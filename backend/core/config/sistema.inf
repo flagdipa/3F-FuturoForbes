@@ -1,0 +1,20 @@
+[SISTEMA]
+nombre = Fer Futuro Forbes (3F)
+version = 1.0.0
+idioma = es
+tema_predeterminado = futurista_neon
+
+[INTERFAZ]
+mostrar_animaciones = true
+frecuencia_actualizacion_ms = 5000
+filas_por_pagina = 100
+
+[IA]
+ocr_proveedor = tesseract
+voz_proveedor = webspeech
+activar_asesor_inversiones = true
+
+[LOCALIZACION]
+timezone = America/Argentina/Buenos_Aires
+moneda_principal = ARS
+idioma_interfaz = es

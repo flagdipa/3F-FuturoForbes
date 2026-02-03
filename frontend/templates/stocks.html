@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('nav.stocks')"></span>{% endblock %}
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stock-card {
+        border-right: 3px solid var(--3f-primary);
+    }
+    .profit-positive { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+    .profit-negative { color: #ff3366; text-shadow: 0 0 10px rgba(255,51,102,0.3); }
+    .ticker-badge {
+        font-family: 'Orbitron';
+        background: rgba(0, 240, 255, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="stocksPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('stocks.title')">Mercado de Valores HUD</h1>
+                <p class="text-dim small mb-0">TERMINAL DE INVERSIONES v2.1 | STATUS: ONLINE</p>
+            </div>
+            <button class="neon-btn shadow-sm" @click="nuevaInversion()">
+                <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('stocks.new')">Añadir Posesión</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen de Portafolio -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card neon-card bg-opacity-10 border-accent">
+                <div class="card-body py-3">
+                    <div class="row align-items-center text-center">
+                        <div class="col-md-3 border-end border-secondary border-opacity-25">
+                            <small class="text-dim d-block" x-text="$store.lang.t('stocks.total_invested')"></small>
+                            <h4 class="mb-0 fw-bold" x-text="formatCurrency(summary.total_invested)"></h4>
+                        </div>
+                        <div class="col-md-3 border-end border-secondary border-opacity-25">
+                            <small class="text-dim d-block" x-text="$store.lang.t('stocks.market_value')"></small>
+                            <h4 class="mb-0 fw-bold text-accent" x-text="formatCurrency(summary.current_value)"></h4>
+                        </div>
+                        <div class="col-md-3 border-end border-secondary border-opacity-25">
+                            <small class="text-dim d-block" x-text="$store.lang.t('stocks.profit_loss')"></small>
+                            <h4 class="mb-0 fw-bold" :class="summary.total_profit_loss >= 0 ? 'profit-positive' : 'profit-negative'">
+                                <span x-text="formatCurrency(summary.total_profit_loss)"></span>
+                            </h4>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-dim d-block">RENDIMIENTO</small>
+                            <h4 class="mb-0 fw-bold" :class="summary.profit_loss_percentage >= 0 ? 'profit-positive' : 'profit-negative'">
+                                <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
+                                <span x-text="summary.profit_loss_percentage.toFixed(2)"></span>%
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de Inversiones -->
+    <div class="row">
+        <template x-for="item in stocks" :key="item.id_inversion">
+            <div class="col-md-4 mb-4">
+                <div class="card neon-card h-100 bg-opacity-10 stock-card" :class="item.activo ? '' : 'opacity-50'">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="ticker-badge me-2 text-primary" x-text="item.simbolo"></div>
+                                <h5 class="mb-0 fw-bold" x-text="item.nombre_inversion"></h5>
+                            </div>
+                            <span class="badge bg-dark border border-secondary text-dim" x-text="item.tipo_inversion"></span>
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <small class="text-dim d-block" x-text="$store.lang.t('stocks.quantity')"></small>
+                                <span class="fw-bold" x-text="item.cantidad"></span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-dim d-block">VALOR_MKT</small>
+                                <span class="fw-bold text-accent" x-text="formatCurrency(item.cantidad * item.precio_actual)"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-2 rounded bg-black bg-opacity-25 mb-3 border border-secondary border-opacity-10">
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-dim" x-text="$store.lang.t('stocks.buy_price')"></span>
+                                <span x-text="formatCurrency(item.precio_compra)"></span>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-dim" x-text="$store.lang.t('stocks.current_price')"></span>
+                                <span class="text-info" x-text="formatCurrency(item.precio_actual)"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-dim small" x-text="$store.lang.t('stocks.profit_loss')"></span>
+                            <span class="fw-bold" :class="(item.precio_actual - item.precio_compra) >= 0 ? 'profit-positive' : 'profit-negative'">
+                                <span x-text="formatCurrency((item.precio_actual - item.precio_compra) * item.cantidad)"></span>
+                                <small class="ms-1" x-text="'(' + (((item.precio_actual - item.precio_compra)/item.precio_compra)*100).toFixed(2) + '%)'"></small>
+                            </span>
+                        </div>
+
+                        <div class="d-flex gap-2 border-top border-secondary border-opacity-25 pt-3">
+                            <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
+                                <i class="fa-solid fa-chart-area me-1"></i> HISTORIAL
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_inversion)">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <div x-show="stocks.length === 0 && !loading" class="col-12 text-center p-5">
+            <i class="fa-solid fa-arrow-trend-down fa-3x text-dim mb-3"></i>
+            <h4 class="text-dim" x-text="$store.lang.t('common.no_data')"></h4>
+        </div>
+    </div>
+
+    <!-- Modal de Edición/Creación -->
+    <div class="modal fade" id="modalStock" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content neon-card border-primary">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary">
+                        <i class="fa-solid fa-chart-line me-2"></i>STOCK_ENTITY_EDITOR
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('stocks.name')"></label>
+                            <input type="text" class="form-control neon-input" x-model="editItem.nombre_inversion">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('stocks.symbol')"></label>
+                            <input type="text" class="form-control neon-input font-monospace" x-model="editItem.simbolo" placeholder="AAPL, BTC, etc">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">CUENTA_VINCULADA</label>
+                            <select class="form-select neon-input" x-model="editItem.id_cuenta">
+                                <template x-for="acc in accounts" :key="acc.id_cuenta">
+                                    <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">TIPO_INVERSIÓN</label>
+                            <select class="form-select neon-input" x-model="editItem.tipo_inversion">
+                                <option value="Stock">Acción (Stock)</option>
+                                <option value="Crypto">Criptomoneda</option>
+                                <option value="ETF">ETF / Fondo</option>
+                                <option value="Bond">Bono</option>
+                                <option value="Other">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('stocks.quantity')"></label>
+                            <input type="number" step="0.00000001" class="form-control neon-input text-primary fw-bold" x-model.number="editItem.cantidad">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('stocks.buy_price')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.precio_compra">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small text-info" x-text="$store.lang.t('stocks.current_price')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input border-info border-opacity-50" x-model.number="editItem.precio_actual">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('stocks.commission')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.comision">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">ESTADO</label>
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
+                                <label class="form-check-label text-dim" for="checkActivo">ACTIVO PARA CÁLCULOS</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-dim small">NOTAS/ESTRATEGIA</label>
+                        <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                    <button type="button" class="btn neon-btn" @click="guardar()" :disabled="saving">
+                        <span x-show="!saving" x-text="$store.lang.t('common.save')"></span>
+                        <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Historial de Precios -->
+    <div class="modal fade" id="modalHistory" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog">
+            <div class="modal-content neon-card border-info">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-info">
+                        <i class="fa-solid fa-timeline me-2"></i>PRICE_EVOLUTION_LOG
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-dark table-hover border-secondary border-opacity-25">
+                            <thead>
+                                <tr class="text-dim small font-monospace">
+                                    <th>TIMESTAMP</th>
+                                    <th class="text-end">UNIT_PRICE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="h in history" :key="h.id_historial">
+                                    <tr>
+                                        <td x-text="formatDate(h.fecha)"></td>
+                                        <td class="text-end fw-bold text-info" x-text="formatCurrency(h.precio)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('stocksPage', () => ({
+        stocks: [],
+        accounts: [],
+        history: [],
+        summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
+        loading: false,
+        saving: false,
+        bsModal: null,
+        bsHistoryModal: null,
+        editItem: { activo: 1, tipo_inversion: 'Stock' },
+
+        async init() {
+            this.bsModal = new bootstrap.Modal(document.getElementById('modalStock'));
+            this.bsHistoryModal = new bootstrap.Modal(document.getElementById('modalHistory'));
+            await Promise.all([this.listar(), this.loadAccounts(), this.loadSummary()]);
+        },
+
+        async listar() {
+            this.loading = true;
+            try {
+                const response = await api.get('/stocks/');
+                this.stocks = response.data;
+            } catch (error) {
+                console.error('Error al listar inversiones:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadAccounts() {
+            try {
+                const response = await api.get('/cuentas/');
+                this.accounts = response.data;
+            } catch (error) {
+                console.error('Error al cargar cuentas:', error);
+            }
+        },
+
+        async loadSummary() {
+            try {
+                const response = await api.get('/stocks/summary');
+                this.summary = response.data;
+            } catch (error) {
+                console.error('Error al cargar resumen:', error);
+            }
+        },
+
+        nuevaInversion() {
+            this.editItem = {
+                id_inversion: 'NEW',
+                nombre_inversion: '',
+                simbolo: '',
+                id_cuenta: this.accounts.length > 0 ? this.accounts[0].id_cuenta : null,
+                tipo_inversion: 'Stock',
+                cantidad: 0,
+                precio_compra: 0,
+                precio_actual: 0,
+                comision: 0,
+                activo: 1,
+                notas: ''
+            };
+            this.bsModal.show();
+        },
+
+        editar(item) {
+            this.editItem = JSON.parse(JSON.stringify(item));
+            this.bsModal.show();
+        },
+
+        async guardar() {
+            this.saving = true;
+            try {
+                if (this.editItem.id_inversion === 'NEW') {
+                    await api.post('/stocks/', this.editItem);
+                } else {
+                    await api.put(`/stocks/${this.editItem.id_inversion}`, this.editItem);
+                }
+                await Promise.all([this.listar(), this.loadSummary()]);
+                this.bsModal.hide();
+            } catch (error) {
+                alert('Error al guardar: ' + (error.response?.data?.detail || error.message));
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async eliminar(id) {
+            if (!confirm('¿Deseas eliminar esta inversión y todo su historial?')) return;
+            try {
+                await api.delete(`/stocks/${id}`);
+                await Promise.all([this.listar(), this.loadSummary()]);
+            } catch (error) {
+                alert('Error al eliminar');
+            }
+        },
+
+        async verHistorial(item) {
+            try {
+                const response = await api.get(`/stocks/${item.id_inversion}/history`);
+                this.history = response.data;
+                this.bsHistoryModal.show();
+            } catch (error) {
+                alert('Error al cargar historial');
+            }
+        },
+
+        formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
+        formatCurrency(v) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v); }
+    }));
+});
+</script>
+{% endblock %}

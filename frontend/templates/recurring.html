@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Programadas{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<div x-data="recurringPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('recurring.title')">Configuración de Recurrentes HUD</h1>
+                <p class="text-dim small mb-0">SISTEMA DE AUTOMATIZACIÓN DE FLUJO DE CAJA v1.0</p>
+            </div>
+            <button class="neon-btn shadow-sm" @click="nuevaProgramacion()">
+                <i class="fa-solid fa-calendar-plus me-2"></i><span x-text="$store.lang.t('recurring.new')">Crear Programación</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Listado de Programaciones -->
+    <div class="row">
+        <template x-for="item in schedules" :key="item.id_recurrencia">
+            <div class="col-md-4 mb-4">
+                <div class="card neon-card h-100 bg-opacity-10 position-relative" :class="item.activo ? 'border-primary' : 'border-secondary opacity-75'">
+                    <!-- Status Indicator -->
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge" :class="item.activo ? 'bg-success text-dark' : 'bg-secondary'" 
+                              x-text="item.activo ? $store.lang.t('recurring.status_active') : $store.lang.t('recurring.status_paused')"></span>
+                    </div>
+
+                    <div class="card-body">
+                        <h5 class="text-primary fw-bold mb-1" x-text="item.codigo_transaccion"></h5>
+                        <p class="text-dim small mb-3" x-text="item.notas || 'Sin notas descriptivas'"></p>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-dim small" x-text="$store.lang.t('recurring.frequency')"></span>
+                            <span class="fw-bold" x-text="getFrequencyLabel(item.frecuencia)"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-dim small" x-text="$store.lang.t('recurring.next_date')"></span>
+                            <span class="text-warning fw-bold" x-text="formatDate(item.proxima_fecha)"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-top border-secondary border-opacity-25 pt-2">
+                            <span class="text-dim small" x-text="$store.lang.t('transactions.columns.amount')"></span>
+                            <span class="text-success fw-bold h5 mb-0" x-text="formatCurrency(item.monto_transaccion)"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 border-top border-secondary border-opacity-25 pt-3">
+                            <button class="btn btn-sm btn-outline-primary" @click="ejecutarAhora(item)" :disabled="!item.activo">
+                                <i class="fa-solid fa-play me-2"></i><span x-text="$store.lang.t('recurring.execute_now')"></span>
+                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary flex-grow-1" @click="editar(item)">
+                                    <i class="fa-solid fa-pen-to-square me-2"></i><span x-text="$store.lang.t('common.edit')"></span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_recurrencia)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <div x-show="schedules.length === 0 && !loading" class="col-12 text-center p-5">
+            <i class="fa-solid fa-calendar-xmark fa-3x text-dim mb-3"></i>
+            <h4 class="text-dim" x-text="$store.lang.t('common.no_data')"></h4>
+        </div>
+    </div>
+
+    <!-- Modal de Edición/Creación -->
+    <div class="modal fade" id="modalScheduled" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content neon-card border-primary">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary">
+                        <i class="fa-solid fa-clock me-2"></i>PROG_TASK_EDITOR
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small">TIPO_TRANSACCION</label>
+                            <select class="form-select neon-input" x-model="editItem.codigo_transaccion">
+                                <option value="Withdrawal">Gasto / Retiro</option>
+                                <option value="Deposit">Ingreso / Depósito</option>
+                                <option value="Transfer">Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small">CUENTA_SISTEMA</label>
+                            <select class="form-select neon-input" x-model.number="editItem.id_cuenta">
+                                <option :value="null">Seleccionar Cuenta</option>
+                                <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
+                                    <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3" x-show="editItem.codigo_transaccion === 'Transfer'">
+                            <label class="text-dim small text-warning">CUENTA_DESTINO</label>
+                            <select class="form-select neon-input border-warning border-opacity-50" x-model.number="editItem.id_cuenta_destino">
+                                <option :value="null">Seleccionar Destino</option>
+                                <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
+                                    <option :value="c.id_cuenta" x-text="c.nombre_cuenta" :disabled="c.id_cuenta === editItem.id_cuenta"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">BENEFICIARIO_DESTINO</label>
+                            <select class="form-select neon-input" x-model.number="editItem.id_beneficiario">
+                                <option :value="null">Seleccionar Beneficiario</option>
+                                <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
+                                    <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">CATEGORÍA_SISTEMA</label>
+                            <select class="form-select neon-input" x-model.number="editItem.id_categoria">
+                                <option :value="null">Sin Categoría</option>
+                                <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
+                                    <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('recurring.frequency')"></label>
+                            <select class="form-select neon-input" x-model="editItem.frecuencia">
+                                <option value="Daily" x-text="$store.lang.t('recurring.daily')"></option>
+                                <option value="Weekly" x-text="$store.lang.t('recurring.weekly')"></option>
+                                <option value="Monthly" x-text="$store.lang.t('recurring.monthly')"></option>
+                                <option value="Yearly" x-text="$store.lang.t('recurring.yearly')"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-dim small">FECHA_INICIO_CONTRATO</label>
+                            <input type="date" class="form-control neon-input" x-model="editItem.fecha_inicio">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('recurring.interval')"></label>
+                            <input type="number" class="form-control neon-input" x-model.number="editItem.intervalo">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('recurring.next_date')"></label>
+                            <input type="date" class="form-control neon-input" x-model="editItem.proxima_fecha">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('transactions.columns.amount')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input text-success fw-bold" x-model.number="editItem.monto_transaccion">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-dim small">NOTAS/DETALLES</label>
+                        <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
+                        <label class="form-check-label text-dim small" for="checkActivo">ESTADO_PROCESO_ACTIVO</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                    <button type="button" class="btn neon-btn" @click="guardar()" :disabled="saving">
+                        <span x-show="!saving" x-text="$store.lang.t('common.save')"></span>
+                        <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('recurringPage', () => ({
+        schedules: [],
+        loading: false,
+        saving: false,
+        bsModal: null,
+        editItem: { activo: 1, frecuencia: 'Monthly', intervalo: 1 },
+        colecciones: { cuentas: [], beneficiarios: [], categorias: [] },
+
+        async init() {
+            this.bsModal = new bootstrap.Modal(document.getElementById('modalScheduled'));
+            await this.cargarColecciones();
+            await this.listar();
+        },
+
+        async cargarColecciones() {
+            try {
+                const [cuentas, benefs, cats] = await Promise.all([
+                    api.get('/cuentas/'),
+                    api.get('/beneficiarios/'),
+                    api.get('/categorias/')
+                ]);
+                this.colecciones.cuentas = cuentas.data;
+                this.colecciones.beneficiarios = benefs.data;
+                this.colecciones.categorias = cats.data;
+            } catch (error) {
+                console.error('Error al cargar colecciones:', error);
+            }
+        },
+
+        async listar() {
+            this.loading = true;
+            try {
+                const response = await api.get('/recurring/');
+                this.schedules = response.data;
+            } catch (error) {
+                console.error('Error al listar programaciones:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        nuevaProgramacion() {
+            this.editItem = {
+                id_recurrencia: 'NEW',
+                codigo_transaccion: 'Withdrawal',
+                id_cuenta: null,
+                id_cuenta_destino: null,
+                id_beneficiario: null,
+                id_categoria: null,
+                monto_transaccion: 0,
+                frecuencia: 'Monthly',
+                intervalo: 1,
+                fecha_inicio: new Date().toISOString().split('T')[0],
+                proxima_fecha: new Date().toISOString().split('T')[0],
+                activo: 1,
+                notas: ''
+            };
+            this.bsModal.show();
+        },
+
+        editar(item) {
+            this.editItem = JSON.parse(JSON.stringify(item));
+            this.bsModal.show();
+        },
+
+        async guardar() {
+            this.saving = true;
+            try {
+                if (this.editItem.id_recurrencia === 'NEW') {
+                    await api.post('/recurring/', this.editItem);
+                } else {
+                    await api.put(`/recurring/${this.editItem.id_recurrencia}`, this.editItem);
+                }
+                await this.listar();
+                this.bsModal.hide();
+            } catch (error) {
+                alert('Error al guardar: ' + (error.response?.data?.detail || error.message));
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async eliminar(id) {
+            if (!confirm('¿Deseas eliminar esta programación permanente?')) return;
+            try {
+                await api.delete(`/recurring/${id}`);
+                this.schedules = this.schedules.filter(s => s.id_recurrencia !== id);
+            } catch (error) {
+                alert('Error al eliminar');
+            }
+        },
+
+        async ejecutarAhora(item) {
+            if (!confirm('¿Ejecutar esta transacción ahora y generar el asiento en el libro?')) return;
+            try {
+                const res = await api.post(`/recurring/${item.id_recurrencia}/execute`);
+                alert('Transacción generada con éxito. Próxima ejecución: ' + res.data.next_date);
+                await this.listar();
+            } catch (error) {
+                alert('Error al ejecutar: ' + (error.response?.data?.detail || error.message));
+            }
+        },
+
+        getFrequencyLabel(f) {
+            const map = {
+                'Daily': this.$store.lang.t('recurring.daily'),
+                'Weekly': this.$store.lang.t('recurring.weekly'),
+                'Monthly': this.$store.lang.t('recurring.monthly'),
+                'Yearly': this.$store.lang.t('recurring.yearly')
+            };
+            return map[f] || f;
+        },
+
+        formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
+        formatCurrency(v) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v); }
+    }));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Cuentas{% endblock %}
+{% block header %}Cuentas Bancarias y Efectivo{% endblock %}
+
+{% block content %}
+<div x-data="accountsPage" class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between">
+            <button class="btn neon-btn" @click="openCreateModal">
+                <i class="fa-solid fa-plus me-2"></i>Nueva Cuenta
+            </button>
+            <div class="d-flex align-items-center">
+                <span class="text-dim small me-3">SISTEMA MULTI-DIVISA: <span class="text-success">CONECTADO</span></span>
+                <i class="fa-solid fa-vault neon-glow"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Cuentas -->
+    <div class="card neon-card">
+        <div class="card-body p-0 table-responsive">
+            <template x-if="loading">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small mt-2">LLAMANDO A LA BÓVEDA...</p>
+                </div>
+            </template>
+            
+            <table class="table table-hover table-dark mb-0" x-show="!loading">
+                <thead>
+                    <tr>
+                        <th class="text-primary">CUENTA</th>
+                        <th class="text-primary">TIPO</th>
+                        <th class="text-primary text-end">SALDO INICIAL</th>
+                        <th class="text-primary text-end">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    <template x-for="account in accounts" :key="account.id_cuenta">
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-microchip text-dim me-2"></i>
+                                    <span x-text="account.nombre_cuenta" class="fw-bold"></span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-dark border border-secondary" x-text="account.tipo_cuenta"></span>
+                            </td>
+                            <td class="text-end">
+                                <span class="neon-glow" x-text="formatCurrency(account.saldo_inicial)"></span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info me-1" @click="editAccount(account)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Creación/Edición -->
+    <div class="modal fade" id="accountModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header neon-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-plus-circle me-2"></i>REGISTRO_NUEVA_CUENTA</h5>
+                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveAccount">
+                        <div class="mb-3">
+                            <label class="text-dim small">NOMBRE_CUENTA</label>
+                            <input type="text" class="form-control neon-input" x-model="formData.nombre_cuenta" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">TIPO_CUENTA</label>
+                            <select class="form-select neon-input" x-model="formData.tipo_cuenta" required>
+                                <option value="Efectivo">Efectivo / Billetera</option>
+                                <option value="Banco">Cuenta Bancaria</option>
+                                <option value="Inversión">Broker / Inversión</option>
+                                <option value="Crypto">Exchange / Wallet Crypto</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">DIVISA_ID</label>
+                            <input type="number" class="form-control neon-input" x-model="formData.id_divisa" required placeholder="Ej: 1 (ARS)">
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">SALDO_INICIAL</label>
+                            <input type="number" step="0.01" class="form-control neon-input" x-model="formData.saldo_inicial" required>
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">CANCELAR</button>
+                            <button type="submit" class="btn btn-primary neon-border" :disabled="saving">
+                                <span x-show="!saving">CONFIGURAR_CUENTA</span>
+                                <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('accountsPage', () => ({
+            accounts: [],
+            loading: true,
+            saving: false,
+            formData: { nombre_cuenta: '', tipo_cuenta: 'Efectivo', id_divisa: 1, saldo_inicial: 0 },
+            bsModal: null,
+
+            async init() {
+                this.bsModal = new bootstrap.Modal(document.getElementById('accountModal'));
+                await this.fetchAccounts();
+            },
+            async fetchAccounts() {
+                this.loading = true;
+                try {
+                    const res = await api.get('/cuentas/');
+                    this.accounts = res.data;
+                } catch (e) {
+                    console.error('Error:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+            formatCurrency(val) {
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+            },
+            openCreateModal() {
+                this.formData = { nombre_cuenta: '', tipo_cuenta: 'Efectivo', id_divisa: 1, saldo_inicial: 0 };
+                this.bsModal.show();
+            },
+            async saveAccount() {
+                this.saving = true;
+                try {
+                    await api.post('/cuentas/', this.formData);
+                    await this.fetchAccounts();
+                    this.bsModal.hide();
+                } catch (e) {
+                    alert('Fallo al registrar cuenta: ' + (e.response?.data?.detail || 'Error de red'));
+                } finally {
+                    this.saving = false;
+                }
+            }
+        }))
+    })
+</script>
+{% endblock %}

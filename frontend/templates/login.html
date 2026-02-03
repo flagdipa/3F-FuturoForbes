@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3F | Iniciar Sesión</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-beta2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="/static/css/neon-3f.css">
+</head>
+<body class="login-page bg-body-tertiary">
+    <div class="login-box">
+        <div class="login-logo mb-4">
+            <a href="/" class="neon-glow fw-bold h1" style="font-family: 'Orbitron';">3F SYSTEM</a>
+        </div>
+        <div class="card neon-card">
+            <div class="card-body login-card-body bg-transparent">
+                <p class="login-box-msg text-dim">Ingrese sus credenciales para acceder al sistema</p>
+                <form id="login-form">
+                    <div class="input-group mb-3">
+                        <input type="email" id="email" class="form-control bg-transparent border-primary text-white" placeholder="Email" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-envelope"></span>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" id="password" class="form-control bg-transparent border-primary text-white" placeholder="Contraseña" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-lock"></span>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold neon-border">ACCEDER AL FUTURO</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="mt-4 text-center">
+                    <a href="/register" class="text-dim small">¿No tienes cuenta? Registrate aquí</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await axios.post('/api/auth/login', { email, password });
+                localStorage.setItem('3f_token', response.data.access_token);
+                window.location.href = '/';
+            } catch (error) {
+                alert('Error al iniciar sesión: ' + (error.response?.data?.detail || 'Error desconocido'));
+            }
+        });
+    </script>
+</body>
+</html>

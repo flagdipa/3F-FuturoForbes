@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías{% endblock %}
+{% block header %}Gestión de Categorías HUD{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-tree-item {
+        border-left: 1px dashed var(--3f-primary);
+        margin-left: 20px;
+        padding-left: 10px;
+        transition: all 0.3s ease;
+    }
+    .category-tree-item:hover {
+        background: rgba(0, 240, 255, 0.05);
+    }
+    .cat-color-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 10px;
+        box-shadow: 0 0 5px currentColor;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="categoriasPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between">
+            <button class="btn neon-btn" @click="nuevaCategoriaPadre()">
+                <i class="fa-solid fa-folder-plus me-2"></i>CREAR NODO RAÍZ
+            </button>
+            <div class="d-flex align-items-center">
+                <span class="text-dim small me-3">SISTEMA JERÁRQUICO: <span class="text-primary">ACTIVO</span></span>
+                <i class="fa-solid fa-tree neon-glow text-accent"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor del Árbol -->
+    <div class="neon-card">
+        <div class="p-3">
+            <template x-if="loading">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small mt-2">MAPEANDO JERARQUÍAS...</p>
+                </div>
+            </template>
+            
+            <div x-show="!loading">
+                <template x-for="cat in tree" :key="cat.id_categoria">
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center p-2 border-bottom border-secondary">
+                            <span class="cat-color-dot" :style="'color: ' + (cat.color || '#00F0FF')"></span>
+                            <span class="fw-bold fs-5 neon-glow" x-text="cat.nombre_categoria"></span>
+                            <div class="ms-auto">
+                                <button class="btn btn-sm btn-outline-info me-1" @click="editar(cat)"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-outline-primary" @click="agregarHija(cat)"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                        
+                        <!-- Subcategorías (Recursivo manual para MVP o componente) -->
+                        <div class="category-tree-item">
+                            <template x-for="sub in cat.subcategorias" :key="sub.id_categoria">
+                                <div class="p-2 d-flex align-items-center border-bottom border-dark">
+                                    <span class="cat-color-dot" :style="'color: ' + (sub.color || '#FF00FF')"></span>
+                                    <span x-text="sub.nombre_categoria"></span>
+                                    <div class="ms-auto">
+                                        <button class="btn btn-sm btn-link text-dim" @click="editar(sub)"><i class="fa-solid fa-pen"></i></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('categoriasPage', () => ({
+            tree: [],
+            loading: true,
+            
+            async init() {
+                await this.cargarArbol();
+            },
+            
+            async cargarArbol() {
+                this.loading = true;
+                try {
+                    const response = await api.get('/categorias/arbol');
+                    this.tree = response.data;
+                } catch (error) {
+                    console.error('Error al cargar árbol:', error);
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            nuevaCategoriaPadre() {
+                alert('Nuevo Nodo Raíz HUD: PRÓXIMAMENTE');
+            },
+            
+            agregarHija(padre) {
+                alert('Agregando subcategoría a: ' + padre.nombre_categoria);
+            },
+            
+            editar(cat) {
+                alert('Editando: ' + cat.nombre_categoria);
+            }
+        }));
+    });
+</script>
+{% endblock %}

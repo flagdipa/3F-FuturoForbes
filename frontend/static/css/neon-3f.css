@@ -1,0 +1,242 @@
+:root {
+    /* Paleta "Galactic Data Center" - Basada en Referencias Visuales */
+    /* Fondos Profundos - Azul Espacial */
+    --3f-bg: #050a14;
+    /* Fondo principal casi negro/azul */
+    --3f-bg-darker: #020408;
+    /* Fondo de sidebar/modales */
+    --3f-bg-lighter: #0f172a;
+    /* Cartas y contenedores */
+
+    /* Colores Principales - Datos Vibrantes */
+    --3f-primary: #00f2ff;
+    /* Cyan Eléctrico (Datos principales) */
+    --3f-primary-glow: rgba(0, 242, 255, 0.35);
+
+    --3f-secondary: #7000ff;
+    /* Violeta Profundo (Gráficos secundarios) */
+    --3f-secondary-glow: rgba(112, 0, 255, 0.4);
+
+    --3f-accent: #2979ff;
+    /* Azul Real (Botones/Links) */
+    --3f-accent-glow: rgba(41, 121, 255, 0.4);
+
+    /* Estados del Sistema */
+    --3f-success: #00d26a;
+    /* Verde Digital */
+    --3f-warning: #ffcc00;
+    /* Amarillo Señal */
+    --3f-danger: #f50057;
+    /* Rojo Alerta */
+
+    /* Textos */
+    --3f-text: #e2e8f0;
+    /* Blanco Hueso */
+    --3f-text-dim: #64748b;
+    /* Gris Azulado */
+
+    /* Bordes y Efectos Tech */
+    --3f-border: rgba(0, 242, 255, 0.15);
+    --3f-shadow: 0 0 20px rgba(0, 100, 255, 0.1);
+    --3f-gradient-card: linear-gradient(145deg, rgba(8, 14, 30, 0.9) 0%, rgba(5, 8, 16, 0.95) 100%);
+}
+
+body {
+    background-color: var(--3f-bg);
+    color: var(--3f-text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+    background-image:
+        radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 10% 90%, rgba(112, 0, 255, 0.08) 0%, transparent 40%);
+    background-attachment: fixed;
+}
+
+/* Tipografía HUD - Tech */
+h1,
+h2,
+h3,
+h4,
+.hud-title {
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--3f-text);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.text-primary-glow {
+    color: var(--3f-primary);
+    text-shadow: 0 0 8px var(--3f-primary-glow);
+}
+
+/* Tarjetas HUD "Glass Panel" */
+.neon-card {
+    background: var(--3f-gradient-card);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--3f-border);
+    border-top: 1px solid rgba(0, 242, 255, 0.3);
+    /* Borde superior brillante tipo panel */
+    border-radius: 4px;
+    /* Bordes más rectos "Tech" */
+    padding: 24px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decoración de esquinas estilo interfaz de Sci-Fi */
+.neon-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    border-top: 2px solid var(--3f-primary);
+    border-right: 2px solid var(--3f-primary);
+    opacity: 0.5;
+    pointer-events: none;
+    /* Fix: Allow clicks to pass through decoration */
+}
+
+/* Botones Holográficos */
+.neon-btn {
+    background: rgba(0, 242, 255, 0.05);
+    border: 1px solid var(--3f-primary);
+    color: var(--3f-primary);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    padding: 10px 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+    /* Forma recortada */
+}
+
+.neon-btn:hover {
+    background: var(--3f-primary);
+    color: #000;
+    box-shadow: 0 0 25px var(--3f-primary-glow);
+    text-shadow: none;
+}
+
+/* Inputs Datos */
+.form-control,
+.form-select,
+.neon-input {
+    background: rgba(2, 4, 8, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    font-family: 'Consolas', monospace;
+}
+
+.form-control:focus {
+    border-color: var(--3f-primary) !important;
+    box-shadow: 0 0 0 1px var(--3f-primary-glow) !important;
+}
+
+/* Sidebar "Command Center" */
+.app-sidebar {
+    background: var(--3f-bg-darker) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.brand-link {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Navegación activa */
+.nav-link.active {
+    background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%) !important;
+    border-left: 2px solid var(--3f-primary);
+    color: var(--3f-primary) !important;
+    box-shadow: none !important;
+}
+
+/* Barra de Progreso Data Viz */
+.progress {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0;
+    height: 8px;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--3f-primary), var(--3f-accent));
+    box-shadow: 0 0 10px var(--3f-primary-glow);
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(90deg, #ff5e62, #ff9966);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
+.progress-bar.bg-warning {
+    background: linear-gradient(90deg, #f2994a, #f2c94c);
+}
+
+/* Scanline Matrix muy sutil */
+.scanline {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0) 50%,
+            rgba(0, 0, 0, 0.1) 50%,
+            rgba(0, 0, 0, 0.1));
+    background-size: 100% 4px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10000;
+    opacity: 0.15;
+}
+
+/* Drag and Drop & Resize Utils */
+.drag-handle {
+    cursor: grab;
+    transition: color 0.3s ease;
+    z-index: 10;
+    /* Ensure handle is clickable */
+    position: relative;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    color: var(--3f-primary);
+}
+
+.cursor-move {
+    cursor: move !important;
+}
+
+/* Permitir redimensionar tarjetas */
+.neon-card {
+    resize: vertical;
+    /* Solo vertical para mantener grid Bootstrap */
+    overflow: auto;
+    /* Necesario para resize */
+    min-height: 150px;
+    max-height: 800px;
+    /* Evitar romper layout excesivamente */
+}
+
+/* Custom Scrollbar for resized cards */
+.neon-card::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.neon-card::-webkit-scrollbar-thumb {
+    background: rgba(0, 242, 255, 0.2);
+    border-radius: 3px;
+}
+
+.neon-card::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}

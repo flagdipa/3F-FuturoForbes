@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('nav.assets')"></span>{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<div x-data="assetsPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('assets.title')">Gestión de Activos Físicos HUD</h1>
+                <p class="text-dim small mb-0">SISTEMA DE SEGUIMIENTO PATRIMONIAL v1.0</p>
+            </div>
+            <button class="neon-btn shadow-sm" @click="nuevoActivo()">
+                <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('assets.new')">Registrar Activo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Listado de Activos -->
+    <div class="row">
+        <template x-for="item in assets" :key="item.id_activo">
+            <div class="col-md-4 mb-4">
+                <div class="card neon-card h-100 bg-opacity-10 position-relative" :class="item.activo ? 'border-primary' : 'border-secondary opacity-75'">
+                    <!-- Status Indicator -->
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge" :class="item.activo ? 'bg-success text-dark' : 'bg-secondary'" 
+                              x-text="item.activo ? $store.lang.t('recurring.status_active') : $store.lang.t('recurring.status_paused')"></span>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fa-solid fa-2x me-3 text-primary" :class="getIcon(item.tipo_activo)"></i>
+                            <div>
+                                <h5 class="text-primary fw-bold mb-0" x-text="item.nombre_activo"></h5>
+                                <span class="text-dim small" x-text="getTypeLabel(item.tipo_activo)"></span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-dim small mb-3 text-truncate" x-text="item.notas || 'Sin notas descriptivas'"></p>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-dim small" x-text="$store.lang.t('assets.initial_value')"></span>
+                            <span class="fw-bold" x-text="formatCurrency(item.valor_inicial)"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-dim small" x-text="$store.lang.t('assets.current_value')"></span>
+                            <span class="text-warning fw-bold" x-text="formatCurrency(item.valor_actual)"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-top border-secondary border-opacity-25 pt-2">
+                            <span class="text-dim small" x-text="$store.lang.t('assets.variation')"></span>
+                            <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold">
+                                <span x-text="item.tasa_variacion"></span>% (<span x-text="item.metodo_variacion"></span>)
+                            </span>
+                        </div>
+
+                        <div class="d-grid gap-2 border-top border-secondary border-opacity-25 pt-3">
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
+                                    <i class="fa-solid fa-chart-line me-1"></i> <span x-text="$store.lang.t('assets.history')"></span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_activo)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <div x-show="assets.length === 0 && !loading" class="col-12 text-center p-5">
+            <i class="fa-solid fa-building-circle-exclamation fa-3x text-dim mb-3"></i>
+            <h4 class="text-dim" x-text="$store.lang.t('common.no_data')"></h4>
+        </div>
+    </div>
+
+    <!-- Modal de Edición/Creación -->
+    <div class="modal fade" id="modalAsset" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content neon-card border-primary">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary">
+                        <i class="fa-solid fa-cube me-2"></i>ASSET_ENTITY_EDITOR
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.name')"></label>
+                            <input type="text" class="form-control neon-input" x-model="editItem.nombre_activo" placeholder="Ej: BMW X5, Apartamento Centro...">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.type')"></label>
+                            <select class="form-select neon-input" x-model="editItem.tipo_activo">
+                                <option value="Property" x-text="$store.lang.t('assets.property')"></option>
+                                <option value="Automobile" x-text="$store.lang.t('assets.vehicle')"></option>
+                                <option value="Household" x-text="$store.lang.t('assets.household')"></option>
+                                <option value="Art" x-text="$store.lang.t('assets.art')"></option>
+                                <option value="Jewelry" x-text="$store.lang.t('assets.jewelry')"></option>
+                                <option value="Other" x-text="$store.lang.t('assets.other')"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.initial_value')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.valor_inicial">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small text-warning" x-text="$store.lang.t('assets.current_value')"></label>
+                            <input type="number" step="0.01" class="form-control neon-input border-warning border-opacity-50" x-model.number="editItem.valor_actual">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.purchase_date')"></label>
+                            <input type="date" class="form-control neon-input" x-model="editItem.fecha_compra">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.method')"></label>
+                            <select class="form-select neon-input" x-model="editItem.metodo_variacion">
+                                <option value="None">None</option>
+                                <option value="Linear">Linear</option>
+                                <option value="Percentage">Percentage</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.variation') + ' (%)'"></label>
+                            <input type="number" step="0.0001" class="form-control neon-input" x-model.number="editItem.tasa_variacion">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="text-dim small" x-text="$store.lang.t('assets.frequency')"></label>
+                            <select class="form-select neon-input" x-model="editItem.frecuencia_variacion">
+                                <option value="Monthly" x-text="$store.lang.t('recurring.monthly')"></option>
+                                <option value="Yearly" x-text="$store.lang.t('recurring.yearly')"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-dim small">NOTAS/DETALLES</label>
+                        <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
+                        <label class="form-check-label text-dim small" for="checkActivo">ESTADO_ACTIVO</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                    <button type="button" class="btn neon-btn" @click="guardar()" :disabled="saving">
+                        <span x-show="!saving" x-text="$store.lang.t('common.save')"></span>
+                        <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Historial -->
+    <div class="modal fade" id="modalHistory" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog">
+            <div class="modal-content neon-card border-info">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-info">
+                        <i class="fa-solid fa-history me-2"></i>VALUATION_LOG
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover border-secondary border-opacity-25">
+                            <thead>
+                                <tr class="text-dim small">
+                                    <th>FECHA</th>
+                                    <th class="text-end">VALOR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="h in history" :key="h.id_historial">
+                                    <tr>
+                                        <td x-text="formatDate(h.fecha)"></td>
+                                        <td class="text-end fw-bold" x-text="formatCurrency(h.valor)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('assetsPage', () => ({
+        assets: [],
+        history: [],
+        loading: false,
+        saving: false,
+        bsModal: null,
+        bsHistoryModal: null,
+        editItem: { activo: 1, tipo_activo: 'Other', metodo_variacion: 'None', frecuencia_variacion: 'Yearly' },
+
+        async init() {
+            this.bsModal = new bootstrap.Modal(document.getElementById('modalAsset'));
+            this.bsHistoryModal = new bootstrap.Modal(document.getElementById('modalHistory'));
+            await this.listar();
+        },
+
+        async listar() {
+            this.loading = true;
+            try {
+                const response = await api.get('/assets/');
+                this.assets = response.data;
+            } catch (error) {
+                console.error('Error al listar activos:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        nuevoActivo() {
+            this.editItem = {
+                id_activo: 'NEW',
+                nombre_activo: '',
+                tipo_activo: 'Other',
+                valor_inicial: 0,
+                valor_actual: 0,
+                fecha_compra: new Date().toISOString().split('T')[0],
+                metodo_variacion: 'None',
+                tasa_variacion: 0,
+                frecuencia_variacion: 'Yearly',
+                activo: 1,
+                notas: ''
+            };
+            this.bsModal.show();
+        },
+
+        editar(item) {
+            this.editItem = JSON.parse(JSON.stringify(item));
+            this.bsModal.show();
+        },
+
+        async guardar() {
+            this.saving = true;
+            try {
+                if (this.editItem.id_activo === 'NEW') {
+                    await api.post('/assets/', this.editItem);
+                } else {
+                    await api.put(`/assets/${this.editItem.id_activo}`, this.editItem);
+                }
+                await this.listar();
+                this.bsModal.hide();
+            } catch (error) {
+                alert('Error al guardar: ' + (error.response?.data?.detail || error.message));
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async eliminar(id) {
+            if (!confirm('¿Deseas eliminar este activo y todo su historial?')) return;
+            try {
+                await api.delete(`/assets/${id}`);
+                this.assets = this.assets.filter(a => a.id_activo !== id);
+            } catch (error) {
+                alert('Error al eliminar');
+            }
+        },
+
+        async verHistorial(item) {
+            try {
+                const response = await api.get(`/assets/${item.id_activo}/history`);
+                this.history = response.data;
+                this.bsHistoryModal.show();
+            } catch (error) {
+                alert('Error al cargar historial');
+            }
+        },
+
+        getIcon(tipo) {
+            const icons = {
+                'Property': 'fa-house-chimney',
+                'Automobile': 'fa-car',
+                'Household': 'fa-couch',
+                'Art': 'fa-palette',
+                'Jewelry': 'fa-gem',
+                'Other': 'fa-box'
+            };
+            return icons[tipo] || 'fa-box';
+        },
+
+        getTypeLabel(tipo) {
+            return this.$store.lang.t('assets.' + tipo.toLowerCase()) || tipo;
+        },
+
+        formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
+        formatCurrency(v) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v); }
+    }));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Presupuestos{% endblock %}
+{% block header %}Control Presupuestario HUD{% endblock %}
+
+{% block content %}
+<div x-data="budgetsPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn neon-btn" @click="nuevoPresupuesto()">
+                <i class="fa-solid fa-plus me-2"></i>DEFINIR LÍMITE
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid de Presupuestos -->
+    <div class="row">
+        <template x-for="budget in presupuestos" :key="budget.id_presupuesto">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="neon-card h-100 position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="text-primary mb-1" style="font-family: 'Orbitron'" x-text="budget.nombre_categoria || 'General'"></h5>
+                            <span class="badge bg-dark border border-secondary text-dim" x-text="budget.periodo"></span>
+                        </div>
+                        <div class="text-end">
+                            <h4 class="mb-0 text-white" x-text="formatCurrency(budget.monto)"></h4>
+                            <small class="text-dim">LÍMITE</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de Progreso HUD -->
+                    <div class="progress mb-2" style="height: 6px; background: rgba(255,255,255,0.1);">
+                        <div class="progress-bar neon-glow" role="progressbar" 
+                             :style="`width: ${getPorcentaje(budget)}%`"
+                             :class="getColorBarra(budget)">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between small text-dim font-monospace">
+                        <span>GASTADO: $0.00</span> <!-- Placeholder: Falta calcular real -->
+                        <span x-text="getPorcentaje(budget) + '%'"></span>
+                    </div>
+
+                    <button class="btn btn-sm btn-link text-dim position-absolute bottom-0 end-0 m-2" @click="editarPresupuesto(budget)">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Modal de Edición/Creación -->
+    <div class="modal fade" id="modalPresupuesto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header neon-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-calculator me-2"></i>CONFIG_PRESUPUESTO</h5>
+                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="guardarPresupuesto">
+                        <div class="mb-3">
+                            <label class="text-dim small">CATEGORÍA OJETIVO</label>
+                            <select class="form-select neon-input" x-model="form.id_categoria" required>
+                                <option value="" disabled>Seleccionar...</option>
+                                <template x-for="cat in categorias" :key="cat.id_categoria">
+                                    <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">LÍMITE MENSUAL</label>
+                            <input type="number" step="0.01" class="form-control neon-input" x-model="form.monto" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">PERIODO</label>
+                            <select class="form-select neon-input" x-model="form.periodo">
+                                <option value="Monthly">Mensual</option>
+                                <option value="Yearly">Anual</option>
+                                <option value="Weekly">Semanal</option>
+                            </select>
+                        </div>
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn neon-btn">CONFIRMAR_PARAMETROS</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('budgetsPage', () => ({
+            presupuestos: [],
+            categorias: [],
+            form: { id_categoria: '', monto: 0, periodo: 'Monthly' },
+            modal: null,
+            editingId: null,
+
+            async init() {
+                this.modal = new bootstrap.Modal(document.getElementById('modalPresupuesto'));
+                await Promise.all([this.loadBudgets(), this.loadCategories()]);
+            },
+
+            async loadBudgets() {
+                try {
+                    const res = await api.get('/presupuestos');
+                    this.presupuestos = res.data;
+                } catch (e) {
+                    console.error("Error loading budgets", e);
+                }
+            },
+
+            async loadCategories() {
+                try {
+                    // Asumiendo que existe endpoint de categorias lista simple
+                    const res = await api.get('/categorias'); 
+                    // Si api/categorias devuelve tree, necesitariamos aplanarlo o usar otro endpoint.
+                    // Por ahora asumimos que devuelve lista o tree y mostramos raiz. 
+                    // Ajuste rápido: Si es tree, solo mostramos nivel 1 para MVP.
+                    this.categorias = Array.isArray(res.data) ? res.data : []; 
+                } catch (e) {
+                    console.error("Error loading categories", e);
+                }
+            },
+
+            nuevoPresupuesto() {
+                this.editingId = null;
+                this.form = { id_categoria: '', monto: 0, periodo: 'Monthly' };
+                this.modal.show();
+            },
+
+            editarPresupuesto(b) {
+                this.editingId = b.id_presupuesto;
+                this.form = { ...b };
+                this.modal.show();
+            },
+
+            async guardarPresupuesto() {
+                try {
+                    let res;
+                    if (this.editingId) {
+                        res = await api.put(`/presupuestos/${this.editingId}`, this.form);
+                    } else {
+                        res = await api.post('/presupuestos/', this.form);
+                    }
+                    await this.loadBudgets();
+                    this.modal.hide();
+                } catch (e) {
+                    alert('Error al guardar: ' + e.message);
+                }
+            },
+
+            formatCurrency(val) {
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+            },
+
+            getPorcentaje(budget) {
+                // Placeholder: Calcular gasto real vs monto
+                // Por ahora retornamos random para demo visual
+                return Math.floor(Math.random() * 100); 
+            },
+
+            getColorBarra(budget) {
+                const p = this.getPorcentaje(budget);
+                if (p > 90) return 'bg-danger';
+                if (p > 70) return 'bg-warning';
+                return 'bg-success';
+            }
+        }))
+    });
+</script>
+{% endblock %}

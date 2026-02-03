@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+
+{% block title %}Transacciones{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<div x-data="transaccionesPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between">
+            <div class="col-sm-6">
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('transactions.title')">Libro de Transacciones HUD</h1>
+            </div>
+            <div class="col-sm-6 text-end">
+                <button class="neon-btn shadow-sm" @click="nuevaTransaccion()">
+                    <i class="fa-solid fa-plus me-2"></i><span x-text="$store.lang.t('transactions.new')">Inserción Data</span>
+                </button>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="text-primary me-3 fw-bold" x-text="'DEBUG: ' + transacciones.length + ' Items Cargados'"></span>
+                <span class="text-dim small me-3">AUDITORÍA ACTIVA: <span class="text-success">OK</span></span>
+                <i class="fa-solid fa-satellite-dish neon-glow"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Avanzados -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card neon-card bg-opacity-10 p-3">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.search_text')"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-secondary border-opacity-25 text-dim">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control neon-input" :placeholder="$store.lang.t('common.search')" 
+                                   x-model="filtros.busqueda" @input.debounce.500ms="aplicarFiltros()">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.date_from')"></label>
+                        <input type="date" class="form-control neon-input" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.date_to')"></label>
+                        <input type="date" class="form-control neon-input" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.account')"></label>
+                        <select class="form-select neon-input" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
+                            <option value="">TODAS</option>
+                            <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
+                                <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" @click="limpiarFiltros()">
+                            <i class="fa-solid fa-eraser me-2"></i><span x-text="$store.lang.t('common.reset_filters')">RESETEAR_FILTROS</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-3">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.beneficiary')"></label>
+                        <select class="form-select neon-input" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
+                            <option value="">TODOS</option>
+                            <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
+                                <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.category')"></label>
+                        <select class="form-select neon-input" x-model="filtros.id_categoria" @change="aplicarFiltros()">
+                            <option value="">TODAS</option>
+                            <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
+                                <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="text-dim small mb-1" x-text="$store.lang.t('nav.tags')"></label>
+                        <select class="form-select neon-input" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
+                            <option value="">SIN_FILTRO</option>
+                            <template x-for="tag in allTags" :key="tag.id_etiqueta">
+                                <option :value="tag.id_etiqueta" x-text="tag.nombre_etiqueta"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado principal -->
+    <div class="card neon-card">
+        <div class="card-body p-0">
+            <div class="table-responsive" 
+                 style="max-height: 70vh; overflow-y: auto;" 
+                 @scroll="handleScroll">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="sticky-top bg-dark">
+                        <tr id="tx-headers">
+                            <template x-for="col in columns" :key="col.key">
+                                <th :class="col.class" 
+                                    class="cursor-move py-3" 
+                                    x-text="col.label"></th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="tx in transacciones" :key="tx.id_transaccion">
+                            <tr class="tx-row" @dblclick="editarTransaccion(tx)">
+                                <template x-for="col in columns" :key="col.key + '-' + tx.id_transaccion">
+                                    <td class="align-middle text-nowrap">
+                                        <template x-if="col.key === 'fecha'">
+                                            <span x-text="formatFechaOnly(tx.fecha_transaccion)"></span>
+                                        </template>
+                                        <template x-if="col.key === 'hora'">
+                                            <span x-text="formatHoraOnly(tx.fecha_transaccion)"></span>
+                                        </template>
+                                        <template x-if="col.key === 'cuenta'">
+                                            <span class="text-accent" x-text="tx.nombre_cuenta"></span>
+                                        </template>
+                                        <template x-if="col.key === 'beneficiario'">
+                                            <span x-text="tx.nombre_beneficiario"></span>
+                                        </template>
+                                        <template x-if="col.key === 'categoria'">
+                                            <span :class="tx.es_dividida ? 'badge bg-warning bg-opacity-25 text-warning border border-warning px-2' : ''" 
+                                                  x-text="tx.es_dividida ? $store.lang.t('transactions.columns.is_split') : (tx.nombre_categoria || '-')"></span>
+                                        </template>
+                                        <template x-if="col.key === 'monto'">
+                                            <span :class="tx.monto_transaccion < 0 ? 'text-danger' : 'text-success'" 
+                                                  class="fw-bold fs-6"
+                                                  x-text="formatCurrency(tx.monto_transaccion)"></span>
+                                        </template>
+                                        <template x-if="col.key === 'estado'">
+                                            <span class="badge rounded-pill" 
+                                                  :class="tx.estado === 'Conciled' ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'"
+                                                  x-text="tx.estado"></span>
+                                        </template>
+                                        <template x-if="col.key === 'etiquetas'">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <template x-for="tagId in (tx.etiquetas || [])">
+                                                    <span class="badge px-2 py-1" 
+                                                          :style="'font-size: 0.65rem; background-color: ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)') + '44; color: ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)') + '; border: 1px solid ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)')"
+                                                          x-text="allTags.find(t => t.id_etiqueta === tagId)?.nombre_etiqueta || tagId"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </td>
+                                </template>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="loading" class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div class="modal fade" id="modalEdicion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content neon-modal">
+                <div class="modal-header neon-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-terminal me-2"></i>EDITOR_TRANSACCION_V1.0</h5>
+                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edicion" x-on:submit.prevent="guardarCambios">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">ID_REGISTRO</label>
+                                <input type="text" class="form-control neon-input" x-model="editTx.id_transaccion" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">FECHA_SINCRO</label>
+                                <input type="datetime-local" class="form-control neon-input" x-model="editTx.fecha_transaccion">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">CUENTA_ORIGEN</label>
+                                <select class="form-select neon-input" x-model.number="editTx.id_cuenta">
+                                    <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
+                                        <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">BENEFICIARIO</label>
+                                <select class="form-select neon-input" x-model.number="editTx.id_beneficiario">
+                                    <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
+                                        <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="checkSplit" x-model="editTx.es_dividida" @change="toggleSplitMode()">
+                                    <label class="form-check-label text-warning small fw-bold" for="checkSplit" x-text="$store.lang.t('transactions.split')"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Single Category Mode -->
+                        <div class="row" x-show="!editTx.es_dividida">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small" x-text="$store.lang.t('transactions.columns.category')"></label>
+                                <select class="form-select neon-input" x-model.number="editTx.id_categoria">
+                                    <option :value="null">Sin Categoría</option>
+                                    <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
+                                        <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small" x-text="$store.lang.t('transactions.columns.amount')"></label>
+                                <input type="number" step="0.01" class="form-control neon-input" x-model.number="editTx.monto_transaccion">
+                            </div>
+                        </div>
+
+                        <!-- Split Category Mode -->
+                        <div class="row" x-show="editTx.es_dividida">
+                            <div class="col-12 mb-3">
+                                <div class="card bg-dark bg-opacity-50 border-secondary border-opacity-25 p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 text-accent" x-text="$store.lang.t('transactions.split_total') + ': ' + formatCurrency(editTx.monto_transaccion)"></h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @click="agregarDivision()">
+                                            <i class="fa-solid fa-plus me-1"></i> <span x-text="$store.lang.t('transactions.add_split')"></span>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-dark table-borderless mb-0">
+                                            <thead>
+                                                <tr class="text-dim extra-small">
+                                                    <th style="width: 40%" x-text="$store.lang.t('transactions.columns.category')"></th>
+                                                    <th style="width: 25%" x-text="$store.lang.t('transactions.columns.amount')"></th>
+                                                    <th style="width: 25%">NOTAS</th>
+                                                    <th style="width: 10%"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="(div, index) in editTx.divisiones" :key="index">
+                                                    <tr>
+                                                        <td>
+                                                            <select class="form-select form-select-sm neon-input" x-model.number="div.id_categoria">
+                                                                <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
+                                                                    <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                                                </template>
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" step="0.01" class="form-control form-control-sm neon-input" x-model.number="div.monto_division">
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" class="form-control form-control-sm neon-input" x-model="div.notas">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button type="button" class="btn btn-sm text-danger" @click="quitarDivision(index)">
+                                                                <i class="fa-solid fa-times"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-2 border-top border-secondary border-opacity-25 pt-2">
+                                        <span class="small" :class="getSplitSum() == editTx.monto_transaccion ? 'text-success' : 'text-danger'">
+                                            SUMA_DIV: <span x-text="formatCurrency(getSplitSum())"></span>
+                                        </span>
+                                        <span class="small text-dim" x-text="$store.lang.t('transactions.split_remaining') + ': ' + formatCurrency(editTx.monto_transaccion - getSplitSum())"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Total for Split Mode -->
+                        <div class="row" x-show="editTx.es_dividida">
+                            <div class="col-md-12 mb-3">
+                                <label class="text-dim small">MONTO_TOTAL_TRANSACCION</label>
+                                <input type="number" step="0.01" class="form-control neon-input border-warning border-opacity-50" x-model.number="editTx.monto_transaccion">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="text-dim small">NOTAS_DE_CAMPO</label>
+                                <textarea class="form-control neon-input" rows="2" x-model="editTx.notas"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="text-dim small">ETIQUETADO_MULTIPLE</label>
+                                <div class="d-flex flex-wrap gap-2 p-2 border border-secondary border-opacity-25 rounded bg-dark bg-opacity-50">
+                                    <template x-for="tag in allTags" :key="tag.id_etiqueta">
+                                        <div class="m-0">
+                                            <span class="badge cursor-pointer px-3 py-2 transition-all" 
+                                                   @click="toggleTag(tag.id_etiqueta)"
+                                                   :style="(editTx.etiquetas || []).includes(tag.id_etiqueta) 
+                                                        ? 'background-color: ' + tag.color + '; color: #000; border: 1px solid ' + tag.color 
+                                                        : 'background-color: transparent; color: ' + tag.color + '; border: 1px solid ' + tag.color + '44'"
+                                                   x-text="tag.nombre_etiqueta"></span>
+                                        </div>
+                                    </template>
+                                    <span x-show="allTags.length === 0" class="text-dim small italic">Sin etiquetas configuradas...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">ABORTAR</button>
+                                <button type="submit" class="btn btn-primary neon-border" :disabled="saving || (editTx.es_dividida && Math.abs(getSplitSum() - parseFloat(editTx.monto_transaccion || 0)) > 0.001)">
+                                    <span x-show="!saving">EJECUTAR_ACCION</span>
+                                    <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('transaccionesPage', () => ({
+            transacciones: [],
+            offset: 0,
+            limit: 100,
+            loading: false,
+            hasMore: true,
+            editTx: { etiquetas: [], divisiones: [], es_dividida: false },
+            bsModal: null,
+            saving: false,
+            allTags: [],
+            filtros: {
+                busqueda: '',
+                fecha_inicio: '',
+                fecha_fin: '',
+                id_cuenta: '',
+                id_beneficiario: '',
+                id_categoria: '',
+                id_etiqueta: ''
+            },
+            colecciones: {
+                cuentas: [],
+                beneficiarios: [],
+                categorias: []
+            },
+            
+            defaultColumns: [
+                { key: 'fecha', label: 'FECHA', class: 'border-primary' },
+                { key: 'hora', label: 'HORA', class: 'border-primary' },
+                { key: 'cuenta', label: 'CUENTA', class: 'border-primary' },
+                { key: 'beneficiario', label: 'BENEFICIARIO', class: 'border-primary' },
+                { key: 'categoria', label: 'CATEGORÍA', class: 'border-primary' },
+                { key: 'monto', label: 'MONTO', class: 'border-primary text-end' },
+                { key: 'etiquetas', label: 'TAGS', class: 'border-primary' },
+                { key: 'estado', label: 'ESTADO', class: 'border-primary' }
+            ],
+            columns: [],
+
+            async init() {
+                this.columns = [...this.defaultColumns];
+                
+                let attempts = 0;
+                while (typeof bootstrap === 'undefined' && attempts < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (typeof bootstrap !== 'undefined') {
+                    const modalEl = document.getElementById('modalEdicion');
+                    if (modalEl) this.bsModal = new bootstrap.Modal(modalEl);
+                }
+
+                await this.cargarColecciones();
+                await this.cargarMas();
+            },
+
+            async cargarColecciones() {
+                try {
+                    const [tags, cuentas, benfs, cats] = await Promise.all([
+                        api.get('/tags/'),
+                        api.get('/cuentas/'),
+                        api.get('/beneficiarios/'),
+                        api.get('/categorias/')
+                    ]);
+                    this.allTags = tags.data;
+                    this.colecciones.cuentas = cuentas.data;
+                    this.colecciones.beneficiarios = benfs.data;
+                    this.colecciones.categorias = cats.data;
+                } catch (e) { console.error('Error cargando iniciales:', e); }
+            },
+
+            async cargarMas() {
+                if (this.loading || !this.hasMore) return;
+                this.loading = true;
+                try {
+                    // Construir query string con filtros
+                    let url = `/transacciones/?offset=${this.offset}&limit=${this.limit}`;
+                    Object.keys(this.filtros).forEach(key => {
+                        if (this.filtros[key]) {
+                            url += `&${key}=${encodeURIComponent(this.filtros[key])}`;
+                        }
+                    });
+
+                    const response = await api.get(url);
+                    const nuevas = response.data;
+                    if (nuevas.length < this.limit) this.hasMore = false;
+                    this.transacciones = [...this.transacciones, ...nuevas];
+                    this.offset += this.limit;
+                } catch (error) {
+                    console.error('Error al cargar transacciones:', error);
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            handleScroll(e) {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                if (scrollTop + clientHeight >= scrollHeight - 50) this.cargarMas();
+            },
+            
+            formatCurrency(val) {
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+            },
+            formatFechaOnly(f) { return f ? new Date(f).toLocaleDateString() : '-'; },
+            formatHoraOnly(f) { return f ? new Date(f).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'; },
+            
+            aplicarFiltros() {
+                this.transacciones = [];
+                this.offset = 0;
+                this.hasMore = true;
+                this.cargarMas();
+            },
+
+            limpiarFiltros() {
+                this.filtros = {
+                    busqueda: '',
+                    fecha_inicio: '',
+                    fecha_fin: '',
+                    id_cuenta: '',
+                    id_beneficiario: '',
+                    id_categoria: '',
+                    id_etiqueta: ''
+                };
+                this.aplicarFiltros();
+            },
+
+            nuevaTransaccion() {
+                this.editTx = {
+                    id_transaccion: 'NEW',
+                    fecha_transaccion: new Date().toISOString().slice(0, 16),
+                    monto_transaccion: 0,
+                    id_cuenta: this.colecciones.cuentas[0]?.id_cuenta || 1,
+                    id_beneficiario: this.colecciones.beneficiarios[0]?.id_beneficiario || 1,
+                    id_categoria: null,
+                    codigo_transaccion: 'Withdrawal',
+                    etiquetas: [],
+                    divisiones: [],
+                    es_dividida: false,
+                    notas: '',
+                    estado: 'None'
+                };
+                if (this.bsModal) this.bsModal.show();
+            },
+
+            async editarTransaccion(tx) {
+                // Copia profunda
+                this.editTx = JSON.parse(JSON.stringify(tx));
+                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
+                if (!this.editTx.divisiones) this.editTx.divisiones = [];
+                
+                if (this.editTx.fecha_transaccion) {
+                    this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
+                }
+
+                // Cargar divisiones si es una TX dividida
+                if (this.editTx.es_dividida) {
+                    try {
+                        const res = await api.get(`/transacciones/${tx.id_transaccion}/divisiones`);
+                        this.editTx.divisiones = res.data;
+                    } catch (e) {
+                        console.error('Error cargando divisiones:', e);
+                    }
+                }
+
+                if (this.bsModal) this.bsModal.show();
+            },
+
+            toggleTag(tagId) {
+                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
+                const idx = this.editTx.etiquetas.indexOf(tagId);
+                if (idx > -1) {
+                    this.editTx.etiquetas.splice(idx, 1);
+                } else {
+                    this.editTx.etiquetas.push(tagId);
+                }
+            },
+            
+            async guardarCambios() {
+                this.saving = true;
+                try {
+                    let response;
+                    // Limpieza previa si no es dividida
+                    if (!this.editTx.es_dividida) {
+                        this.editTx.divisiones = [];
+                    }
+
+                    if (this.editTx.id_transaccion === 'NEW') {
+                        response = await api.post('/transacciones/', this.editTx);
+                        this.transacciones.unshift(response.data);
+                    } else {
+                        response = await api.put(`/transacciones/${this.editTx.id_transaccion}`, this.editTx);
+                        const index = this.transacciones.findIndex(t => t.id_transaccion === this.editTx.id_transaccion);
+                        if (index !== -1) {
+                            this.transacciones.splice(index, 1, response.data);
+                        }
+                    }
+                    if (this.bsModal) this.bsModal.hide();
+                } catch (error) {
+                    const msg = error.response?.data?.detail;
+                    alert('ERROR_TRANSACCION: ' + (typeof msg === 'object' ? JSON.stringify(msg) : (msg || 'Fallas en enlace neuronal')));
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            toggleSplitMode() {
+                if (this.editTx.es_dividida && this.editTx.divisiones.length === 0) {
+                    this.agregarDivision();
+                }
+            },
+
+            agregarDivision() {
+                if (!this.editTx.divisiones) this.editTx.divisiones = [];
+                this.editTx.divisiones.push({
+                    id_categoria: this.colecciones.categorias[0]?.id_categoria || null,
+                    monto_division: 0,
+                    notas: ''
+                });
+            },
+
+            quitarDivision(index) {
+                this.editTx.divisiones.splice(index, 1);
+            },
+
+            getSplitSum() {
+                if (!this.editTx.divisiones) return 0;
+                return this.editTx.divisiones.reduce((sum, d) => sum + (parseFloat(d.monto_division) || 0), 0);
+            }
+        }));
+    });
+</script>
+{% endblock %}

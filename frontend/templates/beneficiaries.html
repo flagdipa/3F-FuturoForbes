@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Beneficiarios{% endblock %}
+{% block header %}Gestión de Beneficiarios HUD{% endblock %}
+
+{% block content %}
+<div x-data="beneficiariosPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between">
+            <button class="btn neon-btn" @click="openCreateModal">
+                <i class="fa-solid fa-user-plus me-2"></i>NUEVO REGISTRO
+            </button>
+            <div class="d-flex align-items-center">
+                <div class="input-group input-group-sm neon-border" style="width: 300px;">
+                    <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-search text-dim"></i></span>
+                    <input type="text" class="form-control bg-transparent border-0 text-white" 
+                           placeholder="FILTRAR_POR_NOMBRE..." x-model="searchQuery" @input="filterBeneficiaries">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Beneficiarios -->
+    <div class="card neon-card">
+        <div class="card-body p-0 table-responsive">
+            <template x-if="loading">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small mt-2">SINCRONIZANDO LISTADO...</p>
+                </div>
+            </template>
+            
+            <table class="table table-hover table-dark mb-0" x-show="!loading && filteredBeneficiaries.length > 0">
+                <thead>
+                    <tr>
+                        <th class="text-primary">BENEFICIARIO</th>
+                        <th class="text-primary">ENTIDAD</th>
+                        <th class="text-primary">CBU/ALIAS</th>
+                        <th class="text-primary">CUIT</th>
+                        <th class="text-primary text-end">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    <template x-for="ben in filteredBeneficiaries" :key="ben.id_beneficiario">
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="beneficiary-avatar-sm me-2 text-primary">
+                                        <i class="fa-solid fa-user-tie"></i>
+                                    </div>
+                                    <span x-text="ben.nombre_beneficiario" class="fw-bold"></span>
+                                </div>
+                            </td>
+                            <td class="text-dim" x-text="ben.banco || '-'"></td>
+                            <td class="text-white" x-text="ben.cbu || '-'"></td>
+                            <td class="text-white" x-text="ben.cuit || '-'"></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info me-1" @click="editBeneficiary(ben)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" @click="verTransacciones(ben)">
+                                    <i class="fa-solid fa-list"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+
+            <template x-if="!loading && filteredBeneficiaries.length === 0">
+                <div class="text-center p-5 text-dim">
+                    <i class="fa-solid fa-user-slash fs-1 mb-3"></i>
+                    <p>NO SE ENCONTRARON REGISTROS</p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Modal de Creación/Edición -->
+    <div class="modal fade" id="benModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header neon-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-id-card me-2"></i>PERFIL_BENEFICIARIO</h5>
+                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveBeneficiary">
+                        <div class="mb-3">
+                            <label class="text-dim small">NOMBRE_OFICIAL</label>
+                            <input type="text" class="form-control neon-input" x-model="formData.nombre_beneficiario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">ENTIDAD_BANCARIA / BANCO</label>
+                            <input type="text" class="form-control neon-input" x-model="formData.banco">
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">CBU_O_ALIAS_SBU</label>
+                            <input type="text" class="form-control neon-input" x-model="formData.cbu">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">CUIT_CUIL</label>
+                                <input type="text" class="form-control neon-input" x-model="formData.cuit">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">CATEGORÍA_ID</label>
+                                <input type="number" class="form-control neon-input" x-model="formData.id_categoria">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim small">NOTAS_INTERNAS</label>
+                            <textarea class="form-control neon-input" x-model="formData.notas" rows="2"></textarea>
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">CANCELAR</button>
+                            <button type="submit" class="btn btn-primary neon-border" :disabled="saving">
+                                <span x-show="!saving">SINCRONIZAR_PERFIL</span>
+                                <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('beneficiariosPage', () => ({
+            beneficiaries: [],
+            filteredBeneficiaries: [],
+            loading: true,
+            saving: false,
+            searchQuery: '',
+            formData: { nombre_beneficiario: '', banco: '', cbu: '', cuit: '', id_categoria: null, notas: '' },
+            isEdit: false,
+            editId: null,
+            bsModal: null,
+
+            async init() {
+                // Esperar a que Bootstrap esté disponible
+                let attempts = 0;
+                while (typeof bootstrap === 'undefined' && attempts < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (typeof bootstrap !== 'undefined') {
+                    const modalEl = document.getElementById('benModal');
+                    if (modalEl) {
+                        this.bsModal = new bootstrap.Modal(modalEl);
+                    } else {
+                        console.error('CRITICAL: Modal element not found in DOM');
+                    }
+                } else {
+                    console.error('CRITICAL: Bootstrap not loaded after 2s');
+                    alert('ERROR_SISTEMA: Librería visual no cargada. Recarga la página.');
+                }
+
+                await this.fetchBeneficiaries();
+            },
+            
+            async fetchBeneficiaries() {
+                this.loading = true;
+                try {
+                    const res = await api.get('/beneficiarios/');
+                    this.beneficiaries = res.data;
+                    this.filterBeneficiaries();
+                } catch (e) {
+                    console.error('Error:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            filterBeneficiaries() {
+                const query = this.searchQuery.toLowerCase();
+                this.filteredBeneficiaries = this.beneficiaries.filter(b => 
+                    b.nombre_beneficiario.toLowerCase().includes(query) || 
+                    (b.banco && b.banco.toLowerCase().includes(query))
+                );
+            },
+            
+            openCreateModal() {
+                this.isEdit = false;
+                this.formData = { nombre_beneficiario: '', banco: '', cbu: '', cuit: '', id_categoria: null, notas: '' };
+                this.bsModal.show();
+            },
+            
+            editBeneficiary(ben) {
+                this.isEdit = true;
+                this.editId = ben.id_beneficiario;
+                this.formData = { ...ben };
+                this.bsModal.show();
+            },
+            
+            async saveBeneficiary() {
+                this.saving = true;
+                try {
+                    if (this.isEdit) {
+                        await api.put(`/beneficiarios/${this.editId}`, this.formData);
+                    } else {
+                        await api.post('/beneficiarios/', this.formData);
+                    }
+                    await this.fetchBeneficiaries();
+                    this.bsModal.hide();
+                } catch (e) {
+                    alert('ERROR_AL_GUARDAR: ' + (e.response?.data?.detail || 'Fallo de enlace'));
+                } finally {
+                    this.saving = false;
+                }
+            },
+            
+            verTransacciones(ben) {
+                window.location.href = `/transacciones?beneficiario=${ben.id_beneficiario}`;
+            }
+        }))
+    })
+</script>
+{% endblock %}
