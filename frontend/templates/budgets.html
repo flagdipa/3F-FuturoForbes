@@ -3,6 +3,23 @@
 {% block title %}Presupuestos{% endblock %}
 {% block header %}Control Presupuestario HUD{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
+<style>
+    .grid-stack-item-content {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        overflow: hidden;
+        padding: 15px;
+    }
+    .neon-glow {
+        box-shadow: 0 0 10px currentColor;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="budgetsPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
@@ -14,10 +31,10 @@
     </div>
 
     <!-- Grid de Presupuestos -->
-    <div class="row">
+    <div class="grid-stack">
         <template x-for="budget in presupuestos" :key="budget.id_presupuesto">
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="neon-card h-100 position-relative">
+            <div class="grid-stack-item" gs-w="4" gs-h="5">
+                <div class="grid-stack-item-content h-100 position-relative">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
                             <h5 class="text-primary mb-1" style="font-family: 'Orbitron'" x-text="budget.nombre_categoria || 'General'"></h5>
@@ -38,8 +55,8 @@
                     </div>
                     
                     <div class="d-flex justify-content-between small text-dim font-monospace">
-                        <span>GASTADO: $0.00</span> <!-- Placeholder: Falta calcular real -->
-                        <span x-text="getPorcentaje(budget) + '%'"></span>
+                        <span x-text="'GASTADO: ' + formatCurrency(budget.gasto_actual)"></span>
+                        <span x-text="(getPorcentaje(budget) || 0).toFixed(1) + '%'"></span>
                     </div>
 
                     <button class="btn btn-sm btn-link text-dim position-absolute bottom-0 end-0 m-2" @click="editarPresupuesto(budget)">
@@ -93,6 +110,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('budgetsPage', () => ({
@@ -101,6 +119,8 @@
             form: { id_categoria: '', monto: 0, periodo: 'Monthly' },
             modal: null,
             editingId: null,
+            grid: null,
+            layoutManager: null,
 
             async init() {
                 this.modal = new bootstrap.Modal(document.getElementById('modalPresupuesto'));
@@ -111,6 +131,19 @@
                 try {
                     const res = await api.get('/presupuestos');
                     this.presupuestos = res.data;
+                    
+                    this.$nextTick(() => {
+                        if (this.grid) {
+                            this.grid.destroy(false);
+                        }
+                        this.grid = GridStack.init({
+                            cellHeight: 70,
+                            margin: 10,
+                            column: 12,
+                            disableOneColumnMode: false,
+                            float: true
+                        });
+                    });
                 } catch (e) {
                     console.error("Error loading budgets", e);
                 }
@@ -161,16 +194,15 @@
             },
 
             getPorcentaje(budget) {
-                // Placeholder: Calcular gasto real vs monto
-                // Por ahora retornamos random para demo visual
-                return Math.floor(Math.random() * 100); 
+                // Return real percentage calculated by backend
+                return budget.porcentaje || 0;
             },
 
             getColorBarra(budget) {
                 const p = this.getPorcentaje(budget);
-                if (p > 90) return 'bg-danger';
-                if (p > 70) return 'bg-warning';
-                return 'bg-success';
+                if (p > 100) return 'bg-danger'; // Over budget
+                if (p > 90) return 'bg-warning'; // Warning zone
+                return 'bg-success'; // Safe zone
             }
         }))
     });

@@ -1,25 +1,102 @@
 {% extends "base.html" %}
 
 {% block title %}<span x-text="$store.lang.t('nav.assets')"></span>{% endblock %}
-{% block header %}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
+<style>
+    .grid-stack-item-content {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .widget-header {
+        padding: 5px 10px;
+        background: rgba(37, 150, 190, 0.1);
+        border-bottom: 1px solid var(--3f-border);
+        font-family: 'Orbitron';
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div x-data="assetsPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
             <div>
                 <h1 class="hud-title mb-0" x-text="$store.lang.t('assets.title')">Gestión de Activos Físicos HUD</h1>
                 <p class="text-dim small mb-0">SISTEMA DE SEGUIMIENTO PATRIMONIAL v1.0</p>
             </div>
-            <button class="neon-btn shadow-sm" @click="nuevoActivo()">
-                <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('assets.new')">Registrar Activo</span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <span id="layout-status" class="text-dim small"></span>
+                <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Reset
+                </button>
+                <button class="neon-btn shadow-sm" @click="nuevoActivo()">
+                    <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('assets.new')">Registrar Activo</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Listado de Activos -->
-    <div class="row">
+    <!-- GridStack Layout -->
+    <div class="grid-stack">
         <template x-for="item in assets" :key="item.id_activo">
+            <div class="grid-stack-item" gs-w="4" gs-h="6">
+                <div class="grid-stack-item-content h-100">
+                    <div class="widget-header">
+                        <span x-text="item.nombre_activo"></span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge" :class="item.activo ? 'bg-success text-dark' : 'bg-secondary'" 
+                                  style="font-size: 0.6rem;">ACT</span>
+                            <i class="fa-solid fa-grip-lines text-dim" style="cursor: grab"></i>
+                        </div>
+                    </div>
+                    <div class="p-3 d-flex flex-column h-100">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fa-solid fa-2x me-3 text-primary" :class="getIcon(item.tipo_activo)"></i>
+                            <div>
+                                <span class="text-dim small d-block" x-text="getTypeLabel(item.tipo_activo)"></span>
+                                <h3 class="text-white fw-bold mb-0" x-text="formatCurrency(item.valor_actual)"></h3>
+                            </div>
+                        </div>
+                        
+                        <p class="text-dim small mb-3 text-truncate" x-text="item.notas || 'Sin notas descriptivas'"></p>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between mb-2 small text-dim border-top border-secondary border-opacity-25 pt-2">
+                                <span>Valor Inicial:</span>
+                                <span x-text="formatCurrency(item.valor_inicial)"></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3 small">
+                                <span>Variación:</span>
+                                <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold">
+                                    <span x-text="item.tasa_variacion"></span>% (<span x-text="item.metodo_variacion"></span>)
+                                </span>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_activo)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
             <div class="col-md-4 mb-4">
                 <div class="card neon-card h-100 bg-opacity-10 position-relative" :class="item.activo ? 'border-primary' : 'border-secondary opacity-75'">
                     <!-- Status Indicator -->
@@ -70,12 +147,6 @@
                     </div>
                 </div>
             </div>
-        </template>
-
-        <div x-show="assets.length === 0 && !loading" class="col-12 text-center p-5">
-            <i class="fa-solid fa-building-circle-exclamation fa-3x text-dim mb-3"></i>
-            <h4 class="text-dim" x-text="$store.lang.t('common.no_data')"></h4>
-        </div>
     </div>
 
     <!-- Modal de Edición/Creación -->
@@ -199,10 +270,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('assetsPage', () => ({
+        // ... (data properties)
         assets: [],
         history: [],
         loading: false,
@@ -210,6 +285,8 @@ document.addEventListener('alpine:init', () => {
         bsModal: null,
         bsHistoryModal: null,
         editItem: { activo: 1, tipo_activo: 'Other', metodo_variacion: 'None', frecuencia_variacion: 'Yearly' },
+        grid: null,
+        layoutManager: null,
 
         async init() {
             this.bsModal = new bootstrap.Modal(document.getElementById('modalAsset'));
@@ -222,13 +299,37 @@ document.addEventListener('alpine:init', () => {
             try {
                 const response = await api.get('/assets/');
                 this.assets = response.data;
+                // Wait for Alpine to render DOM then init GridStack
+                this.$nextTick(() => {
+                    if (this.grid) {
+                        this.grid.destroy(false); // don't remove DOM elements
+                    }
+                    this.grid = GridStack.init({
+                        cellHeight: 70,
+                        margin: 10,
+                        column: 12,
+                        disableOneColumnMode: false,
+                        float: true
+                    });
+                    
+                    // Initialize LayoutManager and load saved layout
+                    this.layoutManager = new LayoutManager('assets', this.grid);
+                    this.layoutManager.loadLayout();
+                });
             } catch (error) {
                 console.error('Error al listar activos:', error);
             } finally {
                 this.loading = false;
             }
         },
+        
+        async resetLayout() {
+            if (this.layoutManager) {
+                await this.layoutManager.resetLayout();
+            }
+        },
 
+        // ... (rest of methods: nuevoActivo, editar, guardar, eliminar, verHistorial, helpers)
         nuevoActivo() {
             this.editItem = {
                 id_activo: 'NEW',
@@ -273,6 +374,8 @@ document.addEventListener('alpine:init', () => {
             try {
                 await api.delete(`/assets/${id}`);
                 this.assets = this.assets.filter(a => a.id_activo !== id);
+                // Re-init grid or remove widget logic could go here, but full reload is safer for sync
+                await this.listar(); 
             } catch (error) {
                 alert('Error al eliminar');
             }

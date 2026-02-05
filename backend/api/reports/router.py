@@ -3,13 +3,16 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
 from ...core.database import get_session
 from ...models.models import LibroTransacciones, ListaCuentas, Beneficiario, Categoria
+from ...models.models_plugins import Plugin
 from ...core.reports_service import reports_service
 from ...core.forecasting_service import forecasting_service
 from ...models.models_advanced import TransaccionRecurrente
 from datetime import datetime, timedelta, date
 from decimal import Decimal
 
-router = APIRouter(prefix="/reportes", tags=["Reportes"])
+from ..auth.deps import get_current_user
+
+router = APIRouter(prefix="/reportes", tags=["Reportes"], dependencies=[Depends(get_current_user)])
 
 @router.get("/mensual")
 def reporte_mensual(
@@ -24,10 +27,10 @@ def reporte_mensual(
     # Agrupación por mes para ingresos
     ingresos_query = select(
         func.extract('month', LibroTransacciones.fecha_transaccion).label('mes'),
-        func.sum(LibroTransacciones.monto_transaccion).label('total')
+        func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
     ).where(
         func.extract('year', LibroTransacciones.fecha_transaccion) == selected_year,
-        LibroTransacciones.monto_transaccion > 0
+        LibroTransacciones.codigo_transaccion == 'Deposit'
     ).group_by(func.extract('month', LibroTransacciones.fecha_transaccion))
     
     ingresos = session.exec(ingresos_query).all()
@@ -35,10 +38,10 @@ def reporte_mensual(
     # Agrupación por mes para gastos
     gastos_query = select(
         func.extract('month', LibroTransacciones.fecha_transaccion).label('mes'),
-        func.sum(LibroTransacciones.monto_transaccion).label('total')
+        func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
     ).where(
         func.extract('year', LibroTransacciones.fecha_transaccion) == selected_year,
-        LibroTransacciones.monto_transaccion < 0
+        LibroTransacciones.codigo_transaccion == 'Withdrawal'
     ).group_by(func.extract('month', LibroTransacciones.fecha_transaccion))
     
     gastos = session.exec(gastos_query).all()
@@ -61,13 +64,24 @@ def reporte_mensual(
 
 @router.get("/categorias")
 def reporte_categorias(
-    month: int = Query(datetime.now().month), 
-    year: int = Query(datetime.now().year),
+    month: int = Query(None), 
+    year: int = Query(None),
     session: Session = Depends(get_session)
 ):
     """
-    Retorna gastos por categoría para el mes especificado.
+    Retorna gastos por categoría. Si no se especifican mes/año, busca el último mes con datos.
     """
+    if month is None or year is None:
+        last_tx = session.exec(select(LibroTransacciones.fecha_transaccion).order_by(LibroTransacciones.fecha_transaccion.desc())).first()
+        if last_tx:
+            dt = datetime.fromisoformat(last_tx)
+            month = dt.month
+            year = dt.year
+        else:
+            now = datetime.now()
+            month = now.month
+            year = now.year
+
     query = select(
         Categoria.nombre_categoria,
         func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
@@ -75,7 +89,7 @@ def reporte_categorias(
      .where(
         func.extract('month', LibroTransacciones.fecha_transaccion) == month,
         func.extract('year', LibroTransacciones.fecha_transaccion) == year,
-        LibroTransacciones.monto_transaccion < 0 # Solo gastos
+        LibroTransacciones.codigo_transaccion == 'Withdrawal' # Basado en el código de MMEX
     ).group_by(Categoria.nombre_categoria)\
      .order_by(func.sum(func.abs(LibroTransacciones.monto_transaccion)).desc())
      
@@ -215,19 +229,29 @@ def reporte_tendencia(
         running_total += float(total)
         points.append((idx, running_total))
         labels.append(f"{idx}") # Etiquetas simplificadas
-        
-    regression = forecasting_service.calculate_linear_regression(points)
+
+    # Verificamos si el plugin de IA está activo
+    plugin_ia = session.exec(select(Plugin).where(Plugin.nombre_tecnico == "ia_forecasting")).first()
+    ai_enabled = plugin_ia.activo if plugin_ia else False
     
-    # Generar puntos de tendencia (incluyendo proyección futura)
     trend_points = []
-    for i in range(len(points) + 3): # 3 meses de futuro
-        val = regression['slope'] * i + regression['intercept']
-        trend_points.append(round(val, 2))
+    final_labels = labels.copy()
+
+    if ai_enabled:
+        regression = forecasting_service.calculate_linear_regression(points)
+        
+        # Generar puntos de tendencia (incluyendo proyección futura)
+        for i in range(len(points) + 3): # 3 meses de futuro
+            val = regression['slope'] * i + regression['intercept']
+            trend_points.append(round(val, 2))
+        
+        final_labels += ["+1", "+2", "+3"]
         
     return {
         "historico": [p[1] for p in points],
         "tendencia": trend_points,
-        "labels": labels + ["+1", "+2", "+3"]
+        "labels": final_labels,
+        "ai_enabled": ai_enabled
     }
 
 @router.get("/proyeccion-cuenta/{id_cuenta}")

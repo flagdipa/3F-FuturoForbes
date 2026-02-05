@@ -3,6 +3,24 @@
 {% block title %}Etiquetas{% endblock %}
 {% block header %}Gestión de Etiquetas HUD{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
+<style>
+    .grid-stack-item-content {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .grid-stack-item-content:hover {
+        border-color: var(--3f-primary);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="tagsPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
@@ -18,15 +36,14 @@
         </div>
     </div>
 
-    <!-- Grid de Etiquetas -->
-    <div class="row">
+    <!-- GridStack Layout -->
+    <div class="grid-stack">
         <template x-for="tag in tags" :key="tag.id_etiqueta">
-            <div class="col-md-3 mb-4">
-                <div class="card neon-card hover-glow transition-all h-100" 
-                     :style="'border-left: 4px solid ' + (tag.color || 'var(--3f-primary)')">
-                    <div class="card-body d-flex flex-column">
+            <div class="grid-stack-item" gs-w="3" gs-h="4">
+                <div class="grid-stack-item-content h-100" :style="'border-left: 4px solid ' + (tag.color || 'var(--3f-primary)')">
+                    <div class="p-3 d-flex flex-column h-100">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="text-white mb-0" x-text="tag.nombre_etiqueta"></h5>
+                            <h5 class="text-white mb-0 text-truncate" x-text="tag.nombre_etiqueta"></h5>
                             <div class="dropdown">
                                 <button class="btn btn-link text-dim p-0" data-bs-toggle="dropdown">
                                     <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -45,6 +62,10 @@
                                 <i class="fa-solid fa-link me-1"></i> 
                                 <span x-text="tag.conteo_uso || 0"></span> usos
                             </span>
+                        </div>
+                        <!-- Drag Handle -->
+                        <div class="position-absolute bottom-0 end-0 p-2 text-dim opacity-50">
+                            <i class="fa-solid fa-grip-lines" style="cursor: grab"></i>
                         </div>
                     </div>
                 </div>
@@ -94,10 +115,14 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('tagsPage', () => ({
             tags: [],
+            grid: null,
+            layoutManager: null,
+            // ... (rest of properties)
             loading: false,
             saving: false,
             editMode: false,
@@ -118,13 +143,27 @@
                 try {
                     const response = await api.get('/tags/with-counts');
                     this.tags = response.data;
+                    
+                    this.$nextTick(() => {
+                        if (this.grid) {
+                            this.grid.destroy(false);
+                        }
+                        this.grid = GridStack.init({
+                            cellHeight: 70,
+                            margin: 10,
+                            column: 12,
+                            disableOneColumnMode: false,
+                            float: true
+                        });
+                    });
                 } catch (error) {
                     console.error('Error al cargar etiquetas:', error);
                 } finally {
                     this.loading = false;
                 }
             },
-
+            
+            // ... (rest of methods)
             nuevaEtiqueta() {
                 this.editMode = false;
                 this.form = { id_etiqueta: null, nombre_etiqueta: '', color: '#4dc9ff' };
@@ -163,6 +202,7 @@
 
                 try {
                     await api.delete(`/tags/${tag.id_etiqueta}`);
+                    // Removing from array and re-init might work, but fetching again works best for sync with DB counters if needed later
                     await this.fetchTags();
                 } catch (error) {
                     alert('ERROR_ELIMINACION: ' + (error.response?.data?.detail || 'Fallo de borrado'));

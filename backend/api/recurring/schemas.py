@@ -23,6 +23,7 @@ class TransaccionRecurrenteBase(BaseModel):
     fecha_fin: Optional[date] = None
     limite_ejecuciones: int = Field(default=-1)
     activo: int = Field(1, ge=0, le=1)
+    auto_execute: bool = Field(default=True)
 
 class TransaccionRecurrenteCreate(TransaccionRecurrenteBase):
     pass
@@ -42,6 +43,7 @@ class TransaccionRecurrenteUpdate(BaseModel):
     fecha_fin: Optional[date] = None
     limite_ejecuciones: Optional[int] = None
     activo: Optional[int] = None
+    auto_execute: Optional[bool] = None
 
 class TransaccionRecurrenteResponse(TransaccionRecurrenteBase):
     id_recurrencia: int

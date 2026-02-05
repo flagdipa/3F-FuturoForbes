@@ -110,6 +110,37 @@ def migrar_datos():
             except: continue
         session.commit()
 
+        # 6. Activos
+        print("Sincronizando activos...")
+        for row in run_mysql_query("SELECT id_activo, nombre_activo, tipo_activo, valor_inicial, valor_actual, activo FROM activos"):
+            try:
+                from models.models_advanced import Activo
+                id_v = int(row[0])
+                if not session.get(Activo, id_v):
+                    session.add(Activo(
+                        id_activo=id_v, nombre_activo=row[1], tipo_activo=row[2],
+                        valor_inicial=decimal.Decimal(row[3]), valor_actual=decimal.Decimal(row[4]),
+                        activo=int(row[5])
+                    ))
+            except: continue
+        session.commit()
+
+        # 7. Inversiones
+        print("Sincronizando inversiones...")
+        for row in run_mysql_query("SELECT id_inversion, id_cuenta, nombre_inversion, simbolo, tipo_inversion, cantidad, precio_compra, precio_actual, activo FROM inversiones"):
+            try:
+                from models.models_advanced import Inversion
+                id_v = int(row[0])
+                if not session.get(Inversion, id_v):
+                    session.add(Inversion(
+                        id_inversion=id_v, id_cuenta=int(row[1]), nombre_inversion=row[2],
+                        simbolo=row[3], tipo_inversion=row[4], cantidad=decimal.Decimal(row[5]),
+                        precio_compra=decimal.Decimal(row[6]), precio_actual=decimal.Decimal(row[7]),
+                        activo=int(row[8])
+                    ))
+            except: continue
+        session.commit()
+
     print("✅ Sincronización exitosa.")
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ async def upload_attachment(
     file: UploadFile = File(...),
     session: Session = Depends(get_session)
 ):
-    """Upload a file attachment for any entity"""
+    """Upload a file attachment with intelligent renaming"""
     
     # Validate file size
     file.file.seek(0, os.SEEK_END)
@@ -45,9 +45,21 @@ async def upload_attachment(
             detail=f"Archivo demasiado grande. Máximo: {MAX_FILE_SIZE // 1024 // 1024}MB"
         )
     
-    # Generate unique filename
+    # Logic for intelligent renaming
+    prefix = tipo_referencia.upper()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_filename = f"{timestamp}_{file.filename}"
+    
+    if tipo_referencia.lower() in ["transaccion", "transaction"]:
+        from ...models.models import LibroTransacciones, ListaCuentas
+        tx = session.get(LibroTransacciones, id_referencia)
+        if tx:
+            cuenta = session.get(ListaCuentas, tx.id_cuenta)
+            nombre_cuba = cuenta.nombre_cuenta.replace(" ", "_") if cuenta else f"CTA{tx.id_cuenta}"
+            fecha_tx = tx.fecha_transaccion.replace("-", "").replace(":", "") if tx.fecha_transaccion else timestamp
+            prefix = f"{nombre_cuba}_{fecha_tx}"
+    
+    extension = os.path.splitext(file.filename)[1]
+    safe_filename = f"{prefix}_{timestamp}{extension}"
     file_path = UPLOAD_DIR / safe_filename
     
     # Save file

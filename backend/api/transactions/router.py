@@ -188,4 +188,37 @@ def crear_transaccion(tx_in: TransaccionComplejaCrear, session: Session = Depend
         session.commit()
         
     session.refresh(db_tx)
+    
+    # Notify about high value transaction
+    if db_tx.monto_transaccion >= 1000:
+        from ..notifications.router import notify_info
+        import asyncio
+        asyncio.create_task(notify_info(
+            user_id=1, # Default user
+            title="Transacción Elevada",
+            message=f"Se ha registrado una transacción de {db_tx.monto_transaccion} en la cuenta."
+        ))
+        
     return _enriquecer_transaccion(db_tx, session)
+
+@router.delete("/{tx_id}")
+def eliminar_transaccion(tx_id: int, session: Session = Depends(get_session)):
+    """Elimina una transacción y sus dependencias (divisiones, etiquetas)"""
+    db_tx = session.get(LibroTransacciones, tx_id)
+    if not db_tx:
+        raise HTTPException(status_code=404, detail="Transacción no encontrada")
+    
+    session.delete(db_tx)
+    session.commit()
+    
+    # Notify about deletion
+    from ..notifications.router import notify_warning
+    import asyncio
+    asyncio.create_task(notify_warning(
+        user_id=1, # Default user
+        title="Transacción Eliminada",
+        message=f"Se ha eliminado una transacción del historial."
+    ))
+    
+    return {"message": "Transacción eliminada"}
+

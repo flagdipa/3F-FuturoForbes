@@ -43,6 +43,7 @@ class TransaccionRecurrente(SQLModel, table=True):
     ejecuciones_realizadas: int = Field(default=0)
     
     activo: int = Field(default=1, index=True)
+    auto_execute: bool = Field(default=True)
     fecha_creacion: Optional[datetime] = None  # MySQL auto-generated
     fecha_actualizacion: Optional[datetime] = None  # MySQL auto-updated
 

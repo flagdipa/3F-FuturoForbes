@@ -13,6 +13,7 @@ from .schemas import (
     TransaccionRecurrenteCreate, TransaccionRecurrenteUpdate, 
     TransaccionRecurrenteResponse
 )
+from backend.core.recurring_service import recurring_service
 
 router = APIRouter(prefix="/recurring", tags=["Recurring Transactions"])
 
@@ -80,67 +81,17 @@ def delete_recurring(id_recurrencia: int, session: Session = Depends(get_session
     session.commit()
     return None
 
-def calculate_next_date(current_date: date, frequency: str, interval: int) -> date:
-    """Helper to calculate next execution date based on frequency"""
-    freq = frequency.lower()
-    if freq == "daily":
-        return current_date + timedelta(days=interval)
-    elif freq == "weekly":
-        return current_date + timedelta(weeks=interval)
-    elif freq == "monthly":
-        return current_date + relativedelta(months=interval)
-    elif freq == "yearly":
-        return current_date + relativedelta(years=interval)
-    return current_date
-
-@router.post("/{id_recurrencia}/execute", response_model=dict)
-def execute_recurring(id_recurrencia: int, session: Session = Depends(get_session)):
-    """
-    Manually trigger execution of a scheduled transaction.
-    Creates a real transaction in 'libro_transacciones' and updates next date.
-    """
-    recurring = session.get(TransaccionRecurrente, id_recurrencia)
-    if not recurring:
-        raise HTTPException(status_code=404, detail="Programación no encontrada")
-    
-    if recurring.activo == 0:
-        raise HTTPException(status_code=400, detail="La programación está inactiva")
-
-    # 1. Create the real transaction
-    transaction = LibroTransacciones(
-        id_cuenta=recurring.id_cuenta,
-        id_cuenta_destino=recurring.id_cuenta_destino,
-        id_beneficiario=recurring.id_beneficiario,
-        codigo_transaccion=recurring.codigo_transaccion,
-        monto_transaccion=recurring.monto_transaccion,
-        id_categoria=recurring.id_categoria,
-        notas=f"[Recurrente] {recurring.notas or ''}",
-        fecha_transaccion=str(recurring.proxima_fecha)
-    )
-    session.add(transaction)
-    
-    # 2. Update recurring schedule
-    recurring.ejecuciones_realizadas += 1
-    
-    # Calculate next proxima_fecha
-    recurring.proxima_fecha = calculate_next_date(
-        recurring.proxima_fecha, 
-        recurring.frecuencia, 
-        recurring.intervalo
-    )
-    
-    # Check limits
-    if recurring.limite_ejecuciones != -1 and recurring.ejecuciones_realizadas >= recurring.limite_ejecuciones:
-        recurring.activo = 0
-        
-    if recurring.fecha_fin and recurring.proxima_fecha > recurring.fecha_fin:
-        recurring.activo = 0
-        
-    session.add(recurring)
-    session.commit()
-    
-    return {
-        "status": "success", 
-        "transaction_id": transaction.id_transaccion,
-        "next_date": str(recurring.proxima_fecha)
-    }
+@router.post("/{id_recurrencia}/execute", response_model=LibroTransacciones)
+def execute_recurring_manual(
+    id_recurrencia: int,
+    session: Session = Depends(get_session)
+):
+    """Manually execute a recurring transaction now"""
+    try:
+        # recurring_service must be imported. It is imported as 'recurring_service' on line 16.
+        result = recurring_service.execute_recurring(session, id_recurrencia)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {str(e)}")

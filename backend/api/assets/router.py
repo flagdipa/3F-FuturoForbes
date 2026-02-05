@@ -86,18 +86,40 @@ def update_asset(
     session.add(asset)
     session.commit()
     session.refresh(asset)
+    
+    # Notify about manual value change
+    if data.valor_actual is not None:
+        from ..notifications.router import notify_info
+        import asyncio
+        asyncio.create_task(notify_info(
+            user_id=1, # Default user for now
+            title="Activo Actualizado",
+            message=f"El valor de '{asset.nombre_activo}' ha sido actualizado a {asset.valor_actual}."
+        ))
+        
     return asset
 
-@router.delete("/{id_activo}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id_activo}")
 def delete_asset(id_activo: int, session: Session = Depends(get_session)):
-    """Delete an asset and its history"""
+    """Delete asset and its history"""
     asset = session.get(Activo, id_activo)
     if not asset:
         raise HTTPException(status_code=404, detail="Activo no encontrado")
     
+    asset_name = asset.nombre_activo
     session.delete(asset)
     session.commit()
-    return None
+    
+    # Notify about deletion
+    from ..notifications.router import notify_warning
+    import asyncio
+    asyncio.create_task(notify_warning(
+        user_id=1, # Default user for now
+        title="Activo Eliminado",
+        message=f"Se ha eliminado el activo '{asset_name}'."
+    ))
+    
+    return {"message": "Activo eliminado"}
 
 # ==================== ASSET HISTORY ====================
 

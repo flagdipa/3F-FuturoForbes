@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
 <style>
     .grid-stack-item-content {
-        background: rgba(22, 27, 61, 0.4);
+        background: rgba(7, 30, 38, 0.4);
         border: 1px solid var(--3f-border);
         backdrop-filter: blur(10px);
         border-radius: 8px;
@@ -20,7 +20,7 @@
     }
     .widget-header {
         padding: 5px 10px;
-        background: rgba(0, 240, 255, 0.1);
+        background: rgba(37, 150, 190, 0.1);
         border-bottom: 1px solid var(--3f-border);
         font-family: 'Orbitron';
         font-size: 0.8rem;
@@ -35,49 +35,69 @@
 <div class="scanline"></div>
 
 <div class="row mb-4" x-data="resumenGeneral">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <h4 class="neon-glow"><i class="fa-solid fa-microchip me-2"></i>ESTADO DEL SISTEMA</h4>
-        <div class="d-flex align-items-center">
-            <button @click="fetchData" class="btn btn-sm btn-outline-primary me-3 neon-border">
-                <i class="fa-solid fa-sync"></i> REFRESCAR_DATA
-            </button>
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
+        <h4 class="neon-glow mb-2 mb-md-0"><i class="fa-solid fa-microchip me-2"></i><span x-text="$store.lang.t('dashboard.system_status')">ESTADO DEL SISTEMA</span></h4>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="text-dim small">Sincrotemporal: <span x-text="fechaActual"></span></span>
+            <button @click="fetchData" class="btn btn-sm btn-outline-primary neon-border">
+                <i class="fa-solid fa-sync"></i> <span x-text="$store.lang.t('dashboard.refresh')">REFRESCAR_DATA</span>
+            </button>
+           
+            <!-- Layout Status Indicator -->
+            <span id="layout-status" class="text-dim small"></span>
         </div>
+    </div>
+</div>
+
+<!-- Reset Layout Button (Right below header) -->
+<div class="row mb-3">
+    <div class="col-12 d-flex justify-content-end" x-data="dashboardWidgets">
+        <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-rotate-left me-1"></i>Restablecer Diseño
+        </button>
     </div>
 </div>
 
 <!-- Grid Principal -->
 <div class="grid-stack" x-data="dashboardWidgets">
-    <!-- Widget: Patrimonio Neto -->
-    <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="0" gs-y="0">
+    <!-- Row 1: KPIs & Summary -->
+    
+    <!-- Widget: Patrimonio Neto (Top Left) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="0" gs-y="0">
         <div class="grid-stack-item-content">
             <div class="widget-header">
-                <span>PATRIMONIO_NETO</span>
+                <span x-text="$store.lang.t('dashboard.net_worth')">PATRIMONIO_NETO</span>
                 <i class="fa-solid fa-wallet text-primary"></i>
             </div>
             <div class="p-4 text-center">
                 <h2 class="neon-glow mb-0" x-text="formatCurrency(resumen.patrimonio_neto)">$0.00</h2>
-                <small class="text-dim">TOTAL CONSOLIDADO (ARS)</small>
+                <small class="text-dim" x-text="$store.lang.t('dashboard.net_worth_total')">TOTAL CONSOLIDADO (ARS)</small>
                 <div class="hud-line"></div>
+                
                 <div class="row mt-2">
                     <div class="col-6 border-end border-secondary">
-                        <small class="d-block text-success">INGRESOS (MES)</small>
+                        <small class="d-block text-success" x-text="$store.lang.t('dashboard.incomes')">INGRESOS (MES)</small>
                         <span class="fw-bold" x-text="formatCurrency(resumen.ingresos_mes)">+ $0.00</span>
                     </div>
                     <div class="col-6">
-                        <small class="d-block text-danger">GASTOS (MES)</small>
+                        <small class="d-block text-danger" x-text="$store.lang.t('dashboard.expenses')">GASTOS (MES)</small>
                         <span class="fw-bold" x-text="formatCurrency(resumen.gastos_mes)">- $0.00</span>
                     </div>
+                </div>
+
+                <div class="mt-3 p-2 bg-dark-subtle rounded border border-info border-opacity-25">
+                    <small class="text-info d-block" x-text="$store.lang.t('dashboard.projected_30d')">PROYECCION 30 DIAS</small>
+                    <h4 class="mb-0 text-info" x-text="formatCurrency(resumen.proyeccion_30d)">$0.00</h4>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Widget: Distribución por Categorías -->
+    <!-- Widget: Distribución por Categorías (Top Center) -->
     <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="4" gs-y="0">
         <div class="grid-stack-item-content">
             <div class="widget-header">
-                <span>DISTRIBUCION_GASTOS</span>
+                <span x-text="$store.lang.t('dashboard.expense_distribution')">DISTRIBUCION_GASTOS</span>
                 <i class="fa-solid fa-chart-pie text-secondary"></i>
             </div>
             <div class="p-3">
@@ -86,29 +106,87 @@
         </div>
     </div>
 
-    <!-- Widget: Pendiente Programadas (Existente) -->
-    <!-- ... (Omitido por brevedad en el diff, pero mantengo la estructura) -->
-
-    <!-- Widget: Inversiones (Portfolio) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="0" gs-y="2">
+    <!-- Widget: Inversiones (Top Right - Moved Up) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="0">
         <div class="grid-stack-item-content">
             <div class="widget-header">
-                <span>PORTAFOLIO_INVERSIONES</span>
+                <span x-text="$store.lang.t('dashboard.portfolio')">PORTAFOLIO_INVERSIONES</span>
                 <i class="fa-solid fa-arrow-trend-up text-info"></i>
             </div>
-            <div class="p-4" x-data="stockSummaryWidget">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h3 class="mb-0 fw-bold" :class="summary.total_profit_loss >= 0 ? 'text-success' : 'text-danger'" x-text="formatCurrency(summary.current_value)">$0.00</h3>
-                        <small class="text-dim">MKT_VALUE</small>
+            <div class="p-4">
+                <div class="text-center mb-3">
+                    <small class="text-dim d-block mb-1">VALOR TOTAL DE MERCADO</small>
+                    <h3 class="mb-0 fw-bold" :class="summary.total_profit_loss >= 0 ? 'text-success' : 'text-danger'" x-text="formatCurrency(summary.current_value)">$0.00</h3>
+                </div>
+                <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-25 pt-3">
+                    <div class="text-start">
+                        <small class="text-dim d-block">Invertido</small>
+                        <span class="fw-bold text-light" x-text="formatCurrency(summary.total_invested)"></span>
                     </div>
                     <div class="text-end">
-                        <span class="badge rounded-pill" :class="summary.profit_loss_percentage >= 0 ? 'bg-success' : 'bg-danger'">
+                        <span class="badge rounded-pill mb-1" :class="summary.profit_loss_percentage >= 0 ? 'bg-success' : 'bg-danger'">
                             <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
-                            <span x-text="summary.profit_loss_percentage.toFixed(2)">0.00</span>%
+                            <span x-text="(summary.profit_loss_percentage || 0).toFixed(2)">0.00</span>%
                         </span>
-                        <div class="mt-1 small text-dim" x-text="'Net: ' + formatCurrency(summary.total_profit_loss)"></div>
+                        <div class="small text-dim" x-text="formatCurrency(summary.total_profit_loss)"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Analysis & Log -->
+
+    <!-- Widget: Evolución de Flujo (Bottom Left - Wide) -->
+    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="0" gs-y="4">
+        <div class="grid-stack-item-content">
+            <div class="widget-header">
+                <div>
+                    <span>EVOLUCION_FLUJO</span>
+                    <span x-show="aiEnabled" class="badge bg-primary ms-2 neon-border" style="font-size: 0.6rem; vertical-align: middle;">
+                        <i class="fa-solid fa-robot"></i> AI POWERED
+                    </span>
+                </div>
+                <i class="fa-solid fa-chart-line text-primary"></i>
+            </div>
+            <div class="p-3">
+                <canvas id="chart-evolucion" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget: Actividad Reciente (Bottom Right) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="4">
+        <div class="grid-stack-item-content">
+            <div class="widget-header">
+                <span x-text="$store.lang.t('dashboard.recent_activity') || 'ACTIVIDAD RECIENTE'">ACTIVIDAD RECIENTE</span>
+                <i class="fa-solid fa-clock-rotate-left text-primary"></i>
+            </div>
+            <div class="p-2">
+                <div class="table-responsive h-100">
+                    <table class="table table-sm table-borderless text-white mb-0">
+                        <tbody style="font-family: 'Consolas', monospace; font-size: 0.8rem;">
+                            <template x-for="tx in transactions" :key="tx.id_transaccion">
+                                <tr class="border-bottom border-light border-opacity-10 align-middle">
+                                    <td width="30" class="text-center">
+                                        <i class="fa-solid" :class="tx.codigo_transaccion === 'Deposit' ? 'fa-circle-chevron-up text-success' : 'fa-circle-chevron-down text-danger'"></i>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-truncate" style="max-width: 120px;" x-text="tx.nombre_beneficiario"></div>
+                                        <div class="small text-dim" x-text="tx.nombre_categoria"></div>
+                                    </td>
+                                    <td class="text-end fw-bold" :class="tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-danger'">
+                                        <span x-text="(tx.codigo_transaccion === 'Deposit' ? '+' : '-') + formatCurrency(tx.monto_transaccion)"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="transactions.length === 0">
+                                <tr>
+                                    <td colspan="3" class="text-center p-4 text-dim">No hay actividad reciente</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -143,12 +221,61 @@
         }));
 
         Alpine.data('dashboardWidgets', () => ({
-            resumen: { patrimonio_neto: 0, ingresos_mes: 0, gastos_mes: 0 },
+            resumen: { patrimonio_neto: 0, ingresos_mes: 0, gastos_mes: 0, proyeccion_30d: 0 },
+            charts: { categorias: null, evolucion: null },
+            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
+            transactions: [],
+            aiEnabled: false,
+            grid: null,
+            layoutManager: null,
+
             async init() {
-                await this.loadResumen();
-                window.addEventListener('update-data', () => this.loadResumen());
+                // Initialize GridStack
+                this.$nextTick(() => {
+                    this.grid = GridStack.init({
+                        cellHeight: 70,
+                        margin: 10,
+                        column: 12,
+                        disableOneColumnMode: false,
+                        float: true
+                    });
+                    
+                    // Initialize LayoutManager and load saved layout
+                    this.layoutManager = new LayoutManager('dashboard', this.grid);
+                    this.layoutManager.loadLayout();
+                });
+                
+                // Carga inicial paralela
+                await Promise.all([
+                    this.loadResumen(),
+                    this.loadSummary(),
+                    this.loadTransactions()
+                ]);
+                
+                // Listener para actualización global
+                window.addEventListener('update-data', async () => {
+                    await Promise.all([
+                        this.loadResumen(),
+                        this.updateCharts(),
+                        this.loadSummary(),
+                        this.loadTransactions()
+                    ]);
+                });
+
+                // Inicializar gráficos después de cargar datos
                 this.initCharts();
             },
+            
+            async resetLayout() {
+                if (this.layoutManager) {
+                    await this.layoutManager.resetLayout();
+                }
+            },
+
+            formatCurrency(val) {
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val || 0);
+            },
+
             async loadResumen() {
                 try {
                     const res = await api.get('/resumen/');
@@ -157,43 +284,121 @@
                     console.error('Error al cargar resumen:', e);
                 }
             },
-            formatCurrency(val) {
-                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val || 0);
-            },
-            initCharts() {
-                const ctxCat = document.getElementById('chart-categorias').getContext('2d');
-                new Chart(ctxCat, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Comida', 'Servicios', 'Transporte', 'Ocio'],
-                        datasets: [{
-                            data: [12500, 19000, 3200, 5100],
-                            backgroundColor: ['#00F0FF', '#FF00FF', '#00FF00', '#FFD700'],
-                            borderColor: '#0A0E27',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: { plugins: { legend: { labels: { color: '#E0E0E0' } } } }
-                });
-            }
-        }));
 
-        Alpine.data('stockSummaryWidget', () => ({
-            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
-            async init() {
-                await this.loadSummary();
-                window.addEventListener('update-data', () => this.loadSummary());
-            },
             async loadSummary() {
                 try {
                     const res = await api.get('/stocks/summary');
-                    this.summary = res.data;
+                    if(res.data) this.summary = res.data;
                 } catch (e) {
-                    console.error('Error al cargar resumen stocks:', e);
+                    console.warn('Stocks module likely inactive or empty:', e);
                 }
             },
-            formatCurrency(val) {
-                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val || 0);
+
+            async loadTransactions() {
+                try {
+                    const res = await api.get('/transacciones/?limit=5');
+                    this.transactions = res.data;
+                } catch (e) {
+                    console.error('Error al cargar transacciones recientes:', e);
+                }
+            },
+
+            async initCharts() {
+                const ctxCat = document.getElementById('chart-categorias');
+                if (ctxCat) {
+                    this.charts.categorias = new Chart(ctxCat.getContext('2d'), {
+                        type: 'doughnut',
+                        data: { 
+                            labels: [], 
+                            datasets: [{ 
+                                data: [], 
+                                backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], 
+                                borderColor: '#040f13', 
+                                borderWidth: 2 
+                            }] 
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { 
+                                legend: { 
+                                    position: 'bottom', 
+                                    labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } 
+                                }
+                            } 
+                        }
+                    });
+                }
+
+                const ctxEvo = document.getElementById('chart-evolucion');
+                if (ctxEvo) {
+                    this.charts.evolucion = new Chart(ctxEvo.getContext('2d'), {
+                        type: 'line',
+                        data: { 
+                            labels: [], 
+                            datasets: [
+                                { 
+                                    label: 'REAL', 
+                                    data: [], 
+                                    borderColor: '#2596be', 
+                                    backgroundColor: 'rgba(37, 150, 190, 0.1)', 
+                                    fill: true, 
+                                    tension: 0.4
+                                },
+                                { 
+                                    label: 'PROYECCION', 
+                                    data: [], 
+                                    borderColor: '#2596be', 
+                                    borderDash: [5, 5], 
+                                    backgroundColor: 'transparent', 
+                                    fill: false, 
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { legend: { labels: { color: '#ffffff' } } },
+                            scales: { 
+                                y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } },
+                                x: { grid: { display: false }, ticks: { color: '#bee0ec' } } 
+                            } 
+                        }
+                    });
+                }
+
+                await this.updateCharts();
+            },
+
+            async updateCharts() {
+                try {
+                    // Categorías
+                    if (this.charts.categorias) {
+                        const resCat = await api.get('/reportes/categorias');
+                        this.charts.categorias.data.labels = resCat.data.labels;
+                        this.charts.categorias.data.datasets[0].data = resCat.data.data;
+                        this.charts.categorias.update();
+                    }
+
+                    // Tendencia
+                    if (this.charts.evolucion) {
+                        const resTend = await api.get('/reportes/tendencia');
+                        this.aiEnabled = resTend.data.ai_enabled || false;
+                        
+                        this.charts.evolucion.data.labels = resTend.data.labels;
+                        this.charts.evolucion.data.datasets[0].data = resTend.data.historico;
+                        this.charts.evolucion.data.datasets[1].data = resTend.data.tendencia;
+                        this.charts.evolucion.update();
+
+                        const histCount = resTend.data.historico.length;
+                        if (resTend.data.tendencia && resTend.data.tendencia.length > histCount) {
+                            this.resumen.proyeccion_30d = resTend.data.tendencia[histCount];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error al actualizar gráficos:', e);
+                }
             }
         }));
     });

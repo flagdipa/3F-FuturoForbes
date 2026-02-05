@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from ...core.database import get_session
-from ...models.models import LibroTransacciones, ListaCuentas
+from ...models.models import LibroTransacciones, ListaCuentas, Usuario
+from ..auth.deps import get_current_user
 from decimal import Decimal
 from datetime import datetime
 
 router = APIRouter(prefix="/resumen", tags=["Resumen"])
 
 @router.get("/")
-def obtener_resumen_financiero(session: Session = Depends(get_session)):
+def obtener_resumen_financiero(
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
     """
     Calcula el patrimonio neto, ingresos y gastos del mes actual.
     """

@@ -14,6 +14,22 @@
         "all": "ALL",
         "none": "NONE"
     },
+    "dashboard": {
+        "net_worth": "NET WORTH",
+        "net_worth_total": "TOTAL CONSOLIDATED (ARS)",
+        "incomes": "INCOME (MONTH)",
+        "expenses": "EXPENSES (MONTH)",
+        "expense_distribution": "EXPENSE DISTRIBUTION",
+        "evolution_trend": "NET WORTH TREND",
+        "real_data": "REAL",
+        "projection": "PROJECTION",
+        "portfolio": "INVESTMENT PORTFOLIO",
+        "market_value": "MKT VALUE",
+        "refresh": "REFRESH DATA",
+        "system_status": "SYSTEM STATUS",
+        "projected_30d": "30D PROJECTION",
+        "recent_activity": "RECENT ACTIVITY"
+    },
     "nav": {
         "dashboard": "Dashboard",
         "accounts": "Accounts",
@@ -24,7 +40,19 @@
         "scheduled": "Scheduled",
         "assets": "Assets",
         "stocks": "Investments",
-        "reports": "Reports"
+        "reports": "Reports",
+        "plugins": "Modules"
+    },
+    "plugins": {
+        "title": "Module Control Center",
+        "status": "Status",
+        "version": "Version",
+        "author": "Author",
+        "configure": "Configure",
+        "active": "Active",
+        "inactive": "Inactive",
+        "install": "Install",
+        "uninstall": "Uninstall"
     },
     "recurring": {
         "title": "Recurring Setup HUD",

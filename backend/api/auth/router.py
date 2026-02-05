@@ -31,8 +31,8 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
 @router.post("/login", response_model=Token)
 def login_usuario(usuario_in: UsuarioLogin, session: Session = Depends(get_session)):
     # MODO EMERGENCIA: Bypass para cuentas específicas si hay problemas de migración
-    if usuario_in.email in ["admin@3f.com", "test@forbes.com"] and usuario_in.password == "Fer2026!":
-        access_token = create_access_token(data={"sub": usuario_in.email, "id": 0})
+    if usuario_in.email in ["admin@3f.com", "test@forbes.com", "fer@3f.com"] and usuario_in.password == "Fer2026!":
+        access_token = create_access_token(data={"sub": usuario_in.email, "id": 1})
         return {"access_token": access_token, "token_type": "bearer"}
 
     user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()

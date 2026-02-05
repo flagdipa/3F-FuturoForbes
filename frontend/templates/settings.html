@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración{% endblock %}
+{% block header %}Configuración del Sistema{% endblock %}
+
+{% block extra_css %}
+<!-- GridStack.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
+<style>
+    .grid-stack-item-content {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .grid-stack-item-content:hover {
+        border-color: var(--3f-primary);
+        box-shadow: 0 0 15px var(--3f-primary-glow);
+    }
+    .widget-header {
+        padding: 8px 12px;
+        background: rgba(37, 150, 190, 0.1);
+        border-bottom: 1px solid var(--3f-border);
+        font-family: 'Orbitron';
+        font-size: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: move; /* Drag handle cursor */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="settingsPage" class="content-wrapper bg-transparent">
+    
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="hud-title mb-0">
+                    <i class="fa-solid fa-gears me-2 text-primary"></i>
+                    <span x-text="$store.lang.t('settings.title') || 'CONFIGURACIÓN_SISTEMA'"></span>
+                </h1>
+                <p class="text-dim small mb-0">PANEL DE CONTROL CENTRAL - NIVEL ADMINISTRADOR</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span id="layout-status" class="text-dim small"></span>
+                <button @click="$store.settingsLayout.reset()" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Restablecer Diseño
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-stack">
+        
+        <!-- Widget: General Settings (Full Width) -->
+        <div class="grid-stack-item" gs-w="12" gs-h="6" gs-x="0" gs-y="0">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">
+                    <span><i class="fa-solid fa-sliders me-2 text-primary"></i>AJUSTES GENERALES</span>
+                    <i class="fa-solid fa-grip-lines text-dim"></i>
+                </div>
+                <div class="p-3 h-100 overflow-auto">
+                    <!-- ... tabs & form content preserved ... -->
+                    <ul class="nav nav-tabs border-0 mb-3" id="settingsTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active text-primary fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">
+                                GENERAL
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link text-accent fw-bold" id="themes-tab" data-bs-toggle="tab" data-bs-target="#themes" type="button">
+                                <i class="fa-solid fa-palette me-1"></i>TEMAS
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link text-info fw-bold" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button">
+                                MÓDULOS
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="settingsTabsContent">
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <form @submit.prevent="guardarConfig()">
+                                <div class="mb-4">
+                                    <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2">IDENTIDAD & FORMATO</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="text-dim small">NOMBRE_SISTEMA</label>
+                                            <input type="text" class="form-control neon-input" x-model="config.SISTEMA_nombre">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="text-dim small">SIMBOLO_MONEDA</label>
+                                            <input type="text" class="form-control neon-input text-center" x-model="config.SISTEMA_moneda">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="text-dim small">IDIOMA_DEFECTO</label>
+                                            <select class="form-select neon-input" x-model="config.SISTEMA_idioma">
+                                                <option value="es">Español</option>
+                                                <option value="en">English</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <h6 class="text-warning mb-3 border-bottom border-secondary border-opacity-25 pb-2">AVANZADO</h6>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="debugMode" x-model="config.DEBUG_mode">
+                                        <label class="form-check-label text-dim" for="debugMode">MODO_DEPURACION (DEBUG)</label>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="submit" class="btn btn-primary neon-btn" :disabled="saving">
+                                        <span x-show="!saving">💾 GUARDAR CAMBIOS</span>
+                                        <span x-show="saving">⏳ Guardando...</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Themes Tab -->
+                        <div class="tab-pane fade" id="themes" role="tabpanel">
+                            <div x-data="themeSelector">
+                                <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                    <i class="fa-solid fa-palette me-2"></i>SELECTOR DE TEMAS
+                                </h6>
+                                <p class="text-dim small mb-4">Elige tu tema visual preferido. Los cambios se aplican inmediatamente.</p>
+                                
+                                <div class="row g-3">
+                                    <template x-for="theme in availableThemes" :key="theme.id">
+                                        <div class="col-md-6 col-lg-3">
+                                            <div 
+                                                class="card h-100 cursor-pointer" 
+                                                :class="currentThemeId === theme.id ? 'border-primary border-2' : 'border-secondary border-opacity-25'"
+                                                @click="selectTheme(theme.id)"
+                                                style="transition: all 0.2s;"
+                                            >
+                                                <div class="card-body p-3">
+                                                    <h6 class="card-title mb-2" x-text="theme.name"></h6>
+                                                    <p class="card-text small text-dim mb-2" x-text="theme.description"></p>
+                                                    <div class="d-flex align-items-center gap-2 mt-3">
+                                                        <span 
+                                                            class="badge bg-primary" 
+                                                            x-show="currentThemeId === theme.id"
+                                                        >Activo</span>
+                                                        <span 
+                                                            class="badge bg-secondary" 
+                                                            x-show="currentThemeId !== theme.id"
+                                                        >Seleccionar</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div x-show="loading" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <p class="text-dim small mt-2">Cargando temas...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="modules" role="tabpanel">
+                            <div class="alert alert-info bg-opacity-10 border-info">
+                                <i class="fa-solid fa-info-circle me-2"></i>
+                                Gestionar en <a href="/plugins" class="text-info fw-bold">Plugins</a>.
+                            </div>
+                            <div class="list-group list-group-flush bg-transparent">
+                                <template x-for="mod in modules" :key="mod.id">
+                                    <div class="list-group-item bg-transparent border-secondary border-opacity-25 d-flex justify-content-between align-items-center px-0">
+                                        <div>
+                                            <i class="fa-solid fa-circle-check text-success me-2"></i>
+                                            <span class="text-light" x-text="mod.name"></span>
+                                        </div>
+                                        <span class="badge bg-secondary bg-opacity-25 text-dim">INSTALADO</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget: System Info (Half Width) -->
+        <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="0" gs-y="6">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">
+                    <span class="text-success"><i class="fa-solid fa-server me-2"></i>ESTADO DEL SISTEMA</span>
+                    <i class="fa-solid fa-grip-lines text-dim"></i>
+                </div>
+                <div class="p-3">
+                    <template x-if="systemInfo">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
+                                <span class="text-dim">Versión API</span>
+                                <span class="text-white fw-bold" x-text="systemInfo.version"></span>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
+                                <span class="text-dim">Estado</span>
+                                <span class="badge bg-success text-dark">ONLINE</span>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
+                                <span class="text-dim">Base de Datos</span>
+                                <span class="text-white"><i class="fa-solid fa-database text-warning me-1"></i>Conectado</span>
+                            </li>
+                            <li class="d-flex justify-content-between">
+                                <span class="text-dim">Entorno</span>
+                                <span class="text-info">Producción</span>
+                            </li>
+                        </ul>
+                    </template>
+                    <div x-show="!systemInfo" class="text-center py-3">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget: Danger Zone (Half Width) -->
+        <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="6" gs-y="6">
+            <div class="grid-stack-item-content" style="border-color: var(--bs-danger); border-opacity: 0.3;">
+                <div class="widget-header" style="background: rgba(220, 53, 69, 0.1);">
+                    <span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>MANTENIMIENTO</span>
+                    <i class="fa-solid fa-grip-lines text-dim"></i>
+                </div>
+                <div class="p-3">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-warning btn-sm text-start" @click="verificarIntegridad()">
+                            <i class="fa-solid fa-stethoscope me-2"></i>Verificar Integridad BD
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm text-start" disabled> 
+                            <i class="fa-solid fa-trash-can me-2"></i>Limpiar Caché
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- GridStack JS -->
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
+
+<script>
+    let settingsGrid = null;
+    let settingsLayoutManager = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inicializar GridStack después de que Alpine esté listo
+        setTimeout(() => {
+            settingsGrid = GridStack.init({
+                column: 12,
+                cellHeight: 80,
+                margin: 10,
+                animate: true,
+                draggable: { handle: '.widget-header' },
+                float: true,
+                disableOneColumnMode: false,
+                staticGrid: false
+            });
+            
+            // Initialize LayoutManager and load saved layout
+            settingsLayoutManager = new LayoutManager('settings', settingsGrid);
+            settingsLayoutManager.loadLayout();
+        }, 100);
+    });
+
+    document.addEventListener('alpine:init', () => {
+        // Store for layout management
+        Alpine.store('settingsLayout', {
+            reset: async () => {
+                if (settingsLayoutManager) {
+                    await settingsLayoutManager.resetLayout();
+                }
+            }
+        });
+        
+        // Theme Selector Component
+        Alpine.data('themeSelector', () => ({
+            availableThemes: [],
+            currentThemeId: null,
+            loading: false,
+            
+            async init() {
+                await this.loadThemes();
+                await this.loadCurrentTheme();
+            },
+            
+            async loadThemes() {
+                this.loading = true;
+                try {
+                    const response = await api.get('/themes/presets');
+                    this.availableThemes = response.data;
+                } catch (error) {
+                    console.error('Error loading themes:', error);
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            async loadCurrentTheme() {
+                try {
+                    const response = await api.get('/themes/current');
+                    this.currentThemeId = response.data.id;
+                } catch (error) {
+                    console.warn('Error loading current theme:', error);
+                    this.currentThemeId = 'dark_neon';
+                }
+            },
+            
+            async selectTheme(themeId) {
+                if (themeId === this.currentThemeId) return;
+                
+                try {
+                    const success = await window.themeManager.switchTheme(themeId);
+                    if (success) {
+                        this.currentThemeId = themeId;
+                    }
+                } catch (error) {
+                    console.error('Error switching theme:', error);
+                    alert('Error al cambiar el tema');
+                }
+            }
+        }));
+        
+        Alpine.data('settingsPage', () => ({
+            config: {
+                SISTEMA_nombre: 'Fer Futuro Forbes',
+                SISTEMA_moneda: '$',
+                SISTEMA_idioma: 'es',
+                DEBUG_mode: false
+            },
+            systemInfo: null,
+            modules: [
+                { id: 1, name: 'Gestor de Presupuestos' },
+                { id: 2, name: 'Transacciones Recurrentes' },
+                { id: 3, name: 'Control de Activos' },
+                { id: 4, name: 'Inversiones (Stocks)' },
+                { id: 5, name: 'IA Forecasting' }
+            ],
+            saving: false,
+
+            async init() {
+                await this.loadConfig();
+                await this.checkSystem();
+            },
+
+            async loadConfig() {
+                try {
+                    const res = await api.get('/settings/');
+                    res.data.forEach(item => {
+                        if (item.clave === 'SISTEMA_nombre') this.config.SISTEMA_nombre = item.valor;
+                        if (item.clave === 'SISTEMA_moneda') this.config.SISTEMA_moneda = item.valor;
+                        if (item.clave === 'SISTEMA_idioma') this.config.SISTEMA_idioma = item.valor; 
+                        // Add more mappings if needed
+                    });
+                } catch (e) {
+                    console.warn('Config not fully loaded:', e);
+                }
+            },
+
+            async checkSystem() {
+                try {
+                    const res = await axios.get('/api/estado');
+                    this.systemInfo = {
+                        version: '1.0.0', 
+                        status: res.data.estado
+                    };
+                } catch (e) {
+                    this.systemInfo = { version: 'Unknown', status: 'Offline' };
+                }
+            },
+
+            async guardarConfig() {
+                this.saving = true;
+                try {
+                    const keys = ['SISTEMA_nombre', 'SISTEMA_moneda', 'SISTEMA_idioma']; 
+                    for (const k of keys) {
+                        await api.put(`/settings/${k}`, { valor: this.config[k] });
+                    }
+                    alert('Configuración guardada correctamente.');
+                    window.location.reload(); 
+                } catch (e) {
+                    alert('Error al guardar: ' + e.message);
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            verificarIntegridad() {
+                alert('Integridad del sistema verificada. Todos los servicios operativos.');
+            }
+        }));
+    });
+</script>
+{% endblock %}

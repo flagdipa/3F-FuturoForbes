@@ -23,7 +23,13 @@ from .api.assets.router import router as assets_router
 from .api.stocks.router import router as stocks_router
 from .api.budgets.router_setup import router as budget_setup_router
 from .api.config.router import router as config_router
+from .api.config.router_plugins import router as plugins_router
 from .api.custom_fields.router import router as custom_fields_router
+from .api.layouts.router import router as layouts_router
+from .api.themes.router import router as themes_router
+from .api.notifications.router import router as notifications_router
+from .models import * # Asegura registro de tablas de SQLModel
+from .core.scheduler import start_scheduler
 import os
 
 app = FastAPI(
@@ -31,6 +37,10 @@ app = FastAPI(
     description="Sistema de Finanzas Personales con IA y Estética Neón Futurista",
     version=config_inf.get("SISTEMA", "version", "1.0.0")
 )
+
+@app.on_event("startup")
+def on_startup():
+    start_scheduler()
 
 # Configuración de CORS
 app.add_middleware(
@@ -67,7 +77,11 @@ app.include_router(assets_router, prefix="/api")
 app.include_router(stocks_router, prefix="/api")
 app.include_router(budget_setup_router, prefix="/api/budgets")
 app.include_router(config_router, prefix="/api")
+app.include_router(plugins_router, prefix="/api")
 app.include_router(custom_fields_router, prefix="/api")
+app.include_router(layouts_router, prefix="/api")
+app.include_router(themes_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
 
 @app.get("/")
 async def root(request: Request):
@@ -76,6 +90,10 @@ async def root(request: Request):
 @app.get("/login")
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/plugins")
+async def plugins_page(request: Request):
+    return templates.TemplateResponse("plugins.html", {"request": request})
 
 @app.get("/cuentas")
 async def accounts_page(request: Request):
@@ -116,6 +134,10 @@ async def assets_page(request: Request):
 @app.get("/inversiones") # Nueva ruta para inversiones
 async def stocks_page(request: Request):
     return templates.TemplateResponse("stocks.html", {"request": request})
+
+@app.get("/settings")
+async def settings_page(request: Request):
+    return templates.TemplateResponse("settings.html", {"request": request})
 
 @app.get("/api/estado")
 async def api_status():

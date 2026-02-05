@@ -4,7 +4,15 @@
 {% block header %}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
 <style>
+    .grid-stack-item-content {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        overflow: hidden;
+    }
     .stock-card {
         border-right: 3px solid var(--3f-primary);
     }
@@ -58,7 +66,7 @@
                             <small class="text-dim d-block">RENDIMIENTO</small>
                             <h4 class="mb-0 fw-bold" :class="summary.profit_loss_percentage >= 0 ? 'profit-positive' : 'profit-negative'">
                                 <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
-                                <span x-text="summary.profit_loss_percentage.toFixed(2)"></span>%
+                                <span x-text="(summary.profit_loss_percentage || 0).toFixed(2)"></span>%
                             </h4>
                         </div>
                     </div>
@@ -68,11 +76,11 @@
     </div>
 
     <!-- Listado de Inversiones -->
-    <div class="row">
+    <div class="grid-stack">
         <template x-for="item in stocks" :key="item.id_inversion">
-            <div class="col-md-4 mb-4">
-                <div class="card neon-card h-100 bg-opacity-10 stock-card" :class="item.activo ? '' : 'opacity-50'">
-                    <div class="card-body">
+            <div class="grid-stack-item" gs-w="4" gs-h="8">
+                <div class="grid-stack-item-content h-100 stock-card" :class="item.activo ? '' : 'opacity-50'">
+                    <div class="p-3">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="d-flex align-items-center">
                                 <div class="ticker-badge me-2 text-primary" x-text="item.simbolo"></div>
@@ -107,7 +115,7 @@
                             <span class="text-dim small" x-text="$store.lang.t('stocks.profit_loss')"></span>
                             <span class="fw-bold" :class="(item.precio_actual - item.precio_compra) >= 0 ? 'profit-positive' : 'profit-negative'">
                                 <span x-text="formatCurrency((item.precio_actual - item.precio_compra) * item.cantidad)"></span>
-                                <small class="ms-1" x-text="'(' + (((item.precio_actual - item.precio_compra)/item.precio_compra)*100).toFixed(2) + '%)'"></small>
+                                <small class="ms-1" x-text="'(' + (((item.precio_actual - item.precio_compra)/(item.precio_compra || 1))*100).toFixed(2) + '%)'"></small>
                             </span>
                         </div>
 
@@ -126,11 +134,6 @@
                 </div>
             </div>
         </template>
-
-        <div x-show="stocks.length === 0 && !loading" class="col-12 text-center p-5">
-            <i class="fa-solid fa-arrow-trend-down fa-3x text-dim mb-3"></i>
-            <h4 class="text-dim" x-text="$store.lang.t('common.no_data')"></h4>
-        </div>
     </div>
 
     <!-- Modal de Edición/Creación -->
@@ -256,6 +259,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('stocksPage', () => ({
@@ -268,6 +272,7 @@ document.addEventListener('alpine:init', () => {
         bsModal: null,
         bsHistoryModal: null,
         editItem: { activo: 1, tipo_inversion: 'Stock' },
+        grid: null,
 
         async init() {
             this.bsModal = new bootstrap.Modal(document.getElementById('modalStock'));
@@ -280,6 +285,23 @@ document.addEventListener('alpine:init', () => {
             try {
                 const response = await api.get('/stocks/');
                 this.stocks = response.data;
+                
+                this.$nextTick(() => {
+                    if (this.grid) {
+                        this.grid.destroy(false);
+                    }
+                    this.grid = GridStack.init({
+                        cellHeight: 70,
+                        margin: 10,
+                        column: 12,
+                        disableOneColumnMode: false,
+                        float: true
+                    });
+                    
+                    // Initialize LayoutManager and load saved layout
+                    this.layoutManager = new LayoutManager('stocks', this.grid);
+                    this.layoutManager.loadLayout();
+                });
             } catch (error) {
                 console.error('Error al listar inversiones:', error);
             } finally {
@@ -302,6 +324,12 @@ document.addEventListener('alpine:init', () => {
                 this.summary = response.data;
             } catch (error) {
                 console.error('Error al cargar resumen:', error);
+            }
+        },
+        
+        async resetLayout() {
+            if (this.layoutManager) {
+                await this.layoutManager.resetLayout();
             }
         },
 
@@ -348,6 +376,7 @@ document.addEventListener('alpine:init', () => {
             if (!confirm('¿Deseas eliminar esta inversión y todo su historial?')) return;
             try {
                 await api.delete(`/stocks/${id}`);
+                // listar() will automatically re-init the grid
                 await Promise.all([this.listar(), this.loadSummary()]);
             } catch (error) {
                 alert('Error al eliminar');

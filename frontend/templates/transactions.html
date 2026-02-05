@@ -321,6 +321,39 @@
                             </div>
                         </div>
 
+                        <!-- Attachments Section -->
+                        <div class="row mt-3" x-show="editTx.id_transaccion !== 'NEW'">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="text-dim small mb-0">ADJUNTOS_DE_RESPALDO</label>
+                                    <button type="button" class="btn btn-xs btn-outline-info" @click="$refs.fileInput.click()">
+                                        <i class="fa-solid fa-paperclip me-1"></i> ADJUNTAR
+                                    </button>
+                                    <input type="file" x-ref="fileInput" class="d-none" @change="subirAdjunto($event)">
+                                </div>
+                                <div class="p-2 border border-secondary border-opacity-25 rounded bg-dark bg-opacity-30">
+                                    <div class="d-flex flex-column gap-2">
+                                        <template x-for="adj in attachments" :key="adj.id_adjunto">
+                                            <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-2 rounded border border-secondary border-opacity-10">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid " :class="adj.tipo_mime?.includes('image') ? 'fa-file-image text-warning' : 'fa-file-pdf text-danger'"></i>
+                                                    <span class="ms-2 small text-accent" x-text="adj.nombre_archivo"></span>
+                                                    <span class="ms-2 extra-small text-dim" x-text="'(' + (adj.tamaño_bytes/1024).toFixed(1) + ' KB)'"></span>
+                                                </div>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn text-info px-2" @click="descargarAdjunto(adj)"><i class="fa-solid fa-download"></i></button>
+                                                    <button type="button" class="btn text-danger px-2" @click="eliminarAdjunto(adj.id_adjunto)"><i class="fa-solid fa-trash-can"></i></button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div x-show="attachments.length === 0" class="text-center py-2">
+                                            <span class="text-dim extra-small italic">Sin archivos vinculados...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-4">
                             <div class="col-12 d-flex justify-content-end">
                                 <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">ABORTAR</button>
@@ -488,6 +521,7 @@
                 this.editTx = JSON.parse(JSON.stringify(tx));
                 if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
                 if (!this.editTx.divisiones) this.editTx.divisiones = [];
+                this.attachments = [];
                 
                 if (this.editTx.fecha_transaccion) {
                     this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
@@ -503,7 +537,55 @@
                     }
                 }
 
+                // Cargar adjuntos
+                await this.cargarAdjuntos();
+
                 if (this.bsModal) this.bsModal.show();
+            },
+
+            async cargarAdjuntos() {
+                if (this.editTx.id_transaccion === 'NEW') return;
+                try {
+                    const res = await api.get(`/attachments/Transaccion/${this.editTx.id_transaccion}`);
+                    this.attachments = res.data;
+                } catch (e) {
+                    console.error('Error cargando adjuntos:', e);
+                }
+            },
+
+            async subirAdjunto(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    this.saving = true;
+                    await api.post(`/attachments/?tipo_referencia=Transaccion&id_referencia=${this.editTx.id_transaccion}`, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    await this.cargarAdjuntos();
+                } catch (e) {
+                    alert('Error al subir archivo: ' + (e.response?.data?.detail || 'Fallo desconocido'));
+                } finally {
+                    this.saving = false;
+                    e.target.value = '';
+                }
+            },
+
+            async eliminarAdjunto(adjId) {
+                if (!confirm('¿Seguro que desea eliminar este comprobante?')) return;
+                try {
+                    await api.delete(`/attachments/${adjId}`);
+                    this.attachments = this.attachments.filter(a => a.id_adjunto !== adjId);
+                } catch (e) {
+                    alert('Error al eliminar adjunto');
+                }
+            },
+
+            descargarAdjunto(adj) {
+                window.open(`${api.defaults.baseURL}/attachments/download/${adj.id_adjunto}`, '_blank');
             },
 
             toggleTag(tagId) {

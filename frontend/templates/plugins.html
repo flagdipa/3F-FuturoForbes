@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Módulos{% endblock %}
+
+{% block content %}
+<div x-data="pluginsPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="hud-title mb-0" x-text="$store.lang.t('plugins.title')">Centro de Control de Módulos</h1>
+            <div class="d-flex align-items-center">
+                <span class="text-dim small me-3">SISTEMA MODULAR: <span class="text-success">NÚCLEO_OK</span></span>
+                <i class="fa-solid fa-microchip neon-glow"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Plugins -->
+    <div class="row g-4">
+        <template x-for="p in plugins" :key="p.id_plugin">
+            <div class="col-md-6 col-lg-4">
+                <div class="card neon-card h-100 transition-all" :class="p.activo ? 'border-primary' : 'border-secondary border-opacity-25'">
+                    <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-start pt-3">
+                        <div>
+                            <h5 class="mb-0 text-accent fw-bold" x-text="p.nombre_display"></h5>
+                            <span class="extra-small text-dim" x-text="p.nombre_tecnico"></span>
+                        </div>
+                        <span class="badge rounded-pill" 
+                              :class="p.activo ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-secondary bg-opacity-25 text-dim border border-secondary'"
+                              x-text="p.activo ? $store.lang.t('plugins.active') : $store.lang.t('plugins.inactive')"></span>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-white opacity-75" x-text="p.descripcion"></p>
+                        <div class="d-flex flex-column gap-1 mt-3">
+                            <div class="d-flex justify-content-between extra-small">
+                                <span class="text-dim" x-text="$store.lang.t('plugins.version')"></span>
+                                <span class="text-accent" x-text="p.version"></span>
+                            </div>
+                            <div class="d-flex justify-content-between extra-small">
+                                <span class="text-dim" x-text="$store.lang.t('plugins.author')"></span>
+                                <span class="text-white" x-text="p.autor"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 d-flex justify-content-between p-3">
+                        <button class="btn btn-sm" 
+                                :class="p.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                                @click="toggleEstado(p)"
+                                :disabled="loading">
+                            <i class="fa-solid me-1" :class="p.activo ? 'fa-power-off' : 'fa-play'"></i>
+                            <span x-text="p.activo ? 'DESACTIVAR' : 'ACTIVAR'"></span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" @click="configurarPlugin(p)" :disabled="!p.activo">
+                            <i class="fa-solid fa-gear me-1"></i>
+                            <span x-text="$store.lang.t('plugins.configure')"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Placeholder para nuevos plugins -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card neon-card h-100 border-dashed border-secondary border-opacity-25 bg-transparent d-flex align-items-center justify-content-center p-5 opacity-50">
+                <div class="text-center">
+                    <i class="fa-solid fa-puzzle-piece fs-1 mb-3 text-dim"></i>
+                    <h6 class="text-dim">Marketplace Próximamente</h6>
+                    <span class="extra-small text-dim">Instala módulos desde la nube 3F</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuración -->
+    <div class="modal fade" id="modalConfigPlugin" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header neon-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-sliders me-2"></i>CONFIGURACIÓN_MÓDULO</h5>
+                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" x-if="editPlugin">
+                    <h6 class="text-accent mb-3" x-text="editPlugin.nombre_display"></h6>
+                    <pre class="bg-dark p-3 rounded extra-small text-success border border-success border-opacity-10" x-text="JSON.stringify(editPlugin.configuracion, null, 2)"></pre>
+                    <p class="text-dim extra-small mt-2 italic">Próximamente: Editor visual de parámetros JSON.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('pluginsPage', () => ({
+            plugins: [],
+            loading: false,
+            editPlugin: null,
+            bsModal: null,
+
+            async init() {
+                const modalEl = document.getElementById('modalConfigPlugin');
+                if (modalEl) this.bsModal = new bootstrap.Modal(modalEl);
+                await this.cargarPlugins();
+            },
+
+            async cargarPlugins() {
+                this.loading = true;
+                try {
+                    const res = await api.get('/plugins/');
+                    this.plugins = res.data;
+                } catch (e) {
+                    console.error('Error cargando plugins:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async toggleEstado(p) {
+                this.loading = true;
+                try {
+                    const res = await api.patch(`/plugins/${p.id_plugin}`, { activo: !p.activo });
+                    const idx = this.plugins.findIndex(pl => pl.id_plugin === p.id_plugin);
+                    if (idx !== -1) {
+                        this.plugins[idx] = res.data;
+                    }
+                } catch (e) {
+                    alert('Error al cambiar estado del módulo');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            configurarPlugin(p) {
+                this.editPlugin = p;
+                if (this.bsModal) this.bsModal.show();
+            }
+        }));
+    });
+</script>
+{% endblock %}

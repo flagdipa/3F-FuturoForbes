@@ -14,6 +14,7 @@ class Usuario(SQLModel, table=True):
     actualizado_el: datetime = Field(default_factory=datetime.utcnow)
     bloqueado: bool = Field(default=False)
     rol_id: Optional[int] = None
+    theme_preference: str = Field(default="dark_neon")  # Theme ID
 
 # --- CATÁLOGOS ---
 

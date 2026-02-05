@@ -1,0 +1,113 @@
+/* Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.toast-notification {
+    background: rgba(7, 30, 38, 0.95);
+    border: 1px solid var(--3f-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-content {
+    padding: 15px;
+}
+
+.toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.toast-title {
+    color: var(--3f-text);
+    font-size: 14px;
+    font-family: 'Orbitron', monospace;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--3f-text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: var(--3f-text);
+}
+
+.toast-body {
+    color: var(--3f-text-dim);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.toast-action {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--3f-primary);
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.2s;
+}
+
+.toast-action:hover {
+    color: var(--3f-accent);
+    text-decoration: underline;
+}
+
+/* Type-specific styling */
+.toast-success {
+    border-left: 4px solid var(--3f-success);
+}
+
+.toast-error {
+    border-left: 4px solid var(--3f-danger);
+}
+
+.toast-warning {
+    border-left: 4px solid var(--3f-warning);
+}
+
+.toast-info {
+    border-left: 4px solid var(--3f-info);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    #toast-container {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+    }
+    
+    .toast-notification {
+        transform: translateY(-100px);
+    }
+    
+    .toast-notification.show {
+        transform: translateY(0);
+    }
+}

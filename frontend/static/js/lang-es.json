@@ -14,6 +14,22 @@
         "all": "TODAS",
         "none": "NINGUNA"
     },
+    "dashboard": {
+        "net_worth": "PATRIMONIO NETO",
+        "net_worth_total": "TOTAL CONSOLIDADO (ARS)",
+        "incomes": "INGRESOS (MES)",
+        "expenses": "GASTOS (MES)",
+        "expense_distribution": "DISTRIBUCIÓN DE GASTOS",
+        "evolution_trend": "TENDENCIA PATRIMONIAL",
+        "real_data": "REAL",
+        "projection": "PROYECCIÓN",
+        "portfolio": "PORTAFOLIO INVERSIONES",
+        "market_value": "VALOR MERCADO",
+        "refresh": "REFRESCAR DATA",
+        "system_status": "ESTADO DEL SISTEMA",
+        "projected_30d": "PROYECCIÓN 30 DÍAS",
+        "recent_activity": "BITÁCORA DE ACTIVIDAD"
+    },
     "nav": {
         "dashboard": "Dashboard",
         "accounts": "Cuentas",
@@ -24,7 +40,19 @@
         "scheduled": "Programadas",
         "assets": "Activos",
         "stocks": "Inversiones",
-        "reports": "Reportes"
+        "reports": "Reportes",
+        "plugins": "Módulos"
+    },
+    "plugins": {
+        "title": "Centro de Control de Módulos",
+        "status": "Estado",
+        "version": "Versión",
+        "author": "Autor",
+        "configure": "Configurar",
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "install": "Instalar",
+        "uninstall": "Desinstalar"
     },
     "recurring": {
         "title": "Configuración de Recurrentes HUD",
