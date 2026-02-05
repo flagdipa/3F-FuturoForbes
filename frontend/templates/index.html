@@ -78,13 +78,25 @@
     <!-- Row 1: KPIs & Summary -->
     
     <!-- Widget: Patrimonio Neto (Top Left) -->
-    <div x-data="{ showBreakdown: false }" class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="0">
+    <div x-data="{ showBreakdown: false }" class="grid-stack-item" gs-w="4" gs-h="7" gs-x="0" gs-y="0">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <span x-text="$store.lang.t('dashboard.net_worth')">PATRIMONIO_NETO</span>
                 <i @click="showBreakdown = !showBreakdown" class="fa-solid fa-circle-info text-primary cursor-pointer" title="Ver desglose"></i>
             </div>
+            
             <div class="p-4 text-center">
+                <!-- Mini Savings Ratio Indicator (New Phase 11) -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-dim smaller">RATIO_AHORRO_MENSUAL</small>
+                        <span class="badge rounded-pill" :class="savingsRate.status === 'HEALTHY' ? 'bg-success bg-opacity-25 text-success' : 'bg-warning bg-opacity-25 text-warning'" x-text="savingsRate.savings_rate_percentage + '%'">0%</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" :style="'width: ' + Math.min(Math.max(savingsRate.savings_rate_percentage || 0, 0), 100) + '%;'" :class="savingsRate.status === 'HEALTHY' ? 'bg-success' : 'bg-warning'"></div>
+                    </div>
+                </div>
+
                 <h2 class="neon-glow mb-0" x-text="formatCurrency(resumen.patrimonio_neto)">$0.00</h2>
                 <small class="text-dim" x-text="$store.lang.t('dashboard.net_worth_total')">TOTAL CONSOLIDADO (ARS)</small>
                 
@@ -174,7 +186,7 @@
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <div>
-                    <span>EVOLUCION_FLUJO</span>
+                    <span x-text="$store.lang.t('dashboard.flow_evolution') || 'EVOLUCION_FLUJO'">EVOLUCION_FLUJO</span>
                     <span x-show="aiEnabled" class="badge bg-primary ms-2 neon-border" style="font-size: 0.6rem; vertical-align: middle;">
                         <i class="fa-solid fa-robot"></i> AI POWERED
                     </span>
@@ -183,6 +195,29 @@
             </div>
             <div class="p-3">
                 <canvas id="chart-evolucion" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget: Inteligencia Patrimonial (New in Phase 11) -->
+    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="14">
+        <div class="grid-stack-item-content border-info border-opacity-50">
+            <div class="widget-header bg-info bg-opacity-10 border-info border-opacity-25">
+                <div class="d-flex align-items-center">
+                    <span class="text-info fw-bold">EVOLUCION_PATRIMONIAL_HISTORICA</span>
+                    <span class="badge bg-info bg-opacity-25 text-info ms-2 border border-info border-opacity-25" style="font-size: 0.6rem;">HUD_SNAPSHOTS</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm bg-dark text-dim border-secondary p-0 px-2" style="font-size: 0.7rem; width: 80px;" x-model="wealthHistoryDays" @change="updateWealthChart()">
+                        <option value="7">7D</option>
+                        <option value="30" selected>30D</option>
+                        <option value="90">90D</option>
+                    </select>
+                    <i class="fa-solid fa-chart-area text-info"></i>
+                </div>
+            </div>
+            <div class="p-3">
+                <canvas id="chart-patrimonio-hist" style="max-height: 250px;"></canvas>
             </div>
         </div>
     </div>
@@ -276,12 +311,13 @@
                 gastos_mes: 0, 
                 proyeccion_30d: 0 
             },
-            charts: { categorias: null, evolucion: null, asignacion: null },
-            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
             transactions: [],
             aiEnabled: false,
+            wealthHistoryDays: 30,
+            savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
             grid: null,
             layoutManager: null,
+            charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
 
             async init() {
                 // Initialize GridStack
@@ -311,12 +347,10 @@
                 await Promise.all([
                     this.loadResumen(),
                     this.loadSummary(),
-                    this.loadTransactions()
+                    this.loadTransactions(),
+                    this.loadSavingsRate()
                 ]);
-                        this.loadTransactions()
-                    ]);
-                });
-
+                
                 // Inicializar gráficos después de cargar datos
                 this.initCharts();
             },
@@ -368,6 +402,15 @@
                     this.transactions = res.data;
                 } catch (e) {
                     console.error('Error al cargar transacciones recientes:', e);
+                }
+            },
+
+            async loadSavingsRate() {
+                try {
+                    const res = await api.get('/wealth/savings-rate');
+                    if(res.data) this.savingsRate = res.data;
+                } catch (e) {
+                    console.error('Error al cargar ratio de ahorro:', e);
                 }
             },
 
@@ -436,26 +479,34 @@
                     });
                 }
 
-                const ctxAsign = document.getElementById('chart-asignacion');
-                if (ctxAsign) {
-                    this.charts.asignacion = new Chart(ctxAsign.getContext('2d'), {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Líquido', 'Activos', 'Inversiones'],
-                            datasets: [{
-                                data: [0, 0, 0],
-                                backgroundColor: ['#00f2ff', '#7000ff', '#be2596'],
-                                borderColor: '#040f13',
-                                borderWidth: 2
-                            }]
-                        },
+                const ctxWealth = document.getElementById('chart-patrimonio-hist');
+                if (ctxWealth) {
+                    this.charts.patrimonioHist = new Chart(ctxWealth.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: [], datasets: [] },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } }
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    bodyFont: { family: 'Consolas' },
+                                    callbacks: {
+                                        label: (context) => this.formatCurrency(context.raw)
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { 
+                                    grid: { color: 'rgba(0, 242, 255, 0.05)' }, 
+                                    ticks: { color: '#00f2ff', font: { size: 9 } } 
+                                },
+                                x: { 
+                                    grid: { display: false }, 
+                                    ticks: { color: '#00f2ff', font: { size: 9 } } 
                                 }
                             }
                         }
@@ -500,8 +551,32 @@
                         ];
                         this.charts.asignacion.update();
                     }
+
+                    // Evolución Patrimonial (Phase 11)
+                    this.updateWealthChart();
+
                 } catch (e) {
                     console.error('Error al actualizar gráficos:', e);
+                }
+            },
+
+            async updateWealthChart() {
+                if (!this.charts.patrimonioHist) return;
+                try {
+                    const res = await api.get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
+                    this.charts.patrimonioHist.data.labels = res.data.labels;
+                    this.charts.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
+                        ...ds,
+                        borderColor: '#00f2ff',
+                        backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2,
+                        pointHoverRadius: 5
+                    }));
+                    this.charts.patrimonioHist.update();
+                } catch (e) {
+                    console.error('Error updating wealth chart:', e);
                 }
             }
         }));
