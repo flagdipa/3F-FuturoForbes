@@ -47,14 +47,15 @@
 {% endblock %}
 
 {% block content %}
+<div x-data="dashboardWidgets">
 <div class="scanline"></div>
 
-<div class="row mb-4" x-data="resumenGeneral">
+<div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
         <h4 class="neon-glow mb-2 mb-md-0"><i class="fa-solid fa-microchip me-2"></i><span x-text="$store.lang.t('dashboard.system_status')">ESTADO DEL SISTEMA</span></h4>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="text-dim small">Sincrotemporal: <span x-text="fechaActual"></span></span>
-            <button @click="fetchData" class="btn btn-sm btn-outline-primary neon-border">
+            <button @click="updateDashboard(true)" class="btn btn-sm btn-outline-primary neon-border">
                 <i class="fa-solid fa-sync"></i> <span x-text="$store.lang.t('dashboard.refresh')">REFRESCAR_DATA</span>
             </button>
            
@@ -66,7 +67,7 @@
 
 <!-- Reset Layout Button (Right below header) -->
 <div class="row mb-3">
-    <div class="col-12 d-flex justify-content-end" x-data="dashboardWidgets">
+    <div class="col-12 d-flex justify-content-end">
         <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary">
             <i class="fa-solid fa-rotate-left me-1"></i>Restablecer Diseño
         </button>
@@ -74,7 +75,7 @@
 </div>
 
 <!-- Grid Principal -->
-<div class="grid-stack" x-data="dashboardWidgets">
+<div class="grid-stack">
     <!-- Row 1: KPIs & Summary -->
     
     <!-- Widget: Patrimonio Neto (Top Left) -->
@@ -271,6 +272,7 @@
             </div>
         </div>
     </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -296,17 +298,8 @@
             return `${prefix} ${val}`;
         };
 
-        Alpine.data('resumenGeneral', () => ({
-            fechaActual: new Date().toLocaleString(),
-            init() {
-                setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
-            },
-            async fetchData() {
-                window.dispatchEvent(new CustomEvent('update-data'));
-            }
-        }));
-
         Alpine.data('dashboardWidgets', () => ({
+            fechaActual: new Date().toLocaleString(),
             selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
             showBreakdown: false,
             resumen: { 
@@ -323,8 +316,11 @@
             charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
 
             async init() {
-                console.log("🚀 Dashboard Widgets Init - Starting...");
+                console.log("🚀 Dashboard Widgets Init (Consolidated) - Starting...");
                 
+                // Clock synchronization
+                setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
+
                 // 1. GridStack & Layout
                 this.$nextTick(() => {
                     try {
@@ -341,13 +337,16 @@
                     } catch (e) { console.error("Grid/Layout Error:", e); }
                 });
                 
-                // 2. Initial Data & Listeners
+                // 2. Initial Data
                 await this.updateDashboard();
+                
+                // Listen for refresh events
                 window.addEventListener('update-data', () => this.updateDashboard(true));
-                console.log("✅ Dashboard Widgets Init - Complete");
+                console.log("✅ Dashboard Widgets Init (Consolidated) - Complete");
             },
             
             async updateDashboard(force = false) {
+                console.log("🔄 Updating Dashboard Data...");
                 try {
                     await Promise.all([
                         this.loadResumen(),
@@ -403,6 +402,7 @@
             },
 
             initCharts() {
+                console.log("📊 Initializing Charts...");
                 const ctxCat = document.getElementById('chart-categorias');
                 const ctxEvo = document.getElementById('chart-evolucion');
                 const ctxWealth = document.getElementById('chart-patrimonio-hist');
