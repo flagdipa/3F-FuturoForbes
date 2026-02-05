@@ -280,6 +280,9 @@
 
 <script>
     document.addEventListener('alpine:init', () => {
+        // Defensive check for API client
+        const getApiClient = () => window.api || { get: () => Promise.resolve({data:[]}), post: () => Promise.resolve({data:[]}) };
+
         // Global utility for formatting
         window.formatCurrencyGlobal = function(amount, currency = 'ARS') {
             const symbols = { 'ARS': '$', 'USD_BLUE': 'US$', 'BTC': '₿', 'ETH': 'Ξ' };
@@ -320,17 +323,14 @@
             charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
 
             async init() {
-                console.log("🚀 Dashboard Widgets Init");
+                console.log("🚀 Dashboard Widgets Init - Starting...");
                 
                 // 1. GridStack & Layout
                 this.$nextTick(() => {
                     try {
                         this.grid = GridStack.init({
-                            cellHeight: 70,
-                            margin: 10,
-                            column: 12,
-                            disableOneColumnMode: false,
-                            float: true,
+                            cellHeight: 70, margin: 10, column: 12,
+                            disableOneColumnMode: false, float: true,
                             draggable: { handle: '.widget-header' }
                         });
                         
@@ -344,6 +344,7 @@
                 // 2. Initial Data & Listeners
                 await this.updateDashboard();
                 window.addEventListener('update-data', () => this.updateDashboard(true));
+                console.log("✅ Dashboard Widgets Init - Complete");
             },
             
             async updateDashboard(force = false) {
@@ -375,30 +376,30 @@
                 try {
                     const currency = this.selectedCurrency || 'ARS';
                     localStorage.setItem('3f_pref_currency', currency);
-                    const res = await api.get(`/resumen/?currency=${currency}`);
+                    const res = await getApiClient().get(`/resumen/?currency=${currency}`);
                     this.resumen = res.data;
-                } catch (e) { console.error('loadResumen fail'); }
+                } catch (e) { console.error('loadResumen fail', e); }
             },
 
             async loadSummary() {
                 try {
-                    const res = await api.get('/stocks/summary');
+                    const res = await getApiClient().get('/stocks/summary');
                     if(res.data) this.summary = res.data;
                 } catch (e) { console.warn('stocks summary empty'); }
             },
 
             async loadTransactions() {
                 try {
-                    const res = await api.get('/transacciones/?limit=5');
+                    const res = await getApiClient().get('/transacciones/?limit=5');
                     this.transactions = res.data;
-                } catch (e) { console.error('loadTransactions fail'); }
+                } catch (e) { console.error('loadTransactions fail', e); }
             },
 
             async loadSavingsRate() {
                 try {
-                    const res = await api.get('/wealth/savings-rate');
+                    const res = await getApiClient().get('/wealth/savings-rate');
                     if(res.data) this.savingsRate = res.data;
-                } catch (e) { console.error('loadSavingsRate fail'); }
+                } catch (e) { console.error('loadSavingsRate fail', e); }
             },
 
             initCharts() {
@@ -449,6 +450,7 @@
 
             async updateCharts() {
                 try {
+                    const api = getApiClient();
                     if (this.charts.categorias) {
                         const resCat = await api.get('/reportes/categorias');
                         this.charts.categorias.data.labels = resCat.data.labels;
@@ -470,20 +472,20 @@
                         this.charts.asignacion.update();
                     }
                     this.updateWealthChart();
-                } catch (e) { console.error('updateCharts fail'); }
+                } catch (e) { console.error('updateCharts fail', e); }
             },
 
             async updateWealthChart() {
                 if (!this.charts.patrimonioHist) return;
                 try {
-                    const res = await api.get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
+                    const res = await getApiClient().get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
                     this.charts.patrimonioHist.data.labels = res.data.labels;
                     this.charts.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
                         ...ds, borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)',
                         fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
                     }));
                     this.charts.patrimonioHist.update();
-                } catch (e) { console.error('updateWealthChart fail'); }
+                } catch (e) { console.error('updateWealthChart fail', e); }
             }
         }));
     });
