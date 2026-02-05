@@ -315,6 +315,7 @@
             aiEnabled: false,
             wealthHistoryDays: 30,
             savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
+            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
             grid: null,
             layoutManager: null,
             charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
@@ -351,8 +352,12 @@
                     this.loadSavingsRate()
                 ]);
                 
-                // Inicializar gráficos después de cargar datos
-                this.initCharts();
+                // Initialize/Update charts
+                if (!this.charts.categorias || force) {
+                    this.initCharts();
+                } else {
+                    this.updateCharts();
+                }
             },
             
             async resetLayout() {
@@ -507,6 +512,32 @@
                                 x: { 
                                     grid: { display: false }, 
                                     ticks: { color: '#00f2ff', font: { size: 9 } } 
+                                }
+                            }
+                        }
+                    });
+                }
+
+                const ctxAsign = document.getElementById('chart-asignacion');
+                if (ctxAsign) {
+                    this.charts.asignacion = new Chart(ctxAsign.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Líquido', 'Activos', 'Inversiones'],
+                            datasets: [{
+                                data: [0, 0, 0],
+                                backgroundColor: ['#00f2ff', '#7000ff', '#be2596'],
+                                borderColor: '#040f13',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } }
                                 }
                             }
                         }
