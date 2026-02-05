@@ -16,10 +16,15 @@
                     </template>
                 </select>
             </div>
-            <button class="btn neon-btn" @click="downloadPDF" :disabled="loadingPDF">
+            <button class="btn neon-btn me-2" @click="downloadPDF" :disabled="loadingPDF">
                 <i class="fa-solid fa-file-pdf me-2"></i>
-                <span x-show="!loadingPDF">EXPORTAR INFORME TÁCTICO</span>
+                <span x-show="!loadingPDF">PDF</span>
                 <span x-show="loadingPDF" class="spinner-border spinner-border-sm"></span>
+            </button>
+            <button class="btn neon-btn-outline" @click="downloadExcel" :disabled="loadingExcel">
+                <i class="fa-solid fa-file-excel me-2"></i>
+                <span x-show="!loadingExcel">EXCEL</span>
+                <span x-show="loadingExcel" class="spinner-border spinner-border-sm"></span>
             </button>
         </div>
         <div class="col-md-6 text-end">
@@ -127,6 +132,44 @@
                 </div>
             </div>
         </div>
+    <!-- Comparativa de Presupuesto -->
+    <div class="row mb-4" id="budget-row">
+        <div class="col-12">
+            <div class="neon-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-primary mb-0">
+                        <i class="fa-solid fa-scale-balanced me-2"></i>PRESUPUESTO VS. REALIDAD
+                    </h5>
+                    <span class="text-dim small" x-text="'Periodo: ' + selectedMonth + ' / ' + selectedYear"></span>
+                </div>
+                
+                <div class="row">
+                    <template x-for="item in budgetData" :key="item.categoria">
+                        <div class="col-md-6 mb-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-white fw-bold" x-text="item.categoria"></span>
+                                <span class="text-dim small" x-text="formatCurrency(item.real) + ' / ' + formatCurrency(item.presupuestado)"></span>
+                            </div>
+                            <div class="progress bg-dark" style="height: 10px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     :style="'width: ' + Math.min(item.porcentaje, 100) + '%'"
+                                     :class="item.porcentaje > 100 ? 'bg-danger shadow-danger' : (item.porcentaje > 80 ? 'bg-warning shadow-warning' : 'bg-success shadow-success')"
+                                     :aria-valuenow="item.porcentaje" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="extra-small" :class="item.porcentaje > 100 ? 'text-danger' : 'text-dim'" x-text="item.porcentaje + '% utilizado'"></span>
+                                <span class="extra-small text-dim" x-text="'Dif: ' + formatCurrency(item.diferencia)"></span>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="budgetData.length === 0">
+                        <div class="col-12 text-center py-4">
+                            <p class="text-dim">No hay presupuestos definidos para este periodo.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -145,10 +188,12 @@
             selectedYear: 2026, // Default a 2026
             selectedMonth: new Date().getMonth() + 1,
             loadingPDF: false,
+            loadingExcel: false,
             
             totalIngresos: 0,
             totalGastos: 0,
             totalNeto: 0,
+            budgetData: [],
             
             async init() {
                 // Esperar a que el DOM esté listo
@@ -190,7 +235,20 @@
 
             async fetchData() {
                 // Ejecutar en paralelo para velocidad
-                await Promise.all([this.fetchEvolution(), this.fetchCategories()]);
+                await Promise.all([
+                    this.fetchEvolution(), 
+                    this.fetchCategories(),
+                    this.fetchBudgetComparison()
+                ]);
+            },
+
+            async fetchBudgetComparison() {
+                try {
+                    const res = await api.get(`/reportes/presupuesto-realidad?year=${this.selectedYear}&month=${this.selectedMonth}`);
+                    this.budgetData = res.data;
+                } catch (e) {
+                    console.error("Error fetching budget comparison:", e);
+                }
             },
 
             async fetchEvolution() {
@@ -220,20 +278,51 @@
             async downloadPDF() {
                 this.loadingPDF = true;
                 try {
-                    const response = await api.get('/reportes/pdf');
-                    // Handle PDF download if the backend returns a file or a URL
-                    // Assuming similar logic to previous implementations or standard file download
-                    // If response is a blob:
-                     const url = window.URL.createObjectURL(new Blob([response.data]));
-                     const link = document.createElement('a');
-                     link.href = url;
-                     link.setAttribute('download', `Reporte_Táctico_${this.selectedYear}.pdf`);
-                     document.body.appendChild(link);
-                     link.click();
+                    // Usar axios directamente para manejar el blob correctamente
+                    const response = await axios({
+                        url: '/api/export/transactions/pdf',
+                        method: 'GET',
+                        responseType: 'blob',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `Reporte_Historial_${this.selectedYear}.pdf`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
                 } catch (e) {
-                    alert('ERROR AL GENERAR REPORTE: ' + e.message);
+                    console.error(e);
+                    alert('ERROR AL GENERAR PDF: ' + e.message);
                 } finally {
                     this.loadingPDF = false;
+                }
+            },
+
+            async downloadExcel() {
+                this.loadingExcel = true;
+                try {
+                    const response = await axios({
+                        url: '/api/export/transactions/excel',
+                        method: 'GET',
+                        responseType: 'blob',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `Exportacion_Transacciones_${this.selectedYear}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                } catch (e) {
+                    console.error(e);
+                    alert('ERROR AL GENERAR EXCEL: ' + e.message);
+                } finally {
+                    this.loadingExcel = false;
                 }
             },
 

@@ -9,7 +9,7 @@ from decimal import Decimal
 
 # ==================== BUDGET YEARS (AÑOS DE PRESUPUESTO) ====================
 
-class AñoPresupuesto(SQLModel, table=True):
+class AnioPresupuesto(SQLModel, table=True):
     """
     Groups budget entries by year.
     Allows for historical budget analysis and planning.

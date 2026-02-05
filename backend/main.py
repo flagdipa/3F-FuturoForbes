@@ -28,6 +28,11 @@ from .api.custom_fields.router import router as custom_fields_router
 from .api.layouts.router import router as layouts_router
 from .api.themes.router import router as themes_router
 from .api.notifications.router import router as notifications_router
+from .api.reports.router_exports import router as exports_router
+from .api.wealth.router import router as wealth_router
+from .api.fx.router import router as fx_router
+from .api.vault.router import router as vault_router
+from .api.audit.router import router as audit_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
 import os
@@ -82,6 +87,11 @@ app.include_router(custom_fields_router, prefix="/api")
 app.include_router(layouts_router, prefix="/api")
 app.include_router(themes_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
+app.include_router(exports_router, prefix="/api")
+app.include_router(wealth_router, prefix="/api")
+app.include_router(fx_router, prefix="/api")
+app.include_router(vault_router, prefix="/api")
+app.include_router(audit_router, prefix="/api")
 
 @app.get("/")
 async def root(request: Request):
@@ -138,6 +148,14 @@ async def stocks_page(request: Request):
 @app.get("/settings")
 async def settings_page(request: Request):
     return templates.TemplateResponse("settings.html", {"request": request})
+
+@app.get("/vault", response_class=HTMLResponse)
+async def vault_page(request: Request):
+    return templates.TemplateResponse("vault.html", {"request": request})
+
+@app.get("/audit", response_class=HTMLResponse)
+async def audit_page(request: Request):
+    return templates.TemplateResponse("audit.html", {"request": request})
 
 @app.get("/api/estado")
 async def api_status():

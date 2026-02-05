@@ -2,33 +2,25 @@
 Notification System - Backend
 Server-Sent Events (SSE) for real-time notifications
 """
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlmodel import Session
+from sqlmodel import Session, select, desc
 from backend.core.database import get_session
 from backend.api.auth.deps import get_current_user
 from backend.models.models import Usuario
-from pydantic import BaseModel
-from typing import Optional, Literal
-from datetime import datetime
+from backend.models.models_notifications import UserNotification, NotificationRead
 from pydantic import BaseModel, Field
+from typing import Optional, Literal, List
+from datetime import datetime
 import asyncio
 import json
-
-router = APIRouter(prefix="/notifications", tags=["Notifications"])
-
-# In-memory notification queue per user
-user_notification_queues = {}
-
-
-from backend.models.models_notifications import UserNotification, NotificationRead
-from sqlmodel import Session, select, desc
 import uuid
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 # In-memory notification queue per user (for SSE delivery)
 user_notification_queues = {}
+
 
 
 class NotificationSchema(BaseModel):

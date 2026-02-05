@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
 from ...core.database import get_session
-from ...models.models import LibroTransacciones, ListaCuentas, Beneficiario, Categoria
+from ...models.models import LibroTransacciones, ListaCuentas, Beneficiario, Categoria, Presupuesto
+from ...models.models_config import AnioPresupuesto
 from ...models.models_plugins import Plugin
 from ...core.reports_service import reports_service
 from ...core.forecasting_service import forecasting_service
@@ -238,14 +239,14 @@ def reporte_tendencia(
     final_labels = labels.copy()
 
     if ai_enabled:
-        regression = forecasting_service.calculate_linear_regression(points)
+        regression = forecasting_service.calculate_weighted_regression(points)
         
-        # Generar puntos de tendencia (incluyendo proyección futura)
-        for i in range(len(points) + 3): # 3 meses de futuro
+        # Generar puntos de tendencia (incluyendo proyección futura a 6 meses)
+        for i in range(len(points) + 6): 
             val = regression['slope'] * i + regression['intercept']
             trend_points.append(round(val, 2))
         
-        final_labels += ["+1", "+2", "+3"]
+        final_labels += ["+1", "+2", "+3", "+4", "+5", "+6"]
         
     return {
         "historico": [p[1] for p in points],
@@ -254,6 +255,57 @@ def reporte_tendencia(
         "ai_enabled": ai_enabled
     }
 
+@router.get("/presupuesto-realidad")
+def presupuesto_realidad(
+    year: int = Query(datetime.now().year),
+    month: int = Query(datetime.now().month),
+    session: Session = Depends(get_session)
+):
+    """
+    Compara el presupuesto vs la realidad por categoría para un mes específico.
+    """
+    # 1. Obtener ID del año de presupuesto
+    anio_obj = session.exec(select(AnioPresupuesto).where(AnioPresupuesto.anio == year)).first()
+    if not anio_obj:
+        return {"error": "Configuración de presupuesto no encontrada para el año especificado"}
+
+    # 2. Obtener presupuestos del año
+    presupuestos = session.exec(
+        select(Presupuesto, Categoria.nombre_categoria)
+        .join(Categoria)
+        .where(Presupuesto.id_anio_presupuesto == anio_obj.id_anio_presupuesto, Presupuesto.activo == 1)
+    ).all()
+
+    # 3. Obtener gastos reales del mes
+    gastos_query = select(
+        LibroTransacciones.id_categoria,
+        func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
+    ).where(
+        func.extract('year', LibroTransacciones.fecha_transaccion) == year,
+        func.extract('month', LibroTransacciones.fecha_transaccion) == month,
+        LibroTransacciones.codigo_transaccion == 'Withdrawal'
+    ).group_by(LibroTransacciones.id_categoria)
+
+    gastos_reales = {g.id_categoria: float(g.total) for g in session.exec(gastos_query).all()}
+
+    # 4. Consolidar
+    comparativa = []
+    for pres, cat_nombre in presupuestos:
+        # Ajustar monto si es mensual vs anual (asumimos Monthly por ahora según modelo)
+        monto_presupuestado = float(pres.monto)
+        gasto_real = gastos_reales.get(pres.id_categoria, 0.0)
+        
+        porcentaje = (gasto_real / monto_presupuestado * 100) if monto_presupuestado > 0 else 0
+        
+        comparativa.append({
+            "categoria": cat_nombre,
+            "presupuestado": monto_presupuestado,
+            "real": gasto_real,
+            "diferencia": monto_presupuestado - gasto_real,
+            "porcentaje": round(porcentaje, 2)
+        })
+
+    return sorted(comparativa, key=lambda x: x['porcentaje'], reverse=True)
 @router.get("/proyeccion-cuenta/{id_cuenta}")
 def proyeccion_cuenta(
     id_cuenta: int,

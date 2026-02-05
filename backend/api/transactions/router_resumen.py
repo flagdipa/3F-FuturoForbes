@@ -1,49 +1,53 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select, func
 from ...core.database import get_session
 from ...models.models import LibroTransacciones, ListaCuentas, Usuario
+from ...models.models_advanced import Activo, Inversion
 from ..auth.deps import get_current_user
 from decimal import Decimal
 from datetime import datetime
 
+from ...core.wealth_service import wealth_service
+
 router = APIRouter(prefix="/resumen", tags=["Resumen"])
 
 @router.get("/")
-def obtener_resumen_financiero(
+async def obtener_resumen_financiero(
+    currency: str = Query("ARS"),
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Calcula el patrimonio neto, ingresos y gastos del mes actual.
+    Calcula el patrimonio neto integral y flujos del mes.
     """
-    # 1. Patrimonio Neto (Suma de saldos iniciales + movimientos)
-    # Nota: En un sistema completo de partida doble, sumaríamos todos los movimientos.
-    # Para el MVP, sumamos saldos de cuentas.
-    cuentas = session.exec(select(ListaCuentas)).all()
-    patrimonio_neto = sum(c.saldo_inicial for c in cuentas)
+    wealth = await wealth_service.calculate_total_wealth(session, current_user.id_usuario, currency)
     
-    # 2. Movimientos del mes actual
+    # Movimientos del mes actual (Flujo de Caja siempre en ARS para consistencia de registros)
+    # pero podríamos convertirlo opcionalmente en el futuro.
     hoy = datetime.utcnow()
     primer_dia_mes = datetime(hoy.year, hoy.month, 1).isoformat()
     
-    # Ingresos (Asumiendo que Deposit aumenta el saldo)
-    ingresos_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(
+    ingresos = session.exec(select(func.sum(LibroTransacciones.monto_transaccion)).where(
         LibroTransacciones.codigo_transaccion == "Deposit",
         LibroTransacciones.fecha_transaccion >= primer_dia_mes
-    )
-    ingresos = session.exec(ingresos_query).one() or Decimal("0.00")
+    )).one() or Decimal("0.00")
     
-    # Gastos (Asumiendo que Withdrawal disminuye el saldo)
-    gastos_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(
+    gastos = session.exec(select(func.sum(LibroTransacciones.monto_transaccion)).where(
         LibroTransacciones.codigo_transaccion == "Withdrawal",
         LibroTransacciones.fecha_transaccion >= primer_dia_mes
-    )
-    gastos = session.exec(gastos_query).one() or Decimal("0.00")
+    )).one() or Decimal("0.00")
+
+    # Convertir ingresos/gastos a la moneda objetivo para el HUD
+    ingresos_revalued = fx_service.convert(ingresos, "ARS", currency, wealth["rates"])
+    gastos_revalued = fx_service.convert(gastos, "ARS", currency, wealth["rates"])
 
     return {
-        "patrimonio_neto": patrimonio_neto,
-        "ingresos_mes": ingresos,
-        "gastos_mes": abs(gastos),
-        "moneda_base": "ARS",
+        "patrimonio_neto": float(wealth["patrimonio_neto"]),
+        "total_liquido": float(wealth["total_liquido"]),
+        "total_activos": float(wealth["total_activos"]),
+        "total_inversiones": float(wealth["total_inversiones"]),
+        "ingresos_mes": float(ingresos_revalued),
+        "gastos_mes": abs(float(gastos_revalued)),
+        "moneda_base": currency,
         "sincronizacion": datetime.utcnow().isoformat()
     }

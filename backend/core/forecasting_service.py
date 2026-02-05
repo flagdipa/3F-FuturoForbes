@@ -8,29 +8,29 @@ import datetime
 
 class ForecastingService:
     @staticmethod
-    def calculate_linear_regression(data: List[Tuple[int, float]]) -> Dict[str, float]:
+    def calculate_weighted_regression(data: List[Tuple[int, float]]) -> Dict[str, float]:
         """
-        Calculates y = mx + b
-        data: List of (index, value)
-        returns: { 'slope': m, 'intercept': b }
+        Calculates weighted linear regression y = mx + b
+        Recent data points have more weight.
         """
         n = len(data)
         if n < 2:
             return {"slope": 0, "intercept": data[0][1] if n == 1 else 0}
 
-        sum_x = sum(x for x, y in data)
-        sum_y = sum(y for x, y in data)
-        sum_xy = sum(x * y for x, y in data)
-        sum_xx = sum(x * x for x, y in data)
+        # Weights: linear increase from 1 to 2
+        weights = [1.0 + (i / (n - 1)) for i in range(n)]
+        sum_w = sum(weights)
+        sum_wx = sum(w * x for w, (x, y) in zip(weights, data))
+        sum_wy = sum(w * y for w, (x, y) in zip(weights, data))
+        sum_wxx = sum(w * x * x for w, (x, y) in zip(weights, data))
+        sum_wxy = sum(w * x * y for w, (x, y) in zip(weights, data))
 
-        # slope (m)
-        denominator = (n * sum_xx - sum_x * sum_x)
-        if denominator == 0:
-            return {"slope": 0, "intercept": sum_y / n}
-            
-        m = (n * sum_xy - sum_x * sum_y) / denominator
-        # intercept (b)
-        b = (sum_y - m * sum_x) / n
+        denominator = (sum_w * sum_wxx - sum_wx * sum_wx)
+        if abs(denominator) < 1e-9:
+            return {"slope": 0, "intercept": sum_wy / sum_w}
+
+        m = (sum_w * sum_wxy - sum_wx * sum_wy) / denominator
+        b = (sum_wy - m * sum_wx) / sum_w
 
         return {"slope": m, "intercept": b}
 

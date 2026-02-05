@@ -21,13 +21,23 @@ Convertir el sistema en un centro de comando patrimonial que combine la solidez 
 - [x] **Triggers Inteligentes**: Avisos por transacciones elevadas y cambios en activos.
 - [x] **Gestión de Lectura**: Funcionalidad de "Leer todas" y borrado masivo.
 
-## ⏳ Tareas Pendientes / Próximos Pasos
+## 💱 Fase 8: Inteligencia Multidivisa (COMPLETADO) 🚀
+- [x] Motor FX con tasas en vivo (ARS Blue/Oficial, BTC, ETH) y caché local.
+- [x] Revaluación en tiempo real del Dashboard (ARS, USD, BTC, ETH).
+- [x] Selector de divisa global integrado en el HUD galáctico.
 
-### 🧪 Fase 6: Análisis de Datos Avanzado (SUGERIDO)
-- [ ] Implementar exportación de reportes a PDF/Excel.
-- [ ] Añadir comparativa de presupuestos vs realidad en tiempo real.
-- [ ] Optimizar el motor de IA para predicciones a 6 meses.
+## 📄 Fase 9: Gestión de Documentos & OCR (COMPLETADO) 🚀
+- [x] **Bóveda Digital**: Nueva sección centralizada para gestionar comprobantes y facturas.
+- [x] **Motor OCR**: Extracción automática de texto desde imágenes de recibos usando `pytesseract`.
+- [x] **Galería Inteligente**: Explorador de archivos con búsqueda y pre-visualización integrado en el HUD.
+
+## 🛡️ Fase 10: Auditoría & Multi-usuario (COMPLETADO) 🚀
+- [x] **Audit Trail**: Registro automático de creación, edición y eliminación de transacciones.
+- [x] **Seguridad**: Captura de IP del cliente y detalles técnicos de cada cambio.
+- [x] **Security Log**: Nueva vista de auditoría para monitoreo en tiempo real.
 
 ## 📝 Notas para Siguiente Sesión
-Para continuar, dile al asistente: **"Continúa con la Fase 5 del plan de notificaciones (Persistencia e Historial)"**.
-Todo el sistema está estable y verificado tras los hotfixes de hoy.
+El sistema es ahora **grado empresarial** en cuanto a seguridad.
+Siguientes pasos sugeridos:
+1.  **Fase 11: Conciliación Bancaria (CSV/OFX)**: Importador inteligente para comparar extractos.
+2.  **Reportes Avanzados de Patrimonio**: Proporción de ahorro vs gasto neto histórico.

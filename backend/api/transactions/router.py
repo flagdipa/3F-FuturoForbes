@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from ...core.database import get_session
-from ...models.models import LibroTransacciones, TransaccionDividida, ListaCuentas, Beneficiario, Categoria
+from ...core.database import get_session, get_current_user
+from ...core.audit_service import audit_service
+from ...models.models import LibroTransacciones, TransaccionDividida, ListaCuentas, Beneficiario, Categoria, Usuario
 from .schemas import TransaccionCrear, TransaccionLectura, TransaccionComplejaCrear, DivisionCrear
 from backend.models.models_extended import TransaccionEtiqueta
 from typing import List, Optional
@@ -75,7 +76,8 @@ def listar_transacciones(
 def actualizar_transaccion(
     tx_id: int, 
     tx_in: TransaccionComplejaCrear, 
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
 ):
     db_tx = session.get(LibroTransacciones, tx_id)
     if not db_tx:
@@ -88,6 +90,10 @@ def actualizar_transaccion(
     
     db_tx.fecha_actualizacion = datetime.utcnow().isoformat()
     session.add(db_tx)
+    
+    # Log update
+    audit_service.log(session, current_user.id_usuario, "UPDATE", "Transaccion", tx_id, tx_in.dict(exclude={"divisiones", "etiquetas"}))
+    
     session.commit()
     
     # Actualizar Etiquetas (M:N)
@@ -155,7 +161,11 @@ def obtener_divisiones_transaccion(tx_id: int, session: Session = Depends(get_se
     ) for s in splits]
 
 @router.post("/", response_model=TransaccionLectura)
-def crear_transaccion(tx_in: TransaccionComplejaCrear, session: Session = Depends(get_session)):
+def crear_transaccion(
+    tx_in: TransaccionComplejaCrear, 
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
     cuenta_origen = session.get(ListaCuentas, tx_in.id_cuenta)
     if not cuenta_origen:
         raise HTTPException(status_code=404, detail="Cuenta de origen no encontrada")
@@ -169,6 +179,9 @@ def crear_transaccion(tx_in: TransaccionComplejaCrear, session: Session = Depend
     session.add(db_tx)
     session.commit()
     session.refresh(db_tx)
+    
+    # Log creation
+    audit_service.log(session, current_user.id_usuario, "CREATE", "Transaccion", db_tx.id_transaccion, tx_in.dict(exclude={"divisiones", "etiquetas"}))
     
     # Gestionar Etiquetas (M:N)
     if tx_in.etiquetas:
@@ -194,7 +207,7 @@ def crear_transaccion(tx_in: TransaccionComplejaCrear, session: Session = Depend
         from ..notifications.router import notify_info
         import asyncio
         asyncio.create_task(notify_info(
-            user_id=1, # Default user
+            user_id=current_user.id_usuario,
             title="Transacción Elevada",
             message=f"Se ha registrado una transacción de {db_tx.monto_transaccion} en la cuenta."
         ))
@@ -202,11 +215,18 @@ def crear_transaccion(tx_in: TransaccionComplejaCrear, session: Session = Depend
     return _enriquecer_transaccion(db_tx, session)
 
 @router.delete("/{tx_id}")
-def eliminar_transaccion(tx_id: int, session: Session = Depends(get_session)):
+def eliminar_transaccion(
+    tx_id: int, 
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
     """Elimina una transacción y sus dependencias (divisiones, etiquetas)"""
     db_tx = session.get(LibroTransacciones, tx_id)
     if not db_tx:
         raise HTTPException(status_code=404, detail="Transacción no encontrada")
+    
+    # Log deletion
+    audit_service.log(session, current_user.id_usuario, "DELETE", "Transaccion", tx_id, {"monto": float(db_tx.monto_transaccion)})
     
     session.delete(db_tx)
     session.commit()
@@ -215,7 +235,7 @@ def eliminar_transaccion(tx_id: int, session: Session = Depends(get_session)):
     from ..notifications.router import notify_warning
     import asyncio
     asyncio.create_task(notify_warning(
-        user_id=1, # Default user
+        user_id=current_user.id_usuario,
         title="Transacción Eliminada",
         message=f"Se ha eliminado una transacción del historial."
     ))

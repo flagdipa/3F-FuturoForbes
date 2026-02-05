@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4" x-data="vaultManager()">
+    <!-- Header de la Bóveda -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-4 rounded-4 border border-primary border-opacity-25 shadow-lg">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 border border-primary border-opacity-50">
+                        <i class="fa-solid fa-vault text-primary fs-3 shadow-glow"></i>
+                    </div>
+                    <div>
+                        <h2 class="Orbitron text-white mb-1">BÓVEDA DIGITAL</h2>
+                        <p class="text-dim small mb-0">Gestión de comprobantes y facturas inteligentes</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button @click="refreshVault()" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fa-solid fa-rotate me-2"></i>Actualizar
+                    </button>
+                    <!-- El upload se maneja desde el modal de transacciones normalmente, 
+                         pero aquí podemos añadir un dropzone global en el futuro -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador y Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-dim"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" x-model="search" class="form-control bg-dark border-secondary text-white" placeholder="Buscar por nombre de archivo...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select bg-dark border-secondary text-white" x-model="filterExt">
+                <option value="">Todos los formatos</option>
+                <option value=".pdf">PDF</option>
+                <option value=".jpg">Imágenes (JPG)</option>
+                <option value=".png">Imágenes (PNG)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Grid de Archivos -->
+    <div class="row g-4">
+        <template x-for="file in filteredFiles" :key="file.name">
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="card bg-dark border-secondary h-100 card-hover-neonic transition-all">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="file-icon-wrapper me-3">
+                                <template x-if="file.extension === '.pdf'">
+                                    <i class="fa-solid fa-file-pdf text-danger fs-2"></i>
+                                </template>
+                                <template x-if="['.jpg', '.jpeg', '.png'].includes(file.extension)">
+                                    <i class="fa-solid fa-file-image text-info fs-2"></i>
+                                </template>
+                            </div>
+                            <div class="overflow-hidden">
+                                <h6 class="text-white text-truncate mb-0" :title="file.name" x-text="file.name"></h6>
+                                <span class="text-dim smaller" x-text="formatSize(file.size)"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-auto">
+                            <button @click="viewFile(file.name)" class="btn btn-sm btn-outline-primary border-0">
+                                <i class="fa-solid fa-eye me-1"></i> Ver
+                            </button>
+                            <button @click="runOCR(file.name)" class="btn btn-sm btn-outline-info border-0" :disabled="loadingOCR === file.name">
+                                <i class="fa-solid fa-robot me-1"></i> 
+                                <span x-text="loadingOCR === file.name ? 'Analizando...' : 'OCR'"></span>
+                            </button>
+                            <button @click="confirmDelete(file.name)" class="btn btn-sm btn-outline-danger border-0">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        
+        <template x-if="filteredFiles.length === 0">
+            <div class="col-12 text-center py-5">
+                <div class="opacity-25 mb-3">
+                    <i class="fa-solid fa-folder-open fs-1"></i>
+                </div>
+                <h5 class="text-dim">No se encontraron documentos</h5>
+                <p class="text-dim small">Sube comprobantes en tus transacciones para verlos aquí.</p>
+            </div>
+        </template>
+    </div>
+
+    <!-- Modal Pre-visualización (Opcional, se puede abrir en nueva pestaña) -->
+</div>
+
+<style>
+    .card-hover-neonic:hover {
+        border-color: #00f2ff !class;
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        transform: translateY(-5px);
+    }
+    .smaller { font-size: 0.75rem; }
+</style>
+
+<script>
+    function vaultManager() {
+        return {
+            files: [],
+            search: '',
+            filterExt: '',
+            loadingOCR: null,
+            
+            init() {
+                this.refreshVault();
+            },
+            
+            async refreshVault() {
+                try {
+                    const res = await api.get('/vault/files');
+                    this.files = res.data;
+                } catch (e) {
+                    notifications.error('Error al cargar la bóveda');
+                }
+            },
+            
+            get filteredFiles() {
+                return this.files.filter(f => {
+                    const matchSearch = f.name.toLowerCase().includes(this.search.toLowerCase());
+                    const matchExt = this.filterExt === '' || f.extension === this.filterExt;
+                    return matchSearch && matchExt;
+                });
+            },
+            
+            formatSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            },
+            
+            viewFile(name) {
+                window.open(`/api/vault/files/${name}`, '_blank');
+            },
+            
+            async runOCR(name) {
+                this.loadingOCR = name;
+                try {
+                    const res = await api.post(`/vault/ocr/${name}`);
+                    alert("Texto Extraído:\n\n" + res.data.text);
+                } catch (e) {
+                    notifications.error('Error en proceso OCR');
+                } finally {
+                    this.loadingOCR = null;
+                }
+            },
+            
+            async confirmDelete(name) {
+                if (confirm(`¿Estás seguro de eliminar "${name}"? Esta acción no se puede deshacer.`)) {
+                    try {
+                        await api.delete(`/vault/files/${name}`);
+                        notifications.success('Archivo eliminado');
+                        this.refreshVault();
+                    } catch (e) {
+                        notifications.error('No se pudo eliminar el archivo');
+                    }
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}
