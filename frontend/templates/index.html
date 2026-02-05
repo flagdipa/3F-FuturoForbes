@@ -78,7 +78,7 @@
     <!-- Row 1: KPIs & Summary -->
     
     <!-- Widget: Patrimonio Neto (Top Left) -->
-    <div x-data="{ showBreakdown: false }" class="grid-stack-item" gs-w="4" gs-h="7" gs-x="0" gs-y="0">
+    <div class="grid-stack-item" gs-w="4" gs-h="7" gs-x="0" gs-y="0">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <span x-text="$store.lang.t('dashboard.net_worth')">PATRIMONIO_NETO</span>
@@ -279,316 +279,198 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Inicializar GridStack
-        GridStack.init({
-            cellHeight: 80,
-            margin: 10,
-            draggable: { handle: '.widget-header' }
-        });
-    });
-
     document.addEventListener('alpine:init', () => {
+        // Global utility for formatting
+        window.formatCurrencyGlobal = function(amount, currency = 'ARS') {
+            const symbols = { 'ARS': '$', 'USD_BLUE': 'US$', 'BTC': '₿', 'ETH': 'Ξ' };
+            const prefix = symbols[currency] || '$';
+            let val = amount || 0;
+            if (currency === 'BTC' || currency === 'ETH') {
+                val = parseFloat(val).toFixed(6);
+            } else {
+                val = parseFloat(val).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+            }
+            return `${prefix} ${val}`;
+        };
+
         Alpine.data('resumenGeneral', () => ({
             fechaActual: new Date().toLocaleString(),
             init() {
                 setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
             },
             async fetchData() {
-                // Dispara evento para que otros componentes se actualicen
                 window.dispatchEvent(new CustomEvent('update-data'));
             }
         }));
 
         Alpine.data('dashboardWidgets', () => ({
             selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
+            showBreakdown: false,
             resumen: { 
-                patrimonio_neto: 0, 
-                total_liquido: 0, 
-                total_activos: 0, 
-                total_inversiones: 0, 
-                ingresos_mes: 0, 
-                gastos_mes: 0, 
-                proyeccion_30d: 0 
+                patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0, 
+                ingresos_mes: 0, gastos_mes: 0, proyeccion_30d: 0 
             },
+            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
             transactions: [],
             aiEnabled: false,
             wealthHistoryDays: 30,
             savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
-            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
             grid: null,
             layoutManager: null,
             charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
 
             async init() {
-                // Initialize GridStack
+                console.log("🚀 Dashboard Widgets Init");
+                
+                // 1. GridStack & Layout
                 this.$nextTick(() => {
-                    this.grid = GridStack.init({
-                        cellHeight: 70,
-                        margin: 10,
-                        column: 12,
-                        disableOneColumnMode: false,
-                        float: true
-                    });
-                    
-                    // Initialize LayoutManager and load saved layout
-                    this.layoutManager = new LayoutManager('dashboard', this.grid);
-                    this.layoutManager.loadLayout();
+                    try {
+                        this.grid = GridStack.init({
+                            cellHeight: 70,
+                            margin: 10,
+                            column: 12,
+                            disableOneColumnMode: false,
+                            float: true,
+                            draggable: { handle: '.widget-header' }
+                        });
+                        
+                        if (window.LayoutManager) {
+                            this.layoutManager = new LayoutManager('dashboard', this.grid);
+                            this.layoutManager.loadLayout();
+                        }
+                    } catch (e) { console.error("Grid/Layout Error:", e); }
                 });
                 
-                this.updateDashboard();
-                // Sincronizar con otros componentes
+                // 2. Initial Data & Listeners
+                await this.updateDashboard();
                 window.addEventListener('update-data', () => this.updateDashboard(true));
-
-                // Inicializar gráficos después de cargar datos
-                this.initCharts();
             },
             
             async updateDashboard(force = false) {
-                await Promise.all([
-                    this.loadResumen(),
-                    this.loadSummary(),
-                    this.loadTransactions(),
-                    this.loadSavingsRate()
-                ]);
-                
-                // Initialize/Update charts
-                if (!this.charts.categorias || force) {
-                    this.initCharts();
-                } else {
-                    this.updateCharts();
-                }
+                try {
+                    await Promise.all([
+                        this.loadResumen(),
+                        this.loadSummary(),
+                        this.loadTransactions(),
+                        this.loadSavingsRate()
+                    ]);
+                    
+                    if (!this.charts.categorias || force) {
+                        this.initCharts();
+                    } else {
+                        this.updateCharts();
+                    }
+                } catch (e) { console.error("Update Error:", e); }
             },
             
             async resetLayout() {
-                if (this.layoutManager) {
-                    await this.layoutManager.resetLayout();
-                }
+                if (this.layoutManager) await this.layoutManager.resetLayout();
             },
 
             formatCurrency(amount) {
-                const currency = this.selectedCurrency || 'ARS';
-                const symbols = { 'ARS': '$', 'USD_BLUE': 'US$', 'BTC': '₿', 'ETH': 'Ξ' };
-                const prefix = symbols[currency] || '$';
-                
-                let val = amount;
-                if (currency === 'BTC' || currency === 'ETH') {
-                    val = parseFloat(amount).toFixed(6);
-                } else {
-                    val = parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2 });
-                }
-                return `${prefix} ${val}`;
+                return window.formatCurrencyGlobal(amount, this.selectedCurrency);
             },
 
             async loadResumen() {
                 try {
                     const currency = this.selectedCurrency || 'ARS';
                     localStorage.setItem('3f_pref_currency', currency);
-
                     const res = await api.get(`/resumen/?currency=${currency}`);
                     this.resumen = res.data;
-                } catch (e) {
-                    console.error('Error al cargar resumen:', e);
-                }
+                } catch (e) { console.error('loadResumen fail'); }
             },
 
             async loadSummary() {
                 try {
                     const res = await api.get('/stocks/summary');
                     if(res.data) this.summary = res.data;
-                } catch (e) {
-                    console.warn('Stocks module likely inactive or empty:', e);
-                }
+                } catch (e) { console.warn('stocks summary empty'); }
             },
 
             async loadTransactions() {
                 try {
                     const res = await api.get('/transacciones/?limit=5');
                     this.transactions = res.data;
-                } catch (e) {
-                    console.error('Error al cargar transacciones recientes:', e);
-                }
+                } catch (e) { console.error('loadTransactions fail'); }
             },
 
             async loadSavingsRate() {
                 try {
                     const res = await api.get('/wealth/savings-rate');
                     if(res.data) this.savingsRate = res.data;
-                } catch (e) {
-                    console.error('Error al cargar ratio de ahorro:', e);
-                }
+                } catch (e) { console.error('loadSavingsRate fail'); }
             },
 
-            async initCharts() {
+            initCharts() {
                 const ctxCat = document.getElementById('chart-categorias');
+                const ctxEvo = document.getElementById('chart-evolucion');
+                const ctxWealth = document.getElementById('chart-patrimonio-hist');
+                const ctxAsign = document.getElementById('chart-asignacion');
+
+                Object.values(this.charts).forEach(c => { if(c) c.destroy(); });
+
                 if (ctxCat) {
                     this.charts.categorias = new Chart(ctxCat.getContext('2d'), {
                         type: 'doughnut',
-                        data: { 
-                            labels: [], 
-                            datasets: [{ 
-                                data: [], 
-                                backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], 
-                                borderColor: '#040f13', 
-                                borderWidth: 2 
-                            }] 
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false, 
-                            plugins: { 
-                                legend: { 
-                                    position: 'bottom', 
-                                    labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } 
-                                }
-                            } 
-                        }
+                        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
                     });
                 }
 
-                const ctxEvo = document.getElementById('chart-evolucion');
                 if (ctxEvo) {
                     this.charts.evolucion = new Chart(ctxEvo.getContext('2d'), {
                         type: 'line',
-                        data: { 
-                            labels: [], 
-                            datasets: [
-                                { 
-                                    label: 'REAL', 
-                                    data: [], 
-                                    borderColor: '#2596be', 
-                                    backgroundColor: 'rgba(37, 150, 190, 0.1)', 
-                                    fill: true, 
-                                    tension: 0.4
-                                },
-                                { 
-                                    label: 'PROYECCION', 
-                                    data: [], 
-                                    borderColor: '#2596be', 
-                                    borderDash: [5, 5], 
-                                    backgroundColor: 'transparent', 
-                                    fill: false, 
-                                    tension: 0.4
-                                }
-                            ]
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false, 
-                            plugins: { legend: { labels: { color: '#ffffff' } } },
-                            scales: { 
-                                y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } },
-                                x: { grid: { display: false }, ticks: { color: '#bee0ec' } } 
-                            } 
-                        }
+                        data: { labels: [], datasets: [{ label: 'REAL', data: [], borderColor: '#2596be', backgroundColor: 'rgba(37, 150, 190, 0.1)', fill: true, tension: 0.4 }, { label: 'PROYECCION', data: [], borderColor: '#2596be', borderDash: [5, 5], backgroundColor: 'transparent', fill: false, tension: 0.4 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } }, x: { grid: { display: false }, ticks: { color: '#bee0ec' } } } }
                     });
                 }
 
-                const ctxWealth = document.getElementById('chart-patrimonio-hist');
                 if (ctxWealth) {
                     this.charts.patrimonioHist = new Chart(ctxWealth.getContext('2d'), {
                         type: 'line',
                         data: { labels: [], datasets: [] },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { 
-                                legend: { display: false },
-                                tooltip: {
-                                    mode: 'index',
-                                    intersect: false,
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    bodyFont: { family: 'Consolas' },
-                                    callbacks: {
-                                        label: (context) => this.formatCurrency(context.raw)
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: { 
-                                    grid: { color: 'rgba(0, 242, 255, 0.05)' }, 
-                                    ticks: { color: '#00f2ff', font: { size: 9 } } 
-                                },
-                                x: { 
-                                    grid: { display: false }, 
-                                    ticks: { color: '#00f2ff', font: { size: 9 } } 
-                                }
-                            }
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0, 0, 0, 0.8)', bodyFont: { family: 'Consolas' }, callbacks: { label: (context) => this.formatCurrency(context.raw) } } },
+                            scales: { y: { grid: { color: 'rgba(0, 242, 255, 0.05)' }, ticks: { color: '#00f2ff', font: { size: 9 } } }, x: { grid: { display: false }, ticks: { color: '#00f2ff', font: { size: 9 } } } }
                         }
                     });
                 }
 
-                const ctxAsign = document.getElementById('chart-asignacion');
                 if (ctxAsign) {
                     this.charts.asignacion = new Chart(ctxAsign.getContext('2d'), {
                         type: 'doughnut',
-                        data: {
-                            labels: ['Líquido', 'Activos', 'Inversiones'],
-                            datasets: [{
-                                data: [0, 0, 0],
-                                backgroundColor: ['#00f2ff', '#7000ff', '#be2596'],
-                                borderColor: '#040f13',
-                                borderWidth: 2
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } }
-                                }
-                            }
-                        }
+                        data: { labels: ['Líquido', 'Activos', 'Inversiones'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#00f2ff', '#7000ff', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
                     });
                 }
-
-                await this.updateCharts();
+                this.updateCharts();
             },
 
             async updateCharts() {
                 try {
-                    // Categorías
                     if (this.charts.categorias) {
                         const resCat = await api.get('/reportes/categorias');
                         this.charts.categorias.data.labels = resCat.data.labels;
                         this.charts.categorias.data.datasets[0].data = resCat.data.data;
                         this.charts.categorias.update();
                     }
-
-                    // Tendencia
                     if (this.charts.evolucion) {
                         const resTend = await api.get('/reportes/tendencia');
                         this.aiEnabled = resTend.data.ai_enabled || false;
-                        
                         this.charts.evolucion.data.labels = resTend.data.labels;
                         this.charts.evolucion.data.datasets[0].data = resTend.data.historico;
                         this.charts.evolucion.data.datasets[1].data = resTend.data.tendencia;
                         this.charts.evolucion.update();
-
-                        const histCount = resTend.data.historico.length;
-                        if (resTend.data.tendencia && resTend.data.tendencia.length > histCount) {
-                            this.resumen.proyeccion_30d = resTend.data.tendencia[histCount];
-                        }
+                        const hC = resTend.data.historico.length;
+                        if (resTend.data.tendencia && resTend.data.tendencia.length > hC) this.resumen.proyeccion_30d = resTend.data.tendencia[hC];
                     }
-
-                    // Asignación de Activos (Phase 7)
                     if (this.charts.asignacion) {
-                        this.charts.asignacion.data.datasets[0].data = [
-                            this.resumen.total_liquido,
-                            this.resumen.total_activos,
-                            this.resumen.total_inversiones
-                        ];
+                        this.charts.asignacion.data.datasets[0].data = [this.resumen.total_liquido, this.resumen.total_activos, this.resumen.total_inversiones];
                         this.charts.asignacion.update();
                     }
-
-                    // Evolución Patrimonial (Phase 11)
                     this.updateWealthChart();
-
-                } catch (e) {
-                    console.error('Error al actualizar gráficos:', e);
-                }
+                } catch (e) { console.error('updateCharts fail'); }
             },
 
             async updateWealthChart() {
@@ -597,18 +479,11 @@
                     const res = await api.get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
                     this.charts.patrimonioHist.data.labels = res.data.labels;
                     this.charts.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
-                        ...ds,
-                        borderColor: '#00f2ff',
-                        backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 2,
-                        pointHoverRadius: 5
+                        ...ds, borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                        fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
                     }));
                     this.charts.patrimonioHist.update();
-                } catch (e) {
-                    console.error('Error updating wealth chart:', e);
-                }
+                } catch (e) { console.error('updateWealthChart fail'); }
             }
         }));
     });
