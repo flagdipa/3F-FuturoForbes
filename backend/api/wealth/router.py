@@ -59,7 +59,7 @@ def get_wealth_chart_data(
     }
 
 @router.get("/savings-rate")
-def get_savings_rate(
+async def get_savings_rate(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
@@ -67,7 +67,8 @@ def get_savings_rate(
     Calculates the savings rate for the current month.
     (Income - Expenses) / Income
     """
-    resumen = obtener_resumen_financiero(session, current_user.id_usuario)
+    # Usamos ARS como base para el cálculo del ratio de ahorro
+    resumen = await obtener_resumen_financiero(currency="ARS", session=session, current_user=current_user)
     ingresos = float(resumen.get("ingresos_mes", 0))
     gastos = float(resumen.get("gastos_mes", 0))
     

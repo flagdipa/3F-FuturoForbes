@@ -8,6 +8,7 @@ from decimal import Decimal
 from datetime import datetime
 
 from ...core.wealth_service import wealth_service
+from ...core.fx_service import fx_service
 
 router = APIRouter(prefix="/resumen", tags=["Resumen"])
 
