@@ -1,12 +1,16 @@
 """
 API Router for Investments (Inversiones / Stocks)
 """
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
 from sqlmodel import Session, select, func
 from typing import List, Optional
 from datetime import date
 from backend.core.database import get_session
 from backend.models.models_advanced import Inversion, HistorialInversion
+from backend.models.models import Usuario
+from ..auth.deps import get_current_user
+from ..base_crud import BaseCRUDService
+from ..schemas.common import PaginatedResponse
 from .schemas import (
     InversionCreate, InversionUpdate, InversionResponse,
     HistorialInversionCreate, HistorialInversionResponse,
@@ -14,32 +18,38 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/stocks", tags=["Investments"])
+stock_service = BaseCRUDService[Inversion, InversionCreate, InversionUpdate](Inversion)
 
 # ==================== INVESTMENTS CRUD ====================
 
-@router.get("/", response_model=List[InversionResponse])
+@router.get("/", response_model=PaginatedResponse[InversionResponse])
 def list_investments(
+    offset: int = 0,
+    limit: int = 100,
     activo: Optional[int] = None,
     id_cuenta: Optional[int] = None,
     session: Session = Depends(get_session)
 ):
-    """List all stock holdings"""
-    query = select(Inversion)
-    if activo is not None:
-        query = query.where(Inversion.activo == activo)
-    if id_cuenta is not None:
-        query = query.where(Inversion.id_cuenta == id_cuenta)
+    """List all stock holdings with pagination"""
+    filters = {}
+    if activo is not None: filters["activo"] = activo
+    if id_cuenta is not None: filters["id_cuenta"] = id_cuenta
     
-    results = session.exec(query).all()
-    return results
+    return stock_service.list(session, offset=offset, limit=limit, filters=filters)
 
 @router.post("/", response_model=InversionResponse, status_code=status.HTTP_201_CREATED)
-def create_investment(data: InversionCreate, session: Session = Depends(get_session)):
-    """Add a new stock holding"""
-    investment = Inversion(**data.dict())
-    session.add(investment)
-    session.commit()
-    session.refresh(investment)
+def create_investment(
+    data: InversionCreate, 
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Add a new stock holding with audit"""
+    investment = stock_service.create(
+        session, data, 
+        user_id=current_user.id_usuario, 
+        ip_address=request.client.host
+    )
     
     # Create initial history entry
     history = HistorialInversion(
@@ -73,7 +83,7 @@ def get_portfolio_summary(session: Session = Depends(get_session)):
 @router.get("/{id_inversion}", response_model=InversionResponse)
 def get_investment(id_inversion: int, session: Session = Depends(get_session)):
     """Get details for a specific holding"""
-    investment = session.get(Inversion, id_inversion)
+    investment = stock_service.get(session, id_inversion)
     if not investment:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
     return investment
@@ -82,10 +92,12 @@ def get_investment(id_inversion: int, session: Session = Depends(get_session)):
 def update_investment(
     id_inversion: int,
     data: InversionUpdate,
-    session: Session = Depends(get_session)
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
 ):
-    """Update investment details or current market price"""
-    investment = session.get(Inversion, id_inversion)
+    """Update investment details or current market price with audit"""
+    investment = stock_service.get(session, id_inversion)
     if not investment:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
     
@@ -98,33 +110,35 @@ def update_investment(
         )
         session.add(history)
     
-    update_data = data.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(investment, key, value)
-    
-    session.add(investment)
-    session.commit()
-    session.refresh(investment)
-    return investment
+    return stock_service.update(
+        session, investment, data,
+        user_id=current_user.id_usuario,
+        ip_address=request.client.host
+    )
 
 @router.delete("/{id_inversion}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_investment(id_inversion: int, session: Session = Depends(get_session)):
-    """Remove an investment holding and history"""
-    investment = session.get(Inversion, id_inversion)
-    if not investment:
+def delete_investment(
+    id_inversion: int, 
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Remove an investment holding and history with audit"""
+    success = stock_service.delete(
+        session, id_inversion,
+        user_id=current_user.id_usuario,
+        ip_address=request.client.host
+    )
+    if not success:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
-    
-    session.delete(investment)
-    session.commit()
     return None
 
 # ==================== PRICE HISTORY ====================
 
 @router.get("/{id_inversion}/history", response_model=List[HistorialInversionResponse])
 def get_investment_history(id_inversion: int, session: Session = Depends(get_session)):
-    """Get price history for a holding"""
-    # Verify investment exists
-    inv = session.get(Inversion, id_inversion)
+    """Get price history for a holding (kept as simple list for charts)"""
+    inv = stock_service.get(session, id_inversion)
     if not inv:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
         
@@ -133,17 +147,21 @@ def get_investment_history(id_inversion: int, session: Session = Depends(get_ses
     return results
 
 @router.post("/history", response_model=HistorialInversionResponse, status_code=status.HTTP_201_CREATED)
-def add_price_entry(data: HistorialInversionCreate, session: Session = Depends(get_session)):
-    """Add a historical price point"""
-    # Verify investment exists
-    inv = session.get(Inversion, data.id_inversion)
+def add_price_entry(
+    data: HistorialInversionCreate, 
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Add a historical price point (History is smaller audit, tracked via stock update)"""
+    inv = stock_service.get(session, data.id_inversion)
     if not inv:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
         
     history = HistorialInversion(**data.dict())
     session.add(history)
     
-    # Update current market price in investment
+    # Update current market price in investment (this triggers audit if using service)
+    # But here we do it manually to keep history simple
     inv.precio_actual = data.precio
     session.add(inv)
     

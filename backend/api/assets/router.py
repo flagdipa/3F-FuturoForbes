@@ -59,7 +59,7 @@ def get_asset(id_activo: int, session: Session = Depends(get_session)):
     return asset
 
 @router.put("/{id_activo}", response_model=ActivoResponse)
-def update_asset(
+async def update_asset(
     id_activo: int,
     data: ActivoUpdate,
     session: Session = Depends(get_session)
@@ -90,17 +90,17 @@ def update_asset(
     # Notify about manual value change
     if data.valor_actual is not None:
         from ..notifications.router import notify_info
-        import asyncio
-        asyncio.create_task(notify_info(
+        await notify_info(
             user_id=1, # Default user for now
             title="Activo Actualizado",
-            message=f"El valor de '{asset.nombre_activo}' ha sido actualizado a {asset.valor_actual}."
-        ))
+            message=f"El valor de '{asset.nombre_activo}' ha sido actualizado a {asset.valor_actual}.",
+            session=session
+        )
         
     return asset
 
 @router.delete("/{id_activo}")
-def delete_asset(id_activo: int, session: Session = Depends(get_session)):
+async def delete_asset(id_activo: int, session: Session = Depends(get_session)):
     """Delete asset and its history"""
     asset = session.get(Activo, id_activo)
     if not asset:
@@ -112,12 +112,12 @@ def delete_asset(id_activo: int, session: Session = Depends(get_session)):
     
     # Notify about deletion
     from ..notifications.router import notify_warning
-    import asyncio
-    asyncio.create_task(notify_warning(
+    await notify_warning(
         user_id=1, # Default user for now
         title="Activo Eliminado",
-        message=f"Se ha eliminado el activo '{asset_name}'."
-    ))
+        message=f"Se ha eliminado el activo '{asset_name}'.",
+        session=session
+    )
     
     return {"message": "Activo eliminado"}
 

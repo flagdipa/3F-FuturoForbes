@@ -23,71 +23,65 @@
         </div>
     </div>
 
-    <!-- Filtros Avanzados -->
-    <div class="row mb-4">
+    <!-- Filtros Avanzados Ultra-Compactos -->
+    <div class="row mb-3">
         <div class="col-12">
-            <div class="card neon-card bg-opacity-10 p-3">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.search_text')"></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-transparent border-secondary border-opacity-25 text-dim">
-                                <i class="fa-solid fa-search"></i>
-                            </span>
-                            <input type="text" class="form-control neon-input" :placeholder="$store.lang.t('common.search')" 
-                                   x-model="filtros.busqueda" @input.debounce.500ms="aplicarFiltros()">
-                        </div>
-                    </div>
+            <div class="card neon-card bg-opacity-10 p-2">
+                <div class="row g-1 align-items-end">
                     <div class="col-md-2">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.date_from')"></label>
-                        <input type="date" class="form-control neon-input" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
+                        <label class="text-dim extra-small mb-1" x-text="$store.lang.t('transactions.search_text')"></label>
+                        <input type="text" class="form-control neon-input form-control-sm py-0" style="font-size: 0.75rem;" 
+                               :placeholder="$store.lang.t('common.search')" 
+                               x-model="filtros.busqueda" @input.debounce.500ms="aplicarFiltros()">
                     </div>
-                    <div class="col-md-2">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.date_to')"></label>
-                        <input type="date" class="form-control neon-input" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
+                    <div class="col-md-1">
+                        <label class="text-dim extra-small mb-1">DESDE</label>
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem;" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
                     </div>
-                    <div class="col-md-2">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.account')"></label>
-                        <select class="form-select neon-input" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
+                    <div class="col-md-1">
+                        <label class="text-dim extra-small mb-1">HASTA</label>
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem;" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="text-dim extra-small mb-1">CUENTA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
                             <option value="">TODAS</option>
                             <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
                                 <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
                             </template>
                         </select>
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-outline-secondary w-100" @click="limpiarFiltros()">
-                            <i class="fa-solid fa-eraser me-2"></i><span x-text="$store.lang.t('common.reset_filters')">RESETEAR_FILTROS</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="row g-3 mt-1">
-                    <div class="col-md-3">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.beneficiary')"></label>
-                        <select class="form-select neon-input" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
+                    <div class="col-md-2">
+                        <label class="text-dim extra-small mb-1">BENEFICIARIO</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
                             <option value="">TODOS</option>
                             <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
                                 <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
                             </template>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('transactions.columns.category')"></label>
-                        <select class="form-select neon-input" x-model="filtros.id_categoria" @change="aplicarFiltros()">
+                    <div class="col-md-2">
+                        <label class="text-dim extra-small mb-1">CATEGORÍA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_categoria" @change="aplicarFiltros()">
                             <option value="">TODAS</option>
                             <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
                                 <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
                             </template>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="text-dim small mb-1" x-text="$store.lang.t('nav.tags')"></label>
-                        <select class="form-select neon-input" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
+                    <div class="col-md-2">
+                        <label class="text-dim extra-small mb-1">ETIQUETA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
                             <option value="">SIN_FILTRO</option>
                             <template x-for="tag in allTags" :key="tag.id_etiqueta">
                                 <option :value="tag.id_etiqueta" x-text="tag.nombre_etiqueta"></option>
                             </template>
                         </select>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button class="btn btn-sm btn-outline-secondary w-100 py-0" style="height: 24px;" @click="limpiarFiltros()">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -424,6 +418,12 @@
                     if (modalEl) this.bsModal = new bootstrap.Modal(modalEl);
                 }
 
+                // --- Handle Account Filtering from Navigation ---
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('id_cuenta')) {
+                    this.filtros.id_cuenta = urlParams.get('id_cuenta');
+                }
+
                 await this.cargarColecciones();
                 await this.cargarMas();
             },
@@ -436,10 +436,10 @@
                         api.get('/beneficiarios/'),
                         api.get('/categorias/')
                     ]);
-                    this.allTags = tags.data;
-                    this.colecciones.cuentas = cuentas.data;
-                    this.colecciones.beneficiarios = benfs.data;
-                    this.colecciones.categorias = cats.data;
+                    this.allTags = tags.data.data || [];
+                    this.colecciones.cuentas = cuentas.data.data || [];
+                    this.colecciones.beneficiarios = benfs.data.data || [];
+                    this.colecciones.categorias = cats.data.data || [];
                 } catch (e) { console.error('Error cargando iniciales:', e); }
             },
 
@@ -456,8 +456,10 @@
                     });
 
                     const response = await api.get(url);
-                    const nuevas = response.data;
-                    if (nuevas.length < this.limit) this.hasMore = false;
+                    const payload = response.data;
+                    const nuevas = payload.data || [];
+                    
+                    this.hasMore = payload.pagination?.has_more ?? (nuevas.length >= this.limit);
                     this.transacciones = [...this.transacciones, ...nuevas];
                     this.offset += this.limit;
                 } catch (error) {
@@ -473,7 +475,7 @@
             },
             
             formatCurrency(val) {
-                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+                return CurrencyUtils.formatCurrency(val);
             },
             formatFechaOnly(f) { return f ? new Date(f).toLocaleDateString() : '-'; },
             formatHoraOnly(f) { return f ? new Date(f).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'; },

@@ -394,7 +394,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
-        formatCurrency(v) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v); }
+        formatCurrency(v) { return CurrencyUtils.formatCurrency(v); }
     }));
 });
 </script>

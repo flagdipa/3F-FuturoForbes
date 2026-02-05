@@ -15,20 +15,28 @@ from .schemas import (
 )
 from backend.core.recurring_service import recurring_service
 
+from backend.core.recurring_service import recurring_service
+from ..base_crud import BaseCRUDService
+from ..schemas.common import PaginatedResponse
+
 router = APIRouter(prefix="/recurring", tags=["Recurring Transactions"])
 
-@router.get("/", response_model=List[TransaccionRecurrenteResponse])
+# Initialize generic service
+recurring_crud = BaseCRUDService[TransaccionRecurrente, TransaccionRecurrenteCreate, TransaccionRecurrenteUpdate](TransaccionRecurrente)
+
+@router.get("/", response_model=PaginatedResponse[TransaccionRecurrenteResponse])
 def list_recurring(
+    offset: int = 0,
+    limit: int = 100,
     activo: Optional[int] = None,
     session: Session = Depends(get_session)
 ):
-    """List all recurring transactions"""
-    query = select(TransaccionRecurrente)
+    """List all recurring transactions with pagination"""
+    filters = {}
     if activo is not None:
-        query = query.where(TransaccionRecurrente.activo == activo)
+        filters["activo"] = activo
     
-    results = session.exec(query).all()
-    return results
+    return recurring_crud.list(session, offset, limit, filters=filters)
 
 @router.post("/", response_model=TransaccionRecurrenteResponse, status_code=status.HTTP_201_CREATED)
 def create_recurring(
@@ -36,16 +44,12 @@ def create_recurring(
     session: Session = Depends(get_session)
 ):
     """Create a new recurring transaction schedule"""
-    recurring = TransaccionRecurrente(**data.dict())
-    session.add(recurring)
-    session.commit()
-    session.refresh(recurring)
-    return recurring
+    return recurring_crud.create(session, data)
 
 @router.get("/{id_recurrencia}", response_model=TransaccionRecurrenteResponse)
 def get_recurring(id_recurrencia: int, session: Session = Depends(get_session)):
     """Get details of a specific recurring schedule"""
-    recurring = session.get(TransaccionRecurrente, id_recurrencia)
+    recurring = recurring_crud.get(session, id_recurrencia)
     if not recurring:
         raise HTTPException(status_code=404, detail="Programación no encontrada")
     return recurring
@@ -57,28 +61,18 @@ def update_recurring(
     session: Session = Depends(get_session)
 ):
     """Update a recurring schedule"""
-    recurring = session.get(TransaccionRecurrente, id_recurrencia)
+    recurring = recurring_crud.get(session, id_recurrencia)
     if not recurring:
         raise HTTPException(status_code=404, detail="Programación no encontrada")
     
-    update_data = data.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(recurring, key, value)
-    
-    session.add(recurring)
-    session.commit()
-    session.refresh(recurring)
-    return recurring
+    return recurring_crud.update(session, recurring, data)
 
 @router.delete("/{id_recurrencia}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_recurring(id_recurrencia: int, session: Session = Depends(get_session)):
     """Delete a recurring schedule"""
-    recurring = session.get(TransaccionRecurrente, id_recurrencia)
-    if not recurring:
+    success = recurring_crud.delete(session, id_recurrencia)
+    if not success:
         raise HTTPException(status_code=404, detail="Programación no encontrada")
-    
-    session.delete(recurring)
-    session.commit()
     return None
 
 @router.post("/{id_recurrencia}/execute", response_model=LibroTransacciones)

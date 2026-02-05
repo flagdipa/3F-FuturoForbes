@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Control Central{% endblock %}
-{% block header %}Control Central HUD{% endblock %}
+{% block title %}Central de Control{% endblock %}
+{% block header %}Central de Control HUD{% endblock %}
 
 {% block extra_css %}
 <!-- GridStack.js CSS -->
@@ -79,7 +79,7 @@
     <!-- Row 1: KPIs & Summary -->
     
     <!-- Widget: Patrimonio Neto (Top Left) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="7" gs-x="0" gs-y="0">
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="0" gs-y="0" gs-id="widget-patrimonio">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <span x-text="$store.lang.t('dashboard.net_worth')">PATRIMONIO_NETO</span>
@@ -139,7 +139,7 @@
     </div>
 
     <!-- Widget: Distribución por Categorías (Top Center) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="4" gs-y="0">
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="4" gs-y="0" gs-id="widget-categorias">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <span x-text="$store.lang.t('dashboard.expense_distribution')">DISTRIBUCION_GASTOS</span>
@@ -152,7 +152,7 @@
     </div>
 
     <!-- Widget: Inversiones (Top Right - Moved Up) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="0">
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="0" gs-id="widget-inversiones">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <span x-text="$store.lang.t('dashboard.portfolio')">PORTAFOLIO_INVERSIONES</span>
@@ -183,11 +183,11 @@
     <!-- Row 2: Analysis & Log -->
 
     <!-- Widget: Evolución de Flujo (Bottom Left - Wide) -->
-    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="0" gs-y="4">
+    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="0" gs-y="4" gs-id="widget-flujo">
         <div class="grid-stack-item-content">
             <div class="widget-header">
                 <div>
-                    <span x-text="$store.lang.t('dashboard.flow_evolution') || 'EVOLUCION_FLUJO'">EVOLUCION_FLUJO</span>
+                    <span x-text="$store.lang.t('nav.dashboard')">Central de Control</span>
                     <span x-show="aiEnabled" class="badge bg-primary ms-2 neon-border" style="font-size: 0.6rem; vertical-align: middle;">
                         <i class="fa-solid fa-robot"></i> AI POWERED
                     </span>
@@ -201,11 +201,11 @@
     </div>
 
     <!-- Widget: Inteligencia Patrimonial (New in Phase 11) -->
-    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="14">
+    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="14" gs-id="widget-evolucion">
         <div class="grid-stack-item-content border-info border-opacity-50">
             <div class="widget-header bg-info bg-opacity-10 border-info border-opacity-25">
                 <div class="d-flex align-items-center">
-                    <span class="text-info fw-bold">EVOLUCION_PATRIMONIAL_HISTORICA</span>
+                    <span class="text-info fw-bold" x-text="$store.lang.t('dashboard.evolution_trend')">EVOLUCION_PATRIMONIAL_HISTORICA</span>
                     <span class="badge bg-info bg-opacity-25 text-info ms-2 border border-info border-opacity-25" style="font-size: 0.6rem;">HUD_SNAPSHOTS</span>
                 </div>
                 <div class="d-flex gap-2">
@@ -224,10 +224,10 @@
     </div>
 
     <!-- Widget: Asignación de Activos (New in Phase 7) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="9">
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="9" gs-id="widget-activos">
         <div class="grid-stack-item-content">
             <div class="widget-header">
-                <span>ASIGNACION_ACTIVOS</span>
+                <span x-text="$store.lang.t('dashboard.portfolio')">PORTAFOLIO</span>
                 <i class="fa-solid fa-layer-group text-info"></i>
             </div>
             <div class="p-3">
@@ -237,10 +237,10 @@
     </div>
 
     <!-- Widget: Actividad Reciente (Moved to accommodate new widget) -->
-    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="4" gs-y="9">
+    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="4" gs-y="9" gs-id="widget-actividad">
         <div class="grid-stack-item-content">
             <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.recent_activity') || 'ACTIVIDAD RECIENTE'">ACTIVIDAD RECIENTE</span>
+                <span x-text="$store.lang.t('dashboard.recent_activity') || 'Central de Control'">Central de Control</span>
                 <i class="fa-solid fa-clock-rotate-left text-primary"></i>
             </div>
             <div class="p-2">
@@ -278,26 +278,14 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
     document.addEventListener('alpine:init', () => {
         // Defensive check for API client
         const getApiClient = () => window.api || { get: () => Promise.resolve({data:[]}), post: () => Promise.resolve({data:[]}) };
 
-        // Global utility for formatting
-        window.formatCurrencyGlobal = function(amount, currency = 'ARS') {
-            const symbols = { 'ARS': '$', 'USD_BLUE': 'US$', 'BTC': '₿', 'ETH': 'Ξ' };
-            const prefix = symbols[currency] || '$';
-            let val = amount || 0;
-            if (currency === 'BTC' || currency === 'ETH') {
-                val = parseFloat(val).toFixed(6);
-            } else {
-                val = parseFloat(val).toLocaleString('es-AR', { minimumFractionDigits: 2 });
-            }
-            return `${prefix} ${val}`;
-        };
-
+        // Local Alpine wrapper for the centralized CurrencyUtils
         Alpine.data('dashboardWidgets', () => ({
             fechaActual: new Date().toLocaleString(),
             selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
@@ -368,7 +356,7 @@
             },
 
             formatCurrency(amount) {
-                return window.formatCurrencyGlobal(amount, this.selectedCurrency);
+                return CurrencyUtils.formatCurrency(amount, this.selectedCurrency);
             },
 
             async loadResumen() {
@@ -390,7 +378,7 @@
             async loadTransactions() {
                 try {
                     const res = await getApiClient().get('/transacciones/?limit=5');
-                    this.transactions = res.data;
+                    this.transactions = res.data.data || [];
                 } catch (e) { console.error('loadTransactions fail', e); }
             },
 

@@ -26,12 +26,12 @@
         "portfolio": "PORTAFOLIO INVERSIONES",
         "market_value": "VALOR MERCADO",
         "refresh": "REFRESCAR DATA",
-        "system_status": "ESTADO DEL SISTEMA",
+        "system_status": "Central de Control",
         "projected_30d": "PROYECCIÓN 30 DÍAS",
         "recent_activity": "BITÁCORA DE ACTIVIDAD"
     },
     "nav": {
-        "dashboard": "Dashboard",
+        "dashboard": "Central de Control",
         "accounts": "Cuentas",
         "transactions": "Transacciones",
         "beneficiaries": "Beneficiarios",

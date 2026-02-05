@@ -202,7 +202,7 @@ async def send_notification(user_id: int, notification_data: NotificationSchema,
 
 
 # Helper functions for common notification types
-async def notify_success(user_id: int, title: str, message: str, action_url: Optional[str] = None, action_text: Optional[str] = None):
+async def notify_success(user_id: int, title: str, message: str, action_url: Optional[str] = None, action_text: Optional[str] = None, session: Optional[Session] = None):
     """Send success notification"""
     notif = NotificationSchema(
         id=str(uuid.uuid4()),
@@ -212,10 +212,10 @@ async def notify_success(user_id: int, title: str, message: str, action_url: Opt
         action_url=action_url,
         action_text=action_text
     )
-    await send_notification(user_id, notif)
+    await send_notification(user_id, notif, session=session)
 
 
-async def notify_error(user_id: int, title: str, message: str):
+async def notify_error(user_id: int, title: str, message: str, session: Optional[Session] = None):
     """Send error notification"""
     notif = NotificationSchema(
         id=str(uuid.uuid4()),
@@ -223,10 +223,10 @@ async def notify_error(user_id: int, title: str, message: str):
         title=title,
         message=message
     )
-    await send_notification(user_id, notif)
+    await send_notification(user_id, notif, session=session)
 
 
-async def notify_info(user_id: int, title: str, message: str, action_url: Optional[str] = None, action_text: Optional[str] = None):
+async def notify_info(user_id: int, title: str, message: str, action_url: Optional[str] = None, action_text: Optional[str] = None, session: Optional[Session] = None):
     """Send info notification"""
     notif = NotificationSchema(
         id=str(uuid.uuid4()),
@@ -236,10 +236,10 @@ async def notify_info(user_id: int, title: str, message: str, action_url: Option
         action_url=action_url,
         action_text=action_text
     )
-    await send_notification(user_id, notif)
+    await send_notification(user_id, notif, session=session)
 
 
-async def notify_warning(user_id: int, title: str, message: str):
+async def notify_warning(user_id: int, title: str, message: str, session: Optional[Session] = None):
     """Send warning notification"""
     notif = NotificationSchema(
         id=str(uuid.uuid4()),
@@ -247,7 +247,7 @@ async def notify_warning(user_id: int, title: str, message: str):
         title=title,
         message=message
     )
-    await send_notification(user_id, notif)
+    await send_notification(user_id, notif, session=session)
 
 
 # Export notification helpers

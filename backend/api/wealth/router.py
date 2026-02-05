@@ -21,17 +21,37 @@ async def capture_wealth_snapshot(
     """
     return await wealth_service.capture_snapshot(session, current_user.id_usuario)
 
-@router.get("/history")
+from ..schemas.common import PaginatedResponse, PaginationMetadata
+
+@router.get("/history", response_model=PaginatedResponse[WealthSnapshot])
 def get_wealth_history(
+    offset: int = 0,
     limit: int = 30,
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Returns historical snapshots for charting.
+    Returns historical snapshots for charting with pagination.
     """
-    query = select(WealthSnapshot).where(WealthSnapshot.id_usuario == current_user.id_usuario).order_by(WealthSnapshot.fecha.desc()).limit(limit)
-    return session.exec(query).all()
+    query = select(WealthSnapshot).where(WealthSnapshot.id_usuario == current_user.id_usuario)
+    
+    # Count total
+    total_query = select(func.count()).select_from(query.subquery())
+    total = session.exec(total_query).one()
+    
+    # Fetch results
+    query = query.order_by(WealthSnapshot.fecha.desc()).offset(offset).limit(limit)
+    results = session.exec(query).all()
+    
+    return PaginatedResponse(
+        data=results,
+        pagination=PaginationMetadata(
+            total=total,
+            offset=offset,
+            limit=limit,
+            has_more=(offset + limit) < total
+        )
+    )
 
 @router.get("/history/chart")
 def get_wealth_chart_data(

@@ -11,7 +11,7 @@
                 <i class="fa-solid fa-user-plus me-2"></i>NUEVO REGISTRO
             </button>
             <div class="d-flex align-items-center">
-                <div class="input-group input-group-sm neon-border" style="width: 300px;">
+                <div class="input-group input-group-sm neon-border" style="width: 200px;">
                     <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-search text-dim"></i></span>
                     <input type="text" class="form-control bg-transparent border-0 text-white" 
                            placeholder="FILTRAR_POR_NOMBRE..." x-model="searchQuery" @input="filterBeneficiaries">
@@ -168,7 +168,7 @@
                 this.loading = true;
                 try {
                     const res = await api.get('/beneficiarios/');
-                    this.beneficiaries = res.data;
+                    this.beneficiaries = res.data.data || [];
                     this.filterBeneficiaries();
                 } catch (e) {
                     console.error('Error:', e);

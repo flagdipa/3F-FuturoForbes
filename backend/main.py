@@ -1,9 +1,14 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from .core.config import settings
 from .core.config_inf import config_inf
+from .core.logging_config import setup_logging
+from .core.security_middleware import limiter, SecurityHeadersMiddleware, _rate_limit_exceeded_handler
+from .core.exceptions import APIException
+from slowapi.errors import RateLimitExceeded
 from .api.auth.router import router as auth_router
 from .api.accounts.router_divisa import router as currency_router
 from .api.accounts.router import router as account_router
@@ -33,19 +38,71 @@ from .api.wealth.router import router as wealth_router
 from .api.fx.router import router as fx_router
 from .api.vault.router import router as vault_router
 from .api.audit.router import router as audit_router
+from .api.health.router import router as health_router
+from .api.reconciliation.router import router as reconciliation_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
+from datetime import datetime
 import os
+
+# Setup logging
+setup_logging(environment="development")
 
 app = FastAPI(
     title=config_inf.get("SISTEMA", "nombre", "Fer Futuro Forbes (3F)"),
-    description="Sistema de Finanzas Personales con IA y Estética Neón Futurista",
-    version=config_inf.get("SISTEMA", "version", "1.0.0")
+    description="""## FuturoForbes (3F) - Sistema de Finanzas Personales
+    
+    ### Características
+    - IA integrada para análisis financiero
+    - Gestión multidivisa con tasas en tiempo real
+    - Sistema de auditoría completo
+    - Presupuestos inteligentes
+    - Reportes avanzados
+    
+    ### Autenticación
+    Use JWT Bearer tokens. Obtenga el token desde `/api/auth/login`
+    
+    ### Rate Limiting
+    100 requests por minuto por dirección IP
+    """,
+    version=config_inf.get("SISTEMA", "version", "1.0.0"),
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
 )
+
+# Rate limiter state
+app.state.limiter = limiter
 
 @app.on_event("startup")
 def on_startup():
     start_scheduler()
+    import logging
+    logging.info("🚀 FuturoForbes (3F) starting up...")
+    logging.info(f"📋 Version: {config_inf.get('SISTEMA', 'version', '1.0.0')}")
+
+# Exception handlers
+@app.exception_handler(APIException)
+async def api_exception_handler(request: Request, exc: APIException):
+    """Handle custom API exceptions"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=exc.detail
+    )
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Handle rate limit exceeded"""
+    return JSONResponse(
+        status_code=429,
+        content={
+            "error_code": "RATE_LIMIT_EXCEEDED",
+            "message": "Too many requests, please try again later",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
+
+# Security middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Configuración de CORS
 app.add_middleware(
@@ -92,6 +149,8 @@ app.include_router(wealth_router, prefix="/api")
 app.include_router(fx_router, prefix="/api")
 app.include_router(vault_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
+app.include_router(health_router, prefix="/api")
+app.include_router(reconciliation_router, prefix="/api")
 
 @app.get("/")
 async def root(request: Request):
@@ -156,6 +215,10 @@ async def vault_page(request: Request):
 @app.get("/audit", response_class=HTMLResponse)
 async def audit_page(request: Request):
     return templates.TemplateResponse("audit.html", {"request": request})
+
+@app.get("/import", response_class=HTMLResponse)
+async def import_page(request: Request):
+    return templates.TemplateResponse("import_csv.html", {"request": request})
 
 @app.get("/api/estado")
 async def api_status():

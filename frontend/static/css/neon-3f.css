@@ -45,6 +45,8 @@ body {
     background-color: var(--3f-bg);
     color: var(--3f-text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    /* Reduced from default */
     margin: 0;
     overflow-x: hidden;
     background-image:
@@ -55,9 +57,25 @@ body {
 
 /* Tipografía HUD - Tech */
 h1,
+.h1 {
+    font-size: 1.8rem;
+}
+
 h2,
+.h2 {
+    font-size: 1.5rem;
+}
+
 h3,
+.h3 {
+    font-size: 1.25rem;
+}
+
 h4,
+.h4 {
+    font-size: 1.1rem;
+}
+
 .hud-title {
     font-family: 'Orbitron', sans-serif;
     text-transform: uppercase;
@@ -197,6 +215,16 @@ h4,
 }
 
 /* Navegación activa */
+.nav-link {
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    font-size: 0.85rem;
+}
+
+.nav-item>.nav-link i {
+    font-size: 0.9rem;
+}
+
 .nav-link.active {
     background: linear-gradient(90deg, rgba(37, 150, 190, 0.15) 0%, transparent 100%) !important;
     border-left: 2px solid var(--3f-primary);
@@ -261,15 +289,13 @@ h4,
     cursor: move !important;
 }
 
-/* Permitir redimensionar tarjetas */
+/* Resizing is handled by GridStack for persistence */
 .neon-card {
-    resize: vertical;
-    /* Solo vertical para mantener grid Bootstrap */
-    overflow: auto;
-    /* Necesario para resize */
+    /* resize: vertical; - REMOVED: Bypasses GridStack events */
+    overflow: hidden;
+    /* Changed from auto to avoid scrollbars inside GridStack items */
     min-height: 150px;
     max-height: 800px;
-    /* Evitar romper layout excesivamente */
 }
 
 /* Custom Scrollbar for resized cards */

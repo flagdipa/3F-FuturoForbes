@@ -6,6 +6,9 @@ from decimal import Decimal
 # --- SEGURIDAD Y USUARIOS ---
 
 class Usuario(SQLModel, table=True):
+    """
+    Application user account. Stores credentials, role, and personal preferences.
+    """
     __tablename__ = "usuarios"
     id_usuario: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
@@ -19,6 +22,10 @@ class Usuario(SQLModel, table=True):
 # --- CATÁLOGOS ---
 
 class Divisa(SQLModel, table=True):
+    """
+    Currency definition (Fiat or Crypto).
+    Stores formatting rules and conversion rates.
+    """
     __tablename__ = "divisas"
     id_divisa: Optional[int] = Field(default=None, primary_key=True)
     nombre_divisa: str = Field(unique=True)
@@ -35,6 +42,9 @@ class Divisa(SQLModel, table=True):
     decimal_places: int = Field(default=2)
 
 class IdentidadFinanciera(SQLModel, table=True):
+    """
+    General info about a bank or financial entity (Bank name, web, contact).
+    """
     __tablename__ = "identidades_financieras"
     id_identidad: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(unique=True)
@@ -49,6 +59,10 @@ class IdentidadFinanciera(SQLModel, table=True):
 # --- CLASIFICACIÓN ---
 
 class Categoria(SQLModel, table=True):
+    """
+    Classification category for transactions (e.g., Food, Rent, Salary).
+    Supports hierarchical structure via id_padre.
+    """
     __tablename__ = "categorias"
     id_categoria: Optional[int] = Field(default=None, primary_key=True)
     nombre_categoria: str
@@ -56,8 +70,15 @@ class Categoria(SQLModel, table=True):
     id_padre: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria")
     color: Optional[str] = None
     notas: Optional[str] = None
+    
+    # Relationships
+    transacciones: List["LibroTransacciones"] = Relationship(back_populates="categoria")
 
 class Beneficiario(SQLModel, table=True):
+    """
+    Payee or recipient of a transaction.
+    Stores banking info (CBU/CUIT) and default category for auto-tagging.
+    """
     __tablename__ = "beneficiarios"
     id_beneficiario: Optional[int] = Field(default=None, primary_key=True)
     nombre_beneficiario: str = Field(unique=True)
@@ -73,10 +94,17 @@ class Beneficiario(SQLModel, table=True):
     telefono: Optional[str] = None
     oculto: int = Field(default=0)
     banco: Optional[str] = None
+    
+    # Relationships
+    transacciones: List["LibroTransacciones"] = Relationship(back_populates="beneficiario")
 
 # --- CUENTAS ---
 
 class ListaCuentas(SQLModel, table=True):
+    """
+    Financial account (Bank, Cash, Crypto Wallet).
+    Tracks balances, limits, and interest rates if applicable.
+    """
     __tablename__ = "lista_cuentas"
     id_cuenta: Optional[int] = Field(default=None, primary_key=True)
     nombre_cuenta: str = Field(unique=True)
@@ -99,10 +127,20 @@ class ListaCuentas(SQLModel, table=True):
     fecha_vencimiento_pago: Optional[str] = None
     pago_minimo: Decimal = Field(default=0.00, max_digits=15, decimal_places=2)
     fecha_inicial: Optional[str] = None
+    
+    # Relationships
+    transacciones: List["LibroTransacciones"] = Relationship(
+        back_populates="cuenta",
+        sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}
+    )
 
 # --- TRANSACCIONES ---
 
 class LibroTransacciones(SQLModel, table=True):
+    """
+    Core ledger entry. Represents any monetary movement (Income, Expense, Transfer).
+    Can be linked to splits and tags.
+    """
     __tablename__ = "libro_transacciones"
     id_transaccion: Optional[int] = Field(default=None, primary_key=True)
     id_cuenta: int = Field(foreign_key="lista_cuentas.id_cuenta")
@@ -121,8 +159,20 @@ class LibroTransacciones(SQLModel, table=True):
     monto_cuenta_destino: Optional[Decimal] = Field(default=None, max_digits=20, decimal_places=8)
     color: int = Field(default=-1)
     es_dividida: bool = Field(default=False)
+    
+    # Relationships
+    cuenta: "ListaCuentas" = Relationship(
+        back_populates="transacciones",
+        sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}
+    )
+    beneficiario: "Beneficiario" = Relationship(back_populates="transacciones")
+    categoria: "Categoria" = Relationship(back_populates="transacciones")
 
 class TransaccionDividida(SQLModel, table=True):
+    """
+    A single part of a split transaction.
+    Multiple splits must sum up to the parent transaction total.
+    """
     __tablename__ = "transacciones_divididas"
     id_division: Optional[int] = Field(default=None, primary_key=True)
     id_transaccion: int = Field(foreign_key="libro_transacciones.id_transaccion")
@@ -133,6 +183,9 @@ class TransaccionDividida(SQLModel, table=True):
 # --- PRESUPUESTOS ---
 
 class Presupuesto(SQLModel, table=True):
+    """
+    Budget allocation for a specific category and year/period.
+    """
     __tablename__ = "tabla_presupuestos"
     id_presupuesto: Optional[int] = Field(default=None, primary_key=True)
     id_anio_presupuesto: Optional[int] = Field(

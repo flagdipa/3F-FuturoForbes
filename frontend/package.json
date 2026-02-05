@@ -1,0 +1,12 @@
+{
+    "name": "3f-frontend-tests",
+    "version": "1.0.0",
+    "description": "Frontend unit tests for FuturoForbes",
+    "main": "index.js",
+    "scripts": {
+        "test": "playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.40.0"
+    }
+}

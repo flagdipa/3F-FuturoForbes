@@ -1,0 +1,189 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\AppServ\www\3F
+plugins: anyio-4.12.1
+collecting ... collected 3 items
+
+backend/tests/test_accounts_api.py::test_create_account_integration ERROR [ 33%]
+backend/tests/test_accounts_api.py::test_listar_cuentas_paginado ERROR   [ 66%]
+backend/tests/test_accounts_api.py::test_eliminar_cuenta_integration ERROR [100%]
+
+=================================== ERRORS ====================================
+______________ ERROR at setup of test_create_account_integration ______________
+file C:\AppServ\www\3F\backend\tests\test_accounts_api.py, line 6
+  def test_create_account_integration(client: TestClient, session: Session, auth_headers):
+E       fixture 'auth_headers' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, session, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\AppServ\www\3F\backend\tests\test_accounts_api.py:6
+_______________ ERROR at setup of test_listar_cuentas_paginado ________________
+file C:\AppServ\www\3F\backend\tests\test_accounts_api.py, line 34
+  def test_listar_cuentas_paginado(client: TestClient, session: Session, auth_headers):
+E       fixture 'auth_headers' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, session, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\AppServ\www\3F\backend\tests\test_accounts_api.py:34
+_____________ ERROR at setup of test_eliminar_cuenta_integration ______________
+file C:\AppServ\www\3F\backend\tests\test_accounts_api.py, line 61
+  def test_eliminar_cuenta_integration(client: TestClient, session: Session, auth_headers):
+E       fixture 'auth_headers' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, session, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\AppServ\www\3F\backend\tests\test_accounts_api.py:61
+============================== warnings summary ===============================
+backend\core\config.py:51
+  C:\AppServ\www\3F\backend\core\config.py:51: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator("DATABASE_URL")
+
+backend\core\config.py:61
+  C:\AppServ\www\3F\backend\core\config.py:61: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator("ENVIRONMENT")
+
+backend\core\config.py:69
+  C:\AppServ\www\3F\backend\core\config.py:69: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator("SECRET_KEY")
+
+backend\core\config.py:78
+  C:\AppServ\www\3F\backend\core\config.py:78: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator("CORS_ORIGINS", pre=True)
+
+..\..\..\Users\flagd\AppData\Roaming\Python\Python313\site-packages\pythonjsonlogger\jsonlogger.py:11
+  C:\Users\flagd\AppData\Roaming\Python\Python313\site-packages\pythonjsonlogger\jsonlogger.py:11: DeprecationWarning: pythonjsonlogger.jsonlogger has been moved to pythonjsonlogger.json
+    warnings.warn(
+
+..\..\..\Users\flagd\AppData\Roaming\Python\Python313\site-packages\sqlmodel\main.py:534
+..\..\..\Users\flagd\AppData\Roaming\Python\Python313\site-packages\sqlmodel\main.py:534
+  C:\Users\flagd\AppData\Roaming\Python\Python313\site-packages\sqlmodel\main.py:534: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    new_cls = super().__new__(cls, name, bases, dict_used, **config_kwargs)
+
+backend\api\auth\schemas.py:19
+  C:\AppServ\www\3F\backend\api\auth\schemas.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UsuarioLectura(BaseModel): # Renombrado a español
+
+backend\api\accounts\schemas_divisa.py:19
+  C:\AppServ\www\3F\backend\api\accounts\schemas_divisa.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DivisaLectura(DivisaBase): # Renombrado
+
+backend\api\accounts\schemas.py:23
+  C:\AppServ\www\3F\backend\api\accounts\schemas.py:23: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class CuentaLectura(CuentaBase): # Renombrado
+
+backend\api\categories\schemas.py:14
+  C:\AppServ\www\3F\backend\api\categories\schemas.py:14: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class CategoriaLectura(CategoriaBase): # Renombrado
+
+backend\api\categories\schemas.py:23
+  C:\AppServ\www\3F\backend\api\categories\schemas.py:23: PydanticDeprecatedSince20: The `update_forward_refs` method is deprecated; use `model_rebuild` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    CategoriaArbol.update_forward_refs()
+
+backend\api\beneficiaries\schemas.py:22
+  C:\AppServ\www\3F\backend\api\beneficiaries\schemas.py:22: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class BeneficiarioLectura(BeneficiarioBase): # Renombrado
+
+backend\api\transactions\schemas.py:38
+  C:\AppServ\www\3F\backend\api\transactions\schemas.py:38: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransaccionLectura(TransaccionBase):
+
+backend\core\ia_service.py:1
+  C:\AppServ\www\3F\backend\core\ia_service.py:1: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+backend\api\budgets\schemas.py:16
+  C:\AppServ\www\3F\backend\api\budgets\schemas.py:16: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class PresupuestoLectura(PresupuestoBase):
+
+backend\api\tags\schemas.py:25
+  C:\AppServ\www\3F\backend\api\tags\schemas.py:25: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class EtiquetaResponse(EtiquetaBase):
+
+backend\api\tags\schemas.py:36
+  C:\AppServ\www\3F\backend\api\tags\schemas.py:36: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransaccionEtiquetaResponse(BaseModel):
+
+backend\api\attachments\schemas.py:19
+  C:\AppServ\www\3F\backend\api\attachments\schemas.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class AdjuntoResponse(AdjuntoBase):
+
+backend\api\currency_history\schemas.py:26
+  C:\AppServ\www\3F\backend\api\currency_history\schemas.py:26: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class HistorialDivisaResponse(HistorialDivisaBase):
+
+backend\api\recurring\schemas.py:48
+  C:\AppServ\www\3F\backend\api\recurring\schemas.py:48: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransaccionRecurrenteResponse(TransaccionRecurrenteBase):
+
+backend\api\assets\schemas.py:34
+  C:\AppServ\www\3F\backend\api\assets\schemas.py:34: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ActivoResponse(ActivoBase):
+
+backend\api\assets\schemas.py:50
+  C:\AppServ\www\3F\backend\api\assets\schemas.py:50: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class HistorialActivoResponse(HistorialActivoBase):
+
+backend\api\stocks\schemas.py:32
+  C:\AppServ\www\3F\backend\api\stocks\schemas.py:32: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class InversionResponse(InversionBase):
+
+backend\api\stocks\schemas.py:47
+  C:\AppServ\www\3F\backend\api\stocks\schemas.py:47: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class HistorialInversionResponse(HistorialInversionBase):
+
+backend\api\config\schemas.py:17
+  C:\AppServ\www\3F\backend\api\config\schemas.py:17: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ConfigResponse(ConfigBase):
+
+backend\api\config\schemas_plugins.py:23
+  C:\AppServ\www\3F\backend\api\config\schemas_plugins.py:23: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class PluginRead(PluginBase):
+
+backend\api\custom_fields\schemas.py:26
+  C:\AppServ\www\3F\backend\api\custom_fields\schemas.py:26: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class CampoPersonalizadoResponse(CampoPersonalizadoBase):
+
+backend\api\custom_fields\schemas.py:42
+  C:\AppServ\www\3F\backend\api\custom_fields\schemas.py:42: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ValorCampoPersonalizadoResponse(ValorCampoPersonalizadoBase):
+
+backend\api\layouts\schemas.py:10
+  C:\AppServ\www\3F\backend\api\layouts\schemas.py:10: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class LayoutSave(BaseModel):
+
+backend\api\layouts\schemas.py:25
+  C:\AppServ\www\3F\backend\api\layouts\schemas.py:25: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class LayoutResponse(BaseModel):
+
+backend\main.py:76
+  C:\AppServ\www\3F\backend\main.py:76: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+..\..\..\Users\flagd\AppData\Roaming\Python\Python313\site-packages\fastapi\applications.py:4576
+  C:\Users\flagd\AppData\Roaming\Python\Python313\site-packages\fastapi\applications.py:4576: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR backend/tests/test_accounts_api.py::test_create_account_integration
+ERROR backend/tests/test_accounts_api.py::test_listar_cuentas_paginado
+ERROR backend/tests/test_accounts_api.py::test_eliminar_cuenta_integration
+======================= 33 warnings, 3 errors in 2.77s ========================

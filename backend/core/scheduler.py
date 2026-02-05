@@ -6,6 +6,7 @@ from backend.models.models import Usuario
 from backend.models.models_advanced import TransaccionRecurrente
 from backend.core.recurring_service import recurring_service
 from backend.core.wealth_service import wealth_service
+from backend.scripts.backup_database import DatabaseBackup
 import logging
 import asyncio
 
@@ -51,11 +52,25 @@ def perform_wealth_snapshots():
             except Exception as e:
                 logger.error(f"Error capturing snapshot for user {u.id_usuario}: {e}")
 
+def perform_database_backup():
+    """
+    Performs automated database backup with cleanup.
+    """
+    logger.info("🔄 Starting automated database backup...")
+    try:
+        backup_manager = DatabaseBackup()
+        backup_path = backup_manager.create_backup(compress=True)
+        backup_manager.cleanup_old_backups()
+        logger.info(f"✓ Database backup completed: {backup_path}")
+    except Exception as e:
+        logger.error(f"✗ Database backup failed: {e}")
+
 def start_scheduler():
     # Run recurring tx check daily at 00:01
-    scheduler.add_job(check_recurring_transactions, 'cron', hour=0, minute=1)
+    scheduler.add_job(check_recurring_transactions, 'cron', hour=0, minute=1, id='recurring_transactions')
     # Run wealth snapshots daily at 00:05
-    scheduler.add_job(perform_wealth_snapshots, 'cron', hour=0, minute=5)
-    # Also run once on startup for debugging/missed checks (optional, good for dev)
-    # scheduler.add_job(check_recurring_transactions, 'date', run_date=datetime.now() + timedelta(seconds=10)) 
+    scheduler.add_job(perform_wealth_snapshots, 'cron', hour=0, minute=5, id='wealth_snapshots')
+    # Run database backup daily at 03:00
+    scheduler.add_job(perform_database_backup, 'cron', hour=3, minute=0, id='database_backup')
     scheduler.start()
+    logger.info("📅 Scheduler started with automatic jobs")

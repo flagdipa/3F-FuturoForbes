@@ -19,7 +19,9 @@ class LayoutManager {
      */
     attachListeners() {
         if (this.grid) {
-            this.grid.on('change', () => {
+            // Monitor all layout changes
+            this.grid.on('change dragstop resizestop', (event, items) => {
+                console.log(`📦 Layout event: ${event.type}`, items);
                 this.debouncedSave();
             });
         }

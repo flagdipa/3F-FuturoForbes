@@ -19,15 +19,14 @@ router = APIRouter(prefix="/layouts", tags=["Layouts"])
 async def get_layout(
     page_name: str,
     session: Session = Depends(get_session),
-    current_user: Usuario = Depends(get_current_user)  # Changed from User
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Get saved layout for a specific page
-    Returns 404 if no custom layout exists (client should use defaults)
     """
     layout = session.exec(
         select(UserLayout)
-        .where(UserLayout.user_id == current_user.id)
+        .where(UserLayout.user_id == current_user.id_usuario)
         .where(UserLayout.page_name == page_name)
     ).first()
     
@@ -57,7 +56,7 @@ async def save_layout(
     # Check if layout exists
     existing = session.exec(
         select(UserLayout)
-        .where(UserLayout.user_id == current_user.id)
+        .where(UserLayout.user_id == current_user.id_usuario)
         .where(UserLayout.page_name == page_name)
     ).first()
     
@@ -71,7 +70,7 @@ async def save_layout(
     else:
         # Create new layout
         layout = UserLayout(
-            user_id=current_user.id,
+            user_id=current_user.id_usuario,
             page_name=page_name,
             layout_config=layout_json
         )
@@ -105,7 +104,7 @@ async def reset_layout(
     """
     layout = session.exec(
         select(UserLayout)
-        .where(UserLayout.user_id == current_user.id)
+        .where(UserLayout.user_id == current_user.id_usuario)
         .where(UserLayout.page_name == page_name)
     ).first()
     

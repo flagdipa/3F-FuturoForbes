@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from ...core.database import get_session, get_current_user
+from ...core.database import get_session
+from ..auth.deps import get_current_user
 from ...core.audit_service import audit_service
 from ...models.models import LibroTransacciones, TransaccionDividida, ListaCuentas, Beneficiario, Categoria, Usuario
 from .schemas import TransaccionCrear, TransaccionLectura, TransaccionComplejaCrear, DivisionCrear
@@ -10,28 +11,25 @@ from datetime import datetime
 
 router = APIRouter(prefix="/transacciones", tags=["Transacciones"])
 
-def _enriquecer_transaccion(tx: LibroTransacciones, session: Session) -> TransaccionLectura:
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func
+from ..schemas.common import PaginatedResponse, PaginationMetadata
+
+def _enriquecer_rapido(tx: LibroTransacciones, tags: List[int]) -> TransaccionLectura:
+    """Enrich transaction data using eager-loaded relationships and pre-fetched tags"""
     tx_lectura = TransaccionLectura.from_orm(tx)
     
-    cuenta = session.get(ListaCuentas, tx.id_cuenta)
-    if cuenta: tx_lectura.nombre_cuenta = cuenta.nombre_cuenta
+    if tx.cuenta:
+        tx_lectura.nombre_cuenta = tx.cuenta.nombre_cuenta
+    if tx.beneficiario:
+        tx_lectura.nombre_beneficiario = tx.beneficiario.nombre_beneficiario
+    if tx.categoria:
+        tx_lectura.nombre_categoria = tx.categoria.nombre_categoria
     
-    benef = session.get(Beneficiario, tx.id_beneficiario)
-    if benef: tx_lectura.nombre_beneficiario = benef.nombre_beneficiario
-    
-    cat = session.get(Categoria, tx.id_categoria)
-    if cat: tx_lectura.nombre_categoria = cat.nombre_categoria
-    
-    # Cargar IDs de etiquetas
-    ids_etiquetas = session.exec(
-        select(TransaccionEtiqueta.id_etiqueta)
-        .where(TransaccionEtiqueta.id_transaccion == tx.id_transaccion)
-    ).all()
-    tx_lectura.etiquetas = ids_etiquetas
-    
+    tx_lectura.etiquetas = tags
     return tx_lectura
 
-@router.get("/", response_model=List[TransaccionLectura])
+@router.get("/", response_model=PaginatedResponse[TransaccionLectura])
 def listar_transacciones(
     offset: int = 0, 
     limit: int = 100, 
@@ -44,7 +42,18 @@ def listar_transacciones(
     busqueda: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
-    query = select(LibroTransacciones)
+    # Base query with eager loading
+    query = (
+        select(LibroTransacciones)
+        .options(
+            joinedload(LibroTransacciones.cuenta),
+            joinedload(LibroTransacciones.beneficiario),
+            joinedload(LibroTransacciones.categoria)
+        )
+    )
+    
+    # Filter by user if possible (assuming id_usuario exists in schema)
+    # query = query.where(LibroTransacciones.id_usuario == current_user.id_usuario)
     
     if id_etiqueta:
         query = query.join(TransaccionEtiqueta, LibroTransacciones.id_transaccion == TransaccionEtiqueta.id_transaccion)\
@@ -61,16 +70,41 @@ def listar_transacciones(
     if fecha_fin:
         query = query.where(LibroTransacciones.fecha_transaccion <= fecha_fin)
     if busqueda:
-        # Búsqueda en notas y número de transacción
         query = query.where(
             (LibroTransacciones.notas.contains(busqueda)) | 
             (LibroTransacciones.numero_transaccion.contains(busqueda))
         )
+    
+    # Calculate total before limit/offset
+    total_query = select(func.count()).select_from(query.subquery())
+    total = session.exec(total_query).one()
         
+    # Apply ordering and pagination
     query = query.order_by(LibroTransacciones.id_transaccion.desc()).offset(offset).limit(limit)
     results = session.exec(query).all()
     
-    return [_enriquecer_transaccion(tx, session) for tx in results]
+    # Batch load labels for all transactions in one query
+    tx_ids = [tx.id_transaccion for tx in results]
+    tags_by_tx = {}
+    if tx_ids:
+        all_tags = session.exec(
+            select(TransaccionEtiqueta)
+            .where(TransaccionEtiqueta.id_transaccion.in_(tx_ids))
+        ).all()
+        for tag in all_tags:
+            tags_by_tx.setdefault(tag.id_transaccion, []).append(tag.id_etiqueta)
+    
+    data = [_enriquecer_rapido(tx, tags_by_tx.get(tx.id_transaccion, [])) for tx in results]
+    
+    return PaginatedResponse(
+        data=data,
+        pagination=PaginationMetadata(
+            total=total,
+            offset=offset,
+            limit=limit,
+            has_more=(offset + limit) < total
+        )
+    )
 
 @router.put("/{tx_id}", response_model=TransaccionLectura)
 def actualizar_transaccion(
@@ -109,7 +143,6 @@ def actualizar_transaccion(
         # Agregar nuevas
         for tag_id in tx_in.etiquetas:
             session.add(TransaccionEtiqueta(id_transaccion=tx_id, id_etiqueta=tag_id))
-        session.commit()
 
     # Actualizar Divisiones si corresponde
     if tx_in.es_dividida:
@@ -131,7 +164,6 @@ def actualizar_transaccion(
                     notas=split.notas
                 )
                 session.add(db_split)
-        session.commit()
     else:
         # Si dejó de ser dividida, borrar cualquier rastro
         viejas = session.exec(
@@ -140,10 +172,16 @@ def actualizar_transaccion(
         ).all()
         for v in viejas:
             session.delete(v)
-        session.commit()
 
+    # UN SOLO COMMIT AL FINAL
+    session.commit()
     session.refresh(db_tx)
-    return _enriquecer_transaccion(db_tx, session)
+    
+    # Recargar etiquetas para el enriquecimiento
+    tags_query = select(TransaccionEtiqueta.id_etiqueta).where(TransaccionEtiqueta.id_transaccion == tx_id)
+    tags = session.exec(tags_query).all()
+    
+    return _enriquecer_rapido(db_tx, tags)
 
 @router.get("/{tx_id}/divisiones", response_model=List[DivisionCrear])
 def obtener_divisiones_transaccion(tx_id: int, session: Session = Depends(get_session)):
@@ -161,7 +199,7 @@ def obtener_divisiones_transaccion(tx_id: int, session: Session = Depends(get_se
     ) for s in splits]
 
 @router.post("/", response_model=TransaccionLectura)
-def crear_transaccion(
+async def crear_transaccion(
     tx_in: TransaccionComplejaCrear, 
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
@@ -177,17 +215,18 @@ def crear_transaccion(
         db_tx.fecha_transaccion = datetime.utcnow().isoformat()
         
     session.add(db_tx)
-    session.commit()
-    session.refresh(db_tx)
+    # Flush to get the ID without committing yet
+    session.flush()
     
     # Log creation
     audit_service.log(session, current_user.id_usuario, "CREATE", "Transaccion", db_tx.id_transaccion, tx_in.dict(exclude={"divisiones", "etiquetas"}))
     
     # Gestionar Etiquetas (M:N)
+    tags = []
     if tx_in.etiquetas:
         for tag_id in tx_in.etiquetas:
             session.add(TransaccionEtiqueta(id_transaccion=db_tx.id_transaccion, id_etiqueta=tag_id))
-        session.commit()
+            tags.append(tag_id)
     
     if tx_in.es_dividida and tx_in.divisiones:
         for split in tx_in.divisiones:
@@ -198,24 +237,25 @@ def crear_transaccion(
                 notas=split.notas
             )
             session.add(db_split)
-        session.commit()
-        
+    
+    # UN SOLO COMMIT AL FINAL
+    session.commit()
     session.refresh(db_tx)
     
-    # Notify about high value transaction
+    # Notify about high value transaction (post-commit)
     if db_tx.monto_transaccion >= 1000:
         from ..notifications.router import notify_info
-        import asyncio
-        asyncio.create_task(notify_info(
+        await notify_info(
             user_id=current_user.id_usuario,
             title="Transacción Elevada",
-            message=f"Se ha registrado una transacción de {db_tx.monto_transaccion} en la cuenta."
-        ))
+            message=f"Se ha registrado una transacción de {db_tx.monto_transaccion} en la cuenta.",
+            session=session
+        )
         
-    return _enriquecer_transaccion(db_tx, session)
+    return _enriquecer_rapido(db_tx, tags)
 
 @router.delete("/{tx_id}")
-def eliminar_transaccion(
+async def eliminar_transaccion(
     tx_id: int, 
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
@@ -233,12 +273,12 @@ def eliminar_transaccion(
     
     # Notify about deletion
     from ..notifications.router import notify_warning
-    import asyncio
-    asyncio.create_task(notify_warning(
+    await notify_warning(
         user_id=current_user.id_usuario,
         title="Transacción Eliminada",
-        message=f"Se ha eliminado una transacción del historial."
-    ))
+        message=f"Se ha eliminado una transacción del historial.",
+        session=session
+    )
     
     return {"message": "Transacción eliminada"}
 

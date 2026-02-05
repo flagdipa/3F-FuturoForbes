@@ -80,9 +80,11 @@
                         <div class="mb-3">
                             <label class="text-dim small">TIPO_CUENTA</label>
                             <select class="form-select neon-input" x-model="formData.tipo_cuenta" required>
-                                <option value="Efectivo">Efectivo / Billetera</option>
-                                <option value="Banco">Cuenta Bancaria</option>
-                                <option value="Inversión">Broker / Inversión</option>
+                                <option value="Cash">Efectivo / Billetera</option>
+                                <option value="Checking">Cuenta Bancaria</option>
+                                <option value="Credit Card">Tarjeta de Crédito</option>
+                                <option value="Term">Plazo Fijo / Ahorro</option>
+                                <option value="Investment">Broker / Inversión</option>
                                 <option value="Crypto">Exchange / Wallet Crypto</option>
                             </select>
                         </div>
@@ -127,7 +129,7 @@
                 this.loading = true;
                 try {
                     const res = await api.get('/cuentas/');
-                    this.accounts = res.data;
+                    this.accounts = res.data.data || [];
                 } catch (e) {
                     console.error('Error:', e);
                 } finally {
@@ -135,7 +137,7 @@
                 }
             },
             formatCurrency(val) {
-                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+                return CurrencyUtils.formatCurrency(val);
             },
             openCreateModal() {
                 this.formData = { nombre_cuenta: '', tipo_cuenta: 'Efectivo', id_divisa: 1, saldo_inicial: 0 };

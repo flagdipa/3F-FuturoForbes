@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select
-from ...core.database import get_session, get_current_user
+from fastapi import APIRouter, Depends, Query, Request
+from sqlmodel import Session
+from ...core.database import get_session
+from ..auth.deps import get_current_user
 from ...models.models import Usuario
 from ...models.models_audit import AuditLog
+from ..base_crud import BaseCRUDService
+from ..schemas.common import PaginatedResponse
 from typing import List, Optional
 
 router = APIRouter(prefix="/audit", tags=["Security Audit"])
+audit_crud = BaseCRUDService(AuditLog)
 
-@router.get("/logs", response_model=List[AuditLog])
+@router.get("/logs", response_model=PaginatedResponse[AuditLog])
 def get_audit_logs(
     offset: int = 0,
     limit: int = 50,
@@ -22,14 +26,9 @@ def get_audit_logs(
     In the future, this will be filtered by admin role.
     For now, users see all logs (beta simplicity).
     """
-    query = select(AuditLog)
+    filters = {}
+    if accion: filters["accion"] = accion
+    if entidad: filters["entidad"] = entidad
+    if id_usuario: filters["id_usuario"] = id_usuario
     
-    if accion:
-        query = query.where(AuditLog.accion == accion)
-    if entidad:
-        query = query.where(AuditLog.entidad == entidad)
-    if id_usuario:
-        query = query.where(AuditLog.id_usuario == id_usuario)
-        
-    query = query.order_by(AuditLog.fecha.desc()).offset(offset).limit(limit)
-    return session.exec(query).all()
+    return audit_crud.list(session, offset=offset, limit=limit, filters=filters)

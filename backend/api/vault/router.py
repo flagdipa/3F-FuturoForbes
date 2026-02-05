@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from ...core.vault_service import vault_service
 from ...models.models import Usuario
-from ...core.database import get_current_user
+from ..auth.deps import get_current_user
 import os
 
 router = APIRouter(prefix="/vault", tags=["Financial Vault"])
