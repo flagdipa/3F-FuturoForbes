@@ -312,3 +312,82 @@ h4,
 .neon-card::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
 }
+
+/* --- Mobile Sidebar Fixes (Phase 14 Hotfix) --- */
+@media (max-width: 991.98px) {
+    .app-sidebar {
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5) !important;
+        /* Ensure high z-index to be on top of content */
+        z-index: 1050;
+    }
+
+    /* When sidebar is explicitly open via AdminLTE toggler */
+    .sidebar-open .app-sidebar {
+        display: block !important;
+    }
+
+    /* Ensure the overly exists or simulate it if missing */
+    .sidebar-overlay {
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1049;
+    }
+}
+
+/* --- Sidebar Scrollbar & Responsiveness --- */
+.sidebar-wrapper {
+    height: calc(100vh - 60px);
+    /* Full height minus header */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-wrapper::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(37, 150, 190, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* --- Compact Table Styles for Density --- */
+.table-compact {
+    font-size: 0.75rem;
+}
+
+.table-compact td,
+.table-compact th {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Column resize handle */
+/* Column resize handle */
+th {
+    position: relative;
+}
+
+.resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    touch-action: none;
+}
+
+.resizer:hover,
+.resizer.resizing {
+    background-color: var(--3f-primary);
+    /* Visible line on hover */
+    opacity: 1;
+    width: 7px;
+    right: -3px;
+    /* Center over border */
+}

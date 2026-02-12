@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Central de Control{% endblock %}
-{% block header %}Central de Control HUD{% endblock %}
+{% block header %}Central de Control{% endblock %}
 
 {% block extra_css %}
 <!-- GridStack.js CSS -->
@@ -17,6 +17,19 @@
     .grid-stack-item-content:hover {
         border-color: var(--3f-primary);
         box-shadow: 0 0 15px var(--3f-primary-glow);
+    }
+    
+    /* Dashboard Scroll Lock: Only the transaction widget should scroll */
+    /* Dashboard Scrolling Enabled */
+    .app-content {
+        overflow-y: auto !important;
+        height: calc(100vh - 60px); /* Adjust based on header height */
+    }
+    .grid-stack {
+        min-height: 100vh;
+        height: auto !important;
+        overflow-y: visible !important;
+        overflow-x: hidden;
     }
     .widget-header {
         padding: 5px 10px;
@@ -50,27 +63,22 @@
 <div x-data="dashboardWidgets">
 <div class="scanline"></div>
 
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
         <h4 class="neon-glow mb-2 mb-md-0"><i class="fa-solid fa-microchip me-2"></i><span x-text="$store.lang.t('dashboard.system_status')">ESTADO DEL SISTEMA</span></h4>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="text-dim small">Sincrotemporal: <span x-text="fechaActual"></span></span>
+            <!-- Sincro Temporal con estilo botón -->
+            <span class="btn btn-sm btn-outline-info neon-border" style="cursor: default;">
+                <i class="fa-solid fa-clock me-1"></i><span x-text="fechaActual"></span>
+            </span>
             <button @click="updateDashboard(true)" class="btn btn-sm btn-outline-primary neon-border">
-                <i class="fa-solid fa-sync"></i> <span x-text="$store.lang.t('dashboard.refresh')">REFRESCAR_DATA</span>
+                <i class="fa-solid fa-sync"></i> <span x-text="$store.lang.t('dashboard.refresh')">REFRESCAR</span>
             </button>
-           
-            <!-- Layout Status Indicator -->
-            <span id="layout-status" class="text-dim small"></span>
+            <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary neon-border">
+                <i class="fa-solid fa-rotate-left"></i> <span class="d-none d-md-inline">Diseño</span>
+            </button>
+            <span id="layout-status" class="text-dim small d-none d-lg-inline"></span>
         </div>
-    </div>
-</div>
-
-<!-- Reset Layout Button (Right below header) -->
-<div class="row mb-3">
-    <div class="col-12 d-flex justify-content-end">
-        <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary">
-            <i class="fa-solid fa-rotate-left me-1"></i>Restablecer Diseño
-        </button>
     </div>
 </div>
 
@@ -99,6 +107,25 @@
                 </div>
 
                 <h2 class="neon-glow mb-0" x-text="formatCurrency(resumen.patrimonio_neto)">$0.00</h2>
+                
+                <!-- Budget Adherence Indicator (New Phase 13) -->
+                <div class="mb-4 mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-dim smaller">CUMPLIMIENTO_PRESUPUESTO</small>
+                        <span class="badge rounded-pill" 
+                              :class="resumen.gastos_mes <= resumen.presupuesto_mes ? 'bg-info bg-opacity-25 text-info' : 'bg-danger bg-opacity-25 text-danger'" 
+                              x-text="resumen.presupuesto_mes > 0 ? Math.round((resumen.gastos_mes / resumen.presupuesto_mes) * 100) + '%' : '0%'">0%</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" 
+                             :style="'width: ' + Math.min(Math.round((resumen.gastos_mes / resumen.presupuesto_mes) * 100) || 0, 100) + '%;'" 
+                             :class="resumen.gastos_mes <= resumen.presupuesto_mes ? 'bg-info' : 'bg-danger'"></div>
+                    </div>
+                    <template x-if="resumen.gastos_mes > resumen.presupuesto_mes">
+                        <small class="text-danger smaller d-block mt-1 text-start"><i class="fa-solid fa-triangle-exclamation me-1"></i>Exceso detectado</small>
+                    </template>
+                </div>
+
                 <small class="text-dim" x-text="$store.lang.t('dashboard.net_worth_total')">TOTAL CONSOLIDADO (ARS)</small>
                 
                 <div class="hud-line"></div>
@@ -130,10 +157,16 @@
                     </div>
                 </div>
 
-                <div class="mt-3 p-2 bg-dark-subtle rounded border border-info border-opacity-25">
-                    <small class="text-info d-block" x-text="$store.lang.t('dashboard.projected_30d')">PROYECCION 30 DIAS</small>
-                    <h4 class="mb-0 text-info" x-text="formatCurrency(resumen.proyeccion_30d)">$0.00</h4>
+                <div class="mt-2 p-2 bg-primary-subtle bg-opacity-10 rounded border border-primary border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-primary smaller fw-bold" x-text="$store.lang.t('dashboard.forecast_end_month')">ESTIMACIÓN CIERRE MES</small>
+                        <span class="badge bg-primary bg-opacity-25 text-primary smaller" x-text="resumen.dias_restantes + ' d ' + $store.lang.t('dashboard.remaining')"></span>
+                    </div>
+                    <h4 class="mb-0 text-primary fw-bold" x-text="formatCurrency(resumen.proyeccion_cierre)">$0.00</h4>
+                    <small class="text-dim smaller">Burn-rate: <span x-text="formatCurrency(resumen.burn_rate_diario) + '/día'"></span></small>
                 </div>
+
+
             </div>
         </div>
     </div>
@@ -171,8 +204,9 @@
                     <div class="text-end">
                         <span class="badge rounded-pill mb-1" :class="summary.profit_loss_percentage >= 0 ? 'bg-success' : 'bg-danger'">
                             <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
-                            <span x-text="(summary.profit_loss_percentage || 0).toFixed(2)">0.00</span>%
+                            <span x-text="Number(summary.profit_loss_percentage || 0).toFixed(2)">0.00</span>%
                         </span>
+
                         <div class="small text-dim" x-text="formatCurrency(summary.total_profit_loss)"></div>
                     </div>
                 </div>
@@ -236,39 +270,58 @@
         </div>
     </div>
 
-    <!-- Widget: Actividad Reciente (Moved to accommodate new widget) -->
+    <!-- Widget: Actividad Reciente con Barra de Acciones -->
     <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="4" gs-y="9" gs-id="widget-actividad">
-        <div class="grid-stack-item-content">
+        <div class="grid-stack-item-content d-flex flex-column">
             <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.recent_activity') || 'Central de Control'">Central de Control</span>
+                <span x-text="$store.lang.t('dashboard.recent_activity') || 'Actividad Reciente'">Actividad Reciente</span>
                 <i class="fa-solid fa-clock-rotate-left text-primary"></i>
             </div>
-            <div class="p-2">
-                <div class="table-responsive h-100">
-                    <table class="table table-sm table-borderless text-white mb-0">
-                        <tbody style="font-family: 'Consolas', monospace; font-size: 0.8rem;">
-                            <template x-for="tx in transactions" :key="tx.id_transaccion">
-                                <tr class="border-bottom border-light border-opacity-10 align-middle">
-                                    <td width="30" class="text-center">
-                                        <i class="fa-solid" :class="tx.codigo_transaccion === 'Deposit' ? 'fa-circle-chevron-up text-success' : 'fa-circle-chevron-down text-danger'"></i>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-truncate" style="max-width: 120px;" x-text="tx.nombre_beneficiario"></div>
-                                        <div class="small text-dim" x-text="tx.nombre_categoria"></div>
-                                    </td>
-                                    <td class="text-end fw-bold" :class="tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-danger'">
-                                        <span x-text="(tx.codigo_transaccion === 'Deposit' ? '+' : '-') + formatCurrency(tx.monto_transaccion)"></span>
-                                    </td>
-                                </tr>
-                            </template>
-                            <template x-if="transactions.length === 0">
-                                <tr>
-                                    <td colspan="3" class="text-center p-4 text-dim">No hay actividad reciente</td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="flex-grow-1 overflow-auto p-2" style="max-height: 200px;">
+                <table class="table table-sm table-borderless text-white mb-0">
+                    <tbody style="font-family: 'Consolas', monospace; font-size: 0.75rem;">
+                        <template x-for="tx in transactions" :key="tx.id_transaccion">
+                            <tr class="border-bottom border-light border-opacity-10 align-middle" 
+                                :class="{'bg-primary bg-opacity-10': selectedTxId === tx.id_transaccion}"
+                                @click="selectedTxId = tx.id_transaccion"
+                                @dblclick="window.location.href='/transacciones?edit=' + tx.id_transaccion">
+                                <td width="25" class="text-center py-1">
+                                    <i class="fa-solid" :class="tx.codigo_transaccion === 'Deposit' ? 'fa-circle-chevron-up text-success' : 'fa-circle-chevron-down text-danger'"></i>
+                                </td>
+                                <td class="py-1">
+                                    <div class="fw-bold text-truncate" style="max-width: 100px; font-size: 0.7rem;" x-text="tx.nombre_beneficiario"></div>
+                                    <div class="text-dim" style="font-size: 0.65rem;" x-text="tx.nombre_categoria"></div>
+                                </td>
+                                <td class="text-end fw-bold py-1" :class="tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-danger'">
+                                    <span style="font-size: 0.75rem;" x-text="(tx.codigo_transaccion === 'Deposit' ? '+' : '-') + formatCurrency(tx.monto_transaccion)"></span>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="transactions.length === 0">
+                            <tr>
+                                <td colspan="3" class="text-center p-3 text-dim">No hay actividad reciente</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Barra de Acciones Inferior -->
+            <div class="border-top border-secondary border-opacity-25 p-2 d-flex justify-content-center gap-2">
+                <a href="/transacciones?new=1" class="btn btn-sm btn-outline-success px-3">
+                    <i class="fa-solid fa-plus me-1"></i>Nuevo
+                </a>
+                <button class="btn btn-sm btn-outline-primary px-3" :disabled="!selectedTxId" 
+                        @click="if(selectedTxId) window.location.href='/transacciones?edit=' + selectedTxId">
+                    <i class="fa-solid fa-pen me-1"></i>Editar
+                </button>
+                <button class="btn btn-sm btn-outline-warning px-3" :disabled="!selectedTxId"
+                        @click="if(selectedTxId) window.location.href='/transacciones?duplicate=' + selectedTxId">
+                    <i class="fa-solid fa-copy me-1"></i>Duplicar
+                </button>
+                <button class="btn btn-sm btn-outline-danger px-3" :disabled="!selectedTxId"
+                        @click="if(selectedTxId && confirm('¿Eliminar esta transacción?')) deleteTx(selectedTxId)">
+                    <i class="fa-solid fa-trash me-1"></i>Borrar
+                </button>
             </div>
         </div>
     </div>
@@ -286,31 +339,40 @@
         const getApiClient = () => window.api || { get: () => Promise.resolve({data:[]}), post: () => Promise.resolve({data:[]}) };
 
         // Local Alpine wrapper for the centralized CurrencyUtils
-        Alpine.data('dashboardWidgets', () => ({
-            fechaActual: new Date().toLocaleString(),
-            selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
-            showBreakdown: false,
-            resumen: { 
-                patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0, 
-                ingresos_mes: 0, gastos_mes: 0, proyeccion_30d: 0 
-            },
-            summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
-            transactions: [],
-            aiEnabled: false,
-            wealthHistoryDays: 30,
-            savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
-            grid: null,
-            layoutManager: null,
-            charts: { categorias: null, evolucion: null, asignacion: null, patrimonioHist: null },
+        Alpine.data('dashboardWidgets', () => {
+            // Non-reactive chart storage to prevent recursion/stack overflow
+            const chartInstances = { 
+                categorias: null, 
+                evolucion: null, 
+                asignacion: null, 
+                patrimonioHist: null 
+            };
 
-            async init() {
-                console.log("🚀 Dashboard Widgets Init (Consolidated) - Starting...");
-                
-                // Clock synchronization
-                setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
+            return {
+                fechaActual: new Date().toLocaleString(),
+                selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
+                showBreakdown: false,
+                selectedTxId: null,
+                resumen: { 
+                    patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0, 
+                    ingresos_mes: 0, gastos_mes: 0, presupuesto_mes: 0, proyeccion_cierre: 0,
+                    dias_restantes: 0, burn_rate_diario: 0, proyeccion_30d: 0 
+                },
+                summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
+                transactions: [],
+                aiEnabled: false,
+                wealthHistoryDays: 30,
+                savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
+                grid: null,
+                layoutManager: null,
+                // Removed 'charts' from reactive data object
 
-                // 1. GridStack & Layout
-                this.$nextTick(() => {
+                async init() {
+                    
+                    // Clock synchronization
+                    setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
+
+                    // 1. GridStack & Layout (STRICTLY SEQUENTIAL)
                     try {
                         this.grid = GridStack.init({
                             cellHeight: 70, margin: 10, column: 12,
@@ -320,162 +382,200 @@
                         
                         if (window.LayoutManager) {
                             this.layoutManager = new LayoutManager('dashboard', this.grid);
-                            this.layoutManager.loadLayout();
+                            await this.layoutManager.loadLayout();
                         }
                     } catch (e) { console.error("Grid/Layout Error:", e); }
-                });
-                
-                // 2. Initial Data
-                await this.updateDashboard();
-                
-                // Listen for refresh events
-                window.addEventListener('update-data', () => this.updateDashboard(true));
-                console.log("✅ Dashboard Widgets Init (Consolidated) - Complete");
-            },
-            
-            async updateDashboard(force = false) {
-                console.log("🔄 Updating Dashboard Data...");
-                try {
-                    await Promise.all([
-                        this.loadResumen(),
-                        this.loadSummary(),
-                        this.loadTransactions(),
-                        this.loadSavingsRate()
-                    ]);
                     
-                    if (!this.charts.categorias || force) {
-                        this.initCharts();
-                    } else {
-                        this.updateCharts();
-                    }
-                } catch (e) { console.error("Update Error:", e); }
-            },
-            
-            async resetLayout() {
-                if (this.layoutManager) await this.layoutManager.resetLayout();
-            },
+                    // 2. Initial Data & Charts
+                    await this.updateDashboard();
+                    
+                    // Listen for refresh events
+                    window.addEventListener('update-data', () => this.updateDashboard(true));
+                },
 
-            formatCurrency(amount) {
-                return CurrencyUtils.formatCurrency(amount, this.selectedCurrency);
-            },
-
-            async loadResumen() {
-                try {
-                    const currency = this.selectedCurrency || 'ARS';
-                    localStorage.setItem('3f_pref_currency', currency);
-                    const res = await getApiClient().get(`/resumen/?currency=${currency}`);
-                    this.resumen = res.data;
-                } catch (e) { console.error('loadResumen fail', e); }
-            },
-
-            async loadSummary() {
-                try {
-                    const res = await getApiClient().get('/stocks/summary');
-                    if(res.data) this.summary = res.data;
-                } catch (e) { console.warn('stocks summary empty'); }
-            },
-
-            async loadTransactions() {
-                try {
-                    const res = await getApiClient().get('/transacciones/?limit=5');
-                    this.transactions = res.data.data || [];
-                } catch (e) { console.error('loadTransactions fail', e); }
-            },
-
-            async loadSavingsRate() {
-                try {
-                    const res = await getApiClient().get('/wealth/savings-rate');
-                    if(res.data) this.savingsRate = res.data;
-                } catch (e) { console.error('loadSavingsRate fail', e); }
-            },
-
-            initCharts() {
-                console.log("📊 Initializing Charts...");
-                const ctxCat = document.getElementById('chart-categorias');
-                const ctxEvo = document.getElementById('chart-evolucion');
-                const ctxWealth = document.getElementById('chart-patrimonio-hist');
-                const ctxAsign = document.getElementById('chart-asignacion');
-
-                Object.values(this.charts).forEach(c => { if(c) c.destroy(); });
-
-                if (ctxCat) {
-                    this.charts.categorias = new Chart(ctxCat.getContext('2d'), {
-                        type: 'doughnut',
-                        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
-                    });
-                }
-
-                if (ctxEvo) {
-                    this.charts.evolucion = new Chart(ctxEvo.getContext('2d'), {
-                        type: 'line',
-                        data: { labels: [], datasets: [{ label: 'REAL', data: [], borderColor: '#2596be', backgroundColor: 'rgba(37, 150, 190, 0.1)', fill: true, tension: 0.4 }, { label: 'PROYECCION', data: [], borderColor: '#2596be', borderDash: [5, 5], backgroundColor: 'transparent', fill: false, tension: 0.4 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } }, x: { grid: { display: false }, ticks: { color: '#bee0ec' } } } }
-                    });
-                }
-
-                if (ctxWealth) {
-                    this.charts.patrimonioHist = new Chart(ctxWealth.getContext('2d'), {
-                        type: 'line',
-                        data: { labels: [], datasets: [] },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0, 0, 0, 0.8)', bodyFont: { family: 'Consolas' }, callbacks: { label: (context) => this.formatCurrency(context.raw) } } },
-                            scales: { y: { grid: { color: 'rgba(0, 242, 255, 0.05)' }, ticks: { color: '#00f2ff', font: { size: 9 } } }, x: { grid: { display: false }, ticks: { color: '#00f2ff', font: { size: 9 } } } }
+                
+                async updateDashboard(force = false) {
+                    try {
+                        await Promise.all([
+                            this.loadResumen(),
+                            this.loadSummary(),
+                            this.loadTransactions(),
+                            this.loadSavingsRate()
+                        ]);
+                        
+                        // Check if charts exist in our non-reactive storage
+                        if (!chartInstances.categorias || force) {
+                            this.initCharts();
+                        } else {
+                            this.updateCharts();
                         }
-                    });
+                    } catch (e) { console.error("Update Error:", e); }
+                },
+                
+                async resetLayout() {
+                    if (this.layoutManager) await this.layoutManager.resetLayout();
+                },
+
+                async deleteTx(txId) {
+                    try {
+                        await getApiClient().delete(`/transacciones/${txId}`);
+                        this.transactions = this.transactions.filter(t => t.id_transaccion !== txId);
+                        this.selectedTxId = null;
+                        await this.updateDashboard(true);
+                    } catch (e) {
+                        alert('Error al eliminar: ' + (e.response?.data?.detail || e.message));
+                    }
+                },
+
+                formatCurrency(amount) {
+                    if (typeof CurrencyUtils === 'undefined') {
+                        console.warn('CurrencyUtils not loaded yet');
+                        return '$ ' + (amount || 0).toFixed(2);
+                    }
+                    return CurrencyUtils.formatCurrency(amount, this.selectedCurrency);
+                },
+
+                async loadResumen() {
+                    try {
+                        const currency = this.selectedCurrency || 'ARS';
+                        localStorage.setItem('3f_pref_currency', currency);
+                        const res = await getApiClient().get(`/resumen/?currency=${currency}`);
+                        // Ensure all fields are present to avoid Alpine issues
+                        this.resumen = {
+                            patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0,
+                            ingresos_mes: 0, gastos_mes: 0, presupuesto_mes: 0, proyeccion_cierre: 0,
+                            dias_restantes: 0, burn_rate_diario: 0, proyeccion_30d: 0,
+                            ...res.data
+                        };
+                    } catch (e) {
+                        console.error('loadResumen fail', e);
+                        // Defensive empty state on failure
+                        this.resumen = { ...this.resumen };
+                    }
+                },
+
+
+                async loadSummary() {
+                    try {
+                        const res = await getApiClient().get('/stocks/summary');
+                        if(res.data) this.summary = res.data;
+                    } catch (e) { console.warn('stocks summary empty'); }
+                },
+
+                async loadTransactions() {
+                    try {
+                        const res = await getApiClient().get('/transacciones/?limit=5');
+                        this.transactions = res.data.data || [];
+                    } catch (e) { console.error('loadTransactions fail', e); }
+                },
+
+                async loadSavingsRate() {
+                    try {
+                        const res = await getApiClient().get('/wealth/savings-rate');
+                        if(res.data) this.savingsRate = res.data;
+                    } catch (e) { console.error('loadSavingsRate fail', e); }
+                },
+
+                initCharts() {
+                    const ctxCat = document.getElementById('chart-categorias');
+                    const ctxEvo = document.getElementById('chart-evolucion');
+                    const ctxWealth = document.getElementById('chart-patrimonio-hist');
+                    const ctxAsign = document.getElementById('chart-asignacion');
+
+                    Object.values(chartInstances).forEach(c => { if(c) c.destroy(); });
+
+                    if (ctxCat) {
+                        chartInstances.categorias = new Chart(ctxCat.getContext('2d'), {
+                            type: 'doughnut',
+                            data: { labels: [], datasets: [{ data: [], backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
+                        });
+                    }
+
+                    if (ctxEvo) {
+                        chartInstances.evolucion = new Chart(ctxEvo.getContext('2d'), {
+                            type: 'line',
+                            data: { labels: [], datasets: [{ label: 'REAL', data: [], borderColor: '#2596be', backgroundColor: 'rgba(37, 150, 190, 0.1)', fill: true, tension: 0.4 }, { label: 'PROYECCION', data: [], borderColor: '#2596be', borderDash: [5, 5], backgroundColor: 'transparent', fill: false, tension: 0.4 }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } }, x: { grid: { display: false }, ticks: { color: '#bee0ec' } } } }
+                        });
+                    }
+
+                    if (ctxWealth) {
+                        chartInstances.patrimonioHist = new Chart(ctxWealth.getContext('2d'), {
+                            type: 'line',
+                            data: { labels: [], datasets: [] },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0, 0, 0, 0.8)', bodyFont: { family: 'Consolas' }, callbacks: { label: (context) => this.formatCurrency(context.raw) } } },
+                                scales: { y: { grid: { color: 'rgba(0, 242, 255, 0.05)' }, ticks: { color: '#00f2ff', font: { size: 9 } } }, x: { grid: { display: false }, ticks: { color: '#00f2ff', font: { size: 9 } } } }
+                            }
+                        });
+                    }
+
+                    if (ctxAsign) {
+                        chartInstances.asignacion = new Chart(ctxAsign.getContext('2d'), {
+                            type: 'doughnut',
+                            data: { labels: ['Líquido', 'Activos', 'Inversiones'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#00f2ff', '#7000ff', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
+                        });
+                    }
+                    this.updateCharts();
+                },
+
+                async updateCharts() {
+                    try {
+                        const api = getApiClient();
+                        
+                        if (chartInstances.categorias && typeof chartInstances.categorias.update === 'function') {
+                            try {
+                                const resCat = await api.get('/reportes/categorias');
+                                chartInstances.categorias.data.labels = resCat.data.labels;
+                                chartInstances.categorias.data.datasets[0].data = resCat.data.data;
+                                chartInstances.categorias.update();
+                            } catch (e) { console.warn('Cat chart update error', e); }
+                        }
+                        
+                        if (chartInstances.evolucion && typeof chartInstances.evolucion.update === 'function') {
+                            try {
+                                const resTend = await api.get('/reportes/tendencia');
+                                this.aiEnabled = resTend.data.ai_enabled || false;
+                                chartInstances.evolucion.data.labels = resTend.data.labels;
+                                chartInstances.evolucion.data.datasets[0].data = resTend.data.historico;
+                                chartInstances.evolucion.data.datasets[1].data = resTend.data.tendencia;
+                                chartInstances.evolucion.update();
+                                const hC = resTend.data.historico.length;
+                                if (resTend.data.tendencia && resTend.data.tendencia.length > hC) this.resumen.proyeccion_30d = resTend.data.tendencia[hC];
+                            } catch (e) { console.warn('Evo chart update error', e); }
+                        }
+                        
+                        if (chartInstances.asignacion && typeof chartInstances.asignacion.update === 'function') {
+                            try {
+                                chartInstances.asignacion.data.datasets[0].data = [this.resumen.total_liquido, this.resumen.total_activos, this.resumen.total_inversiones];
+                                chartInstances.asignacion.update();
+                            } catch (e) { console.warn('Asign chart update error', e); }
+                        }
+                        
+                        this.updateWealthChart();
+                    } catch (e) { console.error('updateCharts fail', e); }
+                },
+
+                async updateWealthChart() {
+                    if (!chartInstances.patrimonioHist || typeof chartInstances.patrimonioHist.update !== 'function') return;
+                    try {
+                        const res = await getApiClient().get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
+                        if (!res.data || !Array.isArray(res.data.datasets)) return;
+                        
+                        chartInstances.patrimonioHist.data.labels = res.data.labels || [];
+                        chartInstances.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
+                            ...ds, borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
+                        }));
+                        chartInstances.patrimonioHist.update();
+                    } catch (e) { console.error('updateWealthChart fail', e); }
                 }
 
-                if (ctxAsign) {
-                    this.charts.asignacion = new Chart(ctxAsign.getContext('2d'), {
-                        type: 'doughnut',
-                        data: { labels: ['Líquido', 'Activos', 'Inversiones'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#00f2ff', '#7000ff', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
-                    });
-                }
-                this.updateCharts();
-            },
-
-            async updateCharts() {
-                try {
-                    const api = getApiClient();
-                    if (this.charts.categorias) {
-                        const resCat = await api.get('/reportes/categorias');
-                        this.charts.categorias.data.labels = resCat.data.labels;
-                        this.charts.categorias.data.datasets[0].data = resCat.data.data;
-                        this.charts.categorias.update();
-                    }
-                    if (this.charts.evolucion) {
-                        const resTend = await api.get('/reportes/tendencia');
-                        this.aiEnabled = resTend.data.ai_enabled || false;
-                        this.charts.evolucion.data.labels = resTend.data.labels;
-                        this.charts.evolucion.data.datasets[0].data = resTend.data.historico;
-                        this.charts.evolucion.data.datasets[1].data = resTend.data.tendencia;
-                        this.charts.evolucion.update();
-                        const hC = resTend.data.historico.length;
-                        if (resTend.data.tendencia && resTend.data.tendencia.length > hC) this.resumen.proyeccion_30d = resTend.data.tendencia[hC];
-                    }
-                    if (this.charts.asignacion) {
-                        this.charts.asignacion.data.datasets[0].data = [this.resumen.total_liquido, this.resumen.total_activos, this.resumen.total_inversiones];
-                        this.charts.asignacion.update();
-                    }
-                    this.updateWealthChart();
-                } catch (e) { console.error('updateCharts fail', e); }
-            },
-
-            async updateWealthChart() {
-                if (!this.charts.patrimonioHist) return;
-                try {
-                    const res = await getApiClient().get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
-                    this.charts.patrimonioHist.data.labels = res.data.labels;
-                    this.charts.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
-                        ...ds, borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                        fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
-                    }));
-                    this.charts.patrimonioHist.update();
-                } catch (e) { console.error('updateWealthChart fail', e); }
-            }
-        }));
+            }; // return object
+        });
     });
 </script>
 {% endblock %}

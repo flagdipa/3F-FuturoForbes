@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('entities.title')">Entidades Financieras</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('entities.title')">Gestión de Entidades Financieras</span>{% endblock %}
+
+{% block content %}
+<div x-data="entidadesPage" class="content-wrapper bg-transparent">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4 border-0" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link border-0 hud-title extra-small px-4 py-2" :class="activeTab === 'tipos' ? 'active text-primary border-bottom border-primary' : 'text-dim bg-transparent opacity-50'" @click="activeTab = 'tipos'">
+                <i class="fa-solid fa-layer-group me-2"></i><span x-text="$store.lang.t('entities.tab_types')">TIPOS DE ENTIDAD</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link border-0 hud-title extra-small px-4 py-2" :class="activeTab === 'entidades' ? 'active text-primary border-bottom border-primary' : 'text-dim bg-transparent opacity-50'" @click="activeTab = 'entidades'">
+                <i class="fa-solid fa-university me-2"></i><span x-text="$store.lang.t('entities.tab_list')">ENTIDADES</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab: Tipos de Entidad -->
+    <div x-show="activeTab === 'tipos'">
+        <div class="row mb-4">
+            <div class="col-12 mb-4 d-flex justify-content-between">
+                <button class="neon-btn px-4 py-2 shadow-sm" @click="openTipoModal()">
+                    <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('entities.new_type')">NUEVO TIPO</span>
+                </button>
+                <button class="btn btn-outline-info border-opacity-25" @click="seedData()" :disabled="seeding">
+                    <span x-show="!seeding"><i class="fa-solid fa-database me-2"></i><span x-text="$store.lang.t('entities.seed')">CARGAR PREDEFINIDOS</span></span>
+                    <span x-show="seeding" class="spinner-border spinner-border-sm"></span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="row g-3">
+            <template x-for="tipo in tipos" :key="tipo.id_tipo">
+                <div class="col-md-4 col-lg-3">
+                    <div class="card neon-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-2xl mb-4" :class="tipo.icono" :style="`color: ${tipo.color}; filter: drop-shadow(0 0 10px ${tipo.color}44)`"></i>
+                            <h5 class="card-title hud-title text-primary mb-3" x-text="tipo.nombre_tipo"></h5>
+                            <p class="card-text text-dim extra-small text-uppercase opacity-75" x-text="tipo.descripcion || '-'"></p>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-info" @click="editTipo(tipo)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template x-if="tipos.length === 0 && !loadingTipos">
+                <div class="col-12 text-center p-5 opacity-50">
+                    <i class="fa-solid fa-folder-open fs-1 mb-3 text-dim"></i>
+                    <p class="hud-title extra-small" x-text="$store.lang.t('entities.empty_types')"></p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Tab: Entidades -->
+    <div x-show="activeTab === 'entidades'">
+        <div class="row mb-4">
+            <div class="col-12 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <button class="neon-btn px-4 py-2 shadow-sm" @click="openEntidadModal()">
+                    <i class="fa-solid fa-building-circle-plus me-2"></i><span x-text="$store.lang.t('entities.new_inst')">NUEVA ENTIDAD</span>
+                </button>
+                <div class="d-flex align-items-center gap-3">
+                    <select class="form-select bg-dark text-white border-secondary border-opacity-25 extra-small" x-model="filterTipo" @change="fetchEntidades()">
+                        <option value="" x-text="$store.lang.t('common.all')">Todos los tipos</option>
+                        <template x-for="tipo in tipos" :key="tipo.id_tipo">
+                            <option :value="tipo.id_tipo" x-text="tipo.nombre_tipo"></option>
+                        </template>
+                    </select>
+                    <div class="input-group neon-border overflow-hidden" style="width: 250px;">
+                        <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-search text-dim extra-small"></i></span>
+                        <input type="text" class="form-control bg-transparent border-0 text-white extra-small" 
+                               :placeholder="$store.lang.t('common.search')" x-model="searchQuery" @input="filterEntidades">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card neon-card">
+            <div class="card-body p-0 table-responsive">
+                <template x-if="loadingEntidades">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </template>
+                
+                <table class="table table-hover table-dark mb-0" x-show="!loadingEntidades && filteredEntidades.length > 0">
+                    <thead class="bg-black bg-opacity-40">
+                        <tr class="extra-small tracking-wider fw-bold text-uppercase">
+                            <th class="text-primary py-3" x-text="$store.lang.t('entities.col_name')">ENTIDAD</th>
+                            <th class="text-primary py-3" x-text="$store.lang.t('entities.col_type')">TIPO</th>
+                            <th class="text-primary py-3" x-text="$store.lang.t('entities.col_web')">WEB</th>
+                            <th class="text-primary py-3" x-text="$store.lang.t('entities.col_id')">ID / CUIT</th>
+                            <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody class="align-middle">
+                        <template x-for="ent in filteredEntidades" :key="ent.id_identidad">
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa-solid me-3" :class="ent.tipo_icono || 'fa-building'" :style="`color: ${ent.tipo_color || '#6c757d'}`"></i>
+                                        <span class="fw-bold" x-text="ent.nombre"></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge" :style="`background-color: ${ent.tipo_color || '#6c757d'}`" x-text="ent.tipo_nombre || 'Sin tipo'"></span>
+                                </td>
+                                <td>
+                                    <a x-show="ent.web" :href="ent.web" target="_blank" class="text-info"><i class="fa-solid fa-external-link"></i></a>
+                                    <span x-show="!ent.web" class="text-dim">-</span>
+                                </td>
+                                <td class="text-white" x-text="ent.cuit || '-'"></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-info me-1" @click="editEntidad(ent)">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deleteEntidad(ent.id_identidad)">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+
+                <template x-if="!loadingEntidades && filteredEntidades.length === 0">
+                    <div class="text-center p-5 opacity-50">
+                        <i class="fa-solid fa-building-circle-xmark fs-1 mb-3 text-dim"></i>
+                        <p class="hud-title extra-small" x-text="$store.lang.t('entities.empty_inst')"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tipo -->
+    <div class="modal fade" id="tipoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary"><i class="fa-solid fa-layer-group me-2"></i> <span x-text="$store.lang.t('entities.new_type')">TIPO DE ENTIDAD</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveTipo">
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('common.name')">NOMBRE</label>
+                            <input type="text" class="form-control neon-input" x-model="tipoForm.nombre_tipo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('common.description')">DESCRIPCIÓN</label>
+                            <input type="text" class="form-control neon-input" x-model="tipoForm.descripcion">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">ICONO (FontAwesome)</label>
+                                <input type="text" class="form-control neon-input" x-model="tipoForm.icono" placeholder="fa-university">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim small">COLOR</label>
+                                <input type="color" class="form-control form-control-color" x-model="tipoForm.color">
+                            </div>
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                            <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                <span x-show="!saving" x-text="$store.lang.t('common.save')">GUARDAR</span>
+                                <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Entidad -->
+    <div class="modal fade" id="entidadModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content neon-modal">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary"><i class="fa-solid fa-building me-2"></i> <span x-text="$store.lang.t('entities.new_inst')">ENTIDAD FINANCIERA</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveEntidad">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('common.name')">NOMBRE</label>
+                                <input type="text" class="form-control neon-input" x-model="entidadForm.nombre" required placeholder="Ej: Banco Santander">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_type')">TIPO</label>
+                                <select class="form-select neon-input" x-model="entidadForm.id_tipo">
+                                    <option value="" x-text="$store.lang.t('common.none')">Seleccionar...</option>
+                                    <template x-for="tipo in tipos" :key="tipo.id_tipo">
+                                        <option :value="tipo.id_tipo" x-text="tipo.nombre_tipo"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_web')">SITIO WEB</label>
+                                <input type="url" class="form-control neon-input" x-model="entidadForm.web" placeholder="https://...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_id')">CUIT</label>
+                                <input type="text" class="form-control neon-input" x-model="entidadForm.cuit" placeholder="30-12345678-9">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_phone')">TELÉFONO</label>
+                                <input type="text" class="form-control neon-input" x-model="entidadForm.telefono">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_branch')">SUCURSAL</label>
+                                <input type="text" class="form-control neon-input" x-model="entidadForm.sucursal" placeholder="Casa Central, Sucursal Norte, etc.">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_contact')">CONTACTO</label>
+                            <input type="text" class="form-control neon-input" x-model="entidadForm.contacto">
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('entities.col_address')">DIRECCIÓN</label>
+                            <input type="text" class="form-control neon-input" x-model="entidadForm.direccion">
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                            <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                <span x-show="!saving" x-text="$store.lang.t('common.save')">GUARDAR</span>
+                                <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('entidadesPage', () => ({
+            activeTab: 'tipos',
+            tipos: [],
+            entidades: [],
+            filteredEntidades: [],
+            loadingTipos: true,
+            loadingEntidades: true,
+            saving: false,
+            seeding: false,
+            searchQuery: '',
+            filterTipo: '',
+            
+            tipoForm: { nombre_tipo: '', descripcion: '', icono: 'fa-university', color: '#0d6efd' },
+            entidadForm: { nombre: '', id_tipo: '', web: '', cuit: '', telefono: '', contacto: '', direccion: '' },
+            isEditTipo: false,
+            isEditEntidad: false,
+            editTipoId: null,
+            editEntidadId: null,
+            
+            tipoModal: null,
+            entidadModal: null,
+
+            async init() {
+                // Wait for Bootstrap
+                let attempts = 0;
+                while (typeof bootstrap === 'undefined' && attempts < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                
+                this.tipoModal = new bootstrap.Modal(document.getElementById('tipoModal'));
+                this.entidadModal = new bootstrap.Modal(document.getElementById('entidadModal'));
+
+                // Tab Selection from URL hash (Phase 18)
+                const hash = window.location.hash;
+                if (hash === '#tipos') this.activeTab = 'tipos';
+                if (hash === '#entidades') this.activeTab = 'entidades';
+                
+                await this.fetchTipos();
+
+                await this.fetchEntidades();
+            },
+            
+            async fetchTipos() {
+                this.loadingTipos = true;
+                try {
+                    const res = await api.get('/financial-entities/types?include_inactive=true');
+                    this.tipos = res.data;
+                } catch (e) {
+                    console.error('Error fetching tipos:', e);
+                } finally {
+                    this.loadingTipos = false;
+                }
+            },
+            
+            async fetchEntidades() {
+                this.loadingEntidades = true;
+                try {
+                    let url = '/financial-entities/institutions?include_inactive=true';
+                    if (this.filterTipo) url += `&id_tipo=${this.filterTipo}`;
+                    const res = await api.get(url);
+                    this.entidades = res.data;
+                    this.filterEntidades();
+                } catch (e) {
+                    console.error('Error fetching entidades:', e);
+                } finally {
+                    this.loadingEntidades = false;
+                }
+            },
+            
+            filterEntidades() {
+                const q = this.searchQuery.toLowerCase();
+                this.filteredEntidades = this.entidades.filter(e => 
+                    e.nombre.toLowerCase().includes(q) ||
+                    (e.tipo_nombre && e.tipo_nombre.toLowerCase().includes(q))
+                );
+            },
+            
+            async seedData() {
+                this.seeding = true;
+                try {
+                    const res = await api.post('/financial-entities/seed');
+                    await this.fetchTipos();
+                    alert(res.data.message);
+                } catch (e) {
+                    alert('Error: ' + (e.response?.data?.detail || 'Fallo'));
+                } finally {
+                    this.seeding = false;
+                }
+            },
+            
+            // Tipo CRUD
+            openTipoModal() {
+                this.isEditTipo = false;
+                this.tipoForm = { nombre_tipo: '', descripcion: '', icono: 'fa-university', color: '#0d6efd' };
+                this.tipoModal.show();
+            },
+            
+            editTipo(tipo) {
+                this.isEditTipo = true;
+                this.editTipoId = tipo.id_tipo;
+                this.tipoForm = { ...tipo };
+                this.tipoModal.show();
+            },
+            
+            async saveTipo() {
+                this.saving = true;
+                try {
+                    if (this.isEditTipo) {
+                        await api.put(`/financial-entities/types/${this.editTipoId}`, this.tipoForm);
+                    } else {
+                        await api.post('/financial-entities/types', this.tipoForm);
+                    }
+                    await this.fetchTipos();
+                    this.tipoModal.hide();
+                } catch (e) {
+                    alert('Error: ' + (e.response?.data?.detail || 'Fallo'));
+                } finally {
+                    this.saving = false;
+                }
+            },
+            
+            // Entidad CRUD
+            openEntidadModal() {
+                this.isEditEntidad = false;
+                this.entidadForm = { nombre: '', id_tipo: '', web: '', cuit: '', telefono: '', contacto: '', direccion: '' };
+                this.entidadModal.show();
+            },
+            
+            editEntidad(ent) {
+                this.isEditEntidad = true;
+                this.editEntidadId = ent.id_identidad;
+                this.entidadForm = { ...ent };
+                this.entidadModal.show();
+            },
+            
+            async saveEntidad() {
+                this.saving = true;
+                try {
+                    const data = { ...this.entidadForm };
+                    if (data.id_tipo === '') data.id_tipo = null;
+                    
+                    if (this.isEditEntidad) {
+                        await api.put(`/financial-entities/institutions/${this.editEntidadId}`, data);
+                    } else {
+                        await api.post('/financial-entities/institutions', data);
+                    }
+                    await this.fetchEntidades();
+                    this.entidadModal.hide();
+                } catch (e) {
+                    alert('Error: ' + (e.response?.data?.detail || 'Fallo'));
+                } finally {
+                    this.saving = false;
+                }
+            },
+            
+            async deleteEntidad(id) {
+                if (!confirm('¿Desactivar esta entidad?')) return;
+                try {
+                    await api.delete(`/financial-entities/institutions/${id}`);
+                    await this.fetchEntidades();
+                } catch (e) {
+                    alert('Error: ' + (e.response?.data?.detail || 'Fallo'));
+                }
+            }
+        }))
+    })
+</script>
+{% endblock %}

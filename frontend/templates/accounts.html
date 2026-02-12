@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Cuentas{% endblock %}
-{% block header %}Cuentas Bancarias y Efectivo{% endblock %}
+{% block title %}<span x-text="$store.lang.t('nav.accounts')">Cuentas</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('accounts.title')">Cuentas Bancarias y Efectivo</span>{% endblock %}
 
 {% block content %}
 <div x-data="accountsPage" class="container-fluid">
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between">
-            <button class="btn neon-btn" @click="openCreateModal">
-                <i class="fa-solid fa-plus me-2"></i>Nueva Cuenta
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <button class="neon-btn px-4 py-2 shadow-sm" @click="openCreateModal">
+                <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('accounts.new')">Nueva Cuenta</span>
             </button>
-            <div class="d-flex align-items-center">
-                <span class="text-dim small me-3">SISTEMA MULTI-DIVISA: <span class="text-success">CONECTADO</span></span>
-                <i class="fa-solid fa-vault neon-glow"></i>
+            <div class="d-flex align-items-center bg-black bg-opacity-20 px-3 py-2 rounded border border-success border-opacity-10">
+                <span class="text-dim extra-small fw-bold tracking-wider me-3" x-text="$store.lang.t('accounts.system_status')">SISTEMA MULTI-DIVISA: CONECTADO</span>
+                <i class="fa-solid fa-vault text-success neon-glow-text"></i>
             </div>
         </div>
     </div>
@@ -21,19 +21,20 @@
     <div class="card neon-card">
         <div class="card-body p-0 table-responsive">
             <template x-if="loading">
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="small mt-2">LLAMANDO A LA BÓVEDA...</p>
+                <div class="text-center p-5 opacity-50">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <p class="hud-title small mb-0" x-text="$store.lang.t('accounts.vault_loading')">LLAMANDO A LA BÓVEDA...</p>
                 </div>
             </template>
             
             <table class="table table-hover table-dark mb-0" x-show="!loading">
-                <thead>
-                    <tr>
-                        <th class="text-primary">CUENTA</th>
-                        <th class="text-primary">TIPO</th>
-                        <th class="text-primary text-end">SALDO INICIAL</th>
-                        <th class="text-primary text-end">ACCIONES</th>
+                <thead class="bg-black bg-opacity-40">
+                    <tr class="extra-small tracking-wider fw-bold">
+                        <th class="text-primary py-3" x-text="$store.lang.t('accounts.col_account')">CUENTA</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD / BANCO</th>
+                        <th class="text-primary py-3 text-center" x-text="$store.lang.t('accounts.col_type')">TIPO</th>
+                        <th class="text-primary py-3 text-end" x-text="$store.lang.t('accounts.col_balance')">SALDO INICIAL</th>
+                        <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody class="align-middle">
@@ -46,7 +47,14 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge bg-dark border border-secondary" x-text="account.tipo_cuenta"></span>
+                                <div class="d-flex align-items-center" x-show="account.identidad_financiera">
+                                    <i class="fa-solid me-2 text-dim extra-small" :class="account.identidad_financiera?.tipo_icono || 'fa-building'"></i>
+                                    <span x-text="account.identidad_financiera?.nombre || '-'"></span>
+                                </div>
+                                <span x-show="!account.identidad_financiera" class="text-dim extra-small italic" x-text="$store.lang.t('common.none')">Efectivo / Ninguno</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge extra-small border border-secondary border-opacity-20 text-dim" x-text="account.tipo_cuenta"></span>
                             </td>
                             <td class="text-end">
                                 <span class="neon-glow" x-text="formatCurrency(account.saldo_inicial)"></span>
@@ -67,39 +75,55 @@
     <div class="modal fade" id="accountModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content neon-modal">
-                <div class="modal-header neon-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-plus-circle me-2"></i>REGISTRO_NUEVA_CUENTA</h5>
-                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary"><i class="fa-solid fa-plus-circle me-2"></i> <span x-text="$store.lang.t('accounts.reg_new')">REGISTRO_NUEVA_CUENTA</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="saveAccount">
-                        <div class="mb-3">
-                            <label class="text-dim small">NOMBRE_CUENTA</label>
-                            <input type="text" class="form-control neon-input" x-model="formData.nombre_cuenta" required>
+                        <div class="row">
+                            <div class="col-md-7 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.name')">NOMBRE_CUENTA</label>
+                                <input type="text" class="form-control neon-input" x-model="formData.nombre_cuenta" required>
+                            </div>
+                            <div class="col-md-5 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.type')">TIPO_CUENTA</label>
+                                <select class="form-select neon-input" x-model="formData.tipo_cuenta" required>
+                                    <option value="Cash">Efectivo / Billetera</option>
+                                    <option value="Checking">Cuenta Bancaria</option>
+                                    <option value="Credit Card">Tarjeta de Crédito</option>
+                                    <option value="Term">Plazo Fijo / Ahorro</option>
+                                    <option value="Investment">Broker / Inversión</option>
+                                    <option value="Crypto">Exchange / Wallet Crypto</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label class="text-dim small">TIPO_CUENTA</label>
-                            <select class="form-select neon-input" x-model="formData.tipo_cuenta" required>
-                                <option value="Cash">Efectivo / Billetera</option>
-                                <option value="Checking">Cuenta Bancaria</option>
-                                <option value="Credit Card">Tarjeta de Crédito</option>
-                                <option value="Term">Plazo Fijo / Ahorro</option>
-                                <option value="Investment">Broker / Inversión</option>
-                                <option value="Crypto">Exchange / Wallet Crypto</option>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD / BANCO</label>
+                            <select class="form-select neon-input" x-model="formData.id_identidad_financiera">
+                                <option value="" x-text="$store.lang.t('common.none')">Ninguna / Efectivo</option>
+                                <template x-for="ent in entities" :key="ent.id_identidad">
+                                    <option :value="ent.id_identidad" x-text="ent.nombre"></option>
+                                </template>
                             </select>
+                            <div class="mt-1 text-end">
+                                <a href="/entidades" class="extra-small text-info text-decoration-none opacity-75 hover-opacity-100" x-text="$store.lang.t('beneficiaries.manage_entities')"><i class="fa-solid fa-external-link me-1 smaller"></i>Gestionar entidades</a>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="text-dim small">DIVISA_ID</label>
-                            <input type="number" class="form-control neon-input" x-model="formData.id_divisa" required placeholder="Ej: 1 (ARS)">
-                        </div>
-                        <div class="mb-3">
-                            <label class="text-dim small">SALDO_INICIAL</label>
-                            <input type="number" step="0.01" class="form-control neon-input" x-model="formData.saldo_inicial" required>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.divisa_id')">DIVISA_ID (1=ARS, 2=USD)</label>
+                                <input type="number" class="form-control neon-input" x-model="formData.id_divisa" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.col_balance')">SALDO_INICIAL</label>
+                                <input type="number" step="0.01" class="form-control neon-input fw-bold text-primary" x-model="formData.saldo_inicial" required>
+                            </div>
                         </div>
                         <div class="mt-4 text-end">
-                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">CANCELAR</button>
-                            <button type="submit" class="btn btn-primary neon-border" :disabled="saving">
-                                <span x-show="!saving">CONFIGURAR_CUENTA</span>
+                            <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                            <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                <span x-show="!saving" x-text="$store.lang.t('accounts.config_btn')">CONFIGURAR_CUENTA</span>
                                 <span x-show="saving" class="spinner-border spinner-border-sm"></span>
                             </button>
                         </div>
@@ -116,13 +140,17 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('accountsPage', () => ({
             accounts: [],
+            entities: [],
             loading: true,
             saving: false,
-            formData: { nombre_cuenta: '', tipo_cuenta: 'Efectivo', id_divisa: 1, saldo_inicial: 0 },
+            formData: { nombre_cuenta: '', tipo_cuenta: 'Cash', id_divisa: 1, saldo_inicial: 0, id_identidad_financiera: null },
+            isEdit: false,
+            editId: null,
             bsModal: null,
 
             async init() {
                 this.bsModal = new bootstrap.Modal(document.getElementById('accountModal'));
+                await this.fetchEntities();
                 await this.fetchAccounts();
             },
             async fetchAccounts() {
@@ -131,22 +159,50 @@
                     const res = await api.get('/cuentas/');
                     this.accounts = res.data.data || [];
                 } catch (e) {
-                    console.error('Error:', e);
+                    console.error('Error fetching accounts:', e);
                 } finally {
                     this.loading = false;
+                }
+            },
+            async fetchEntities() {
+                try {
+                    const res = await api.get('/financial-entities/institutions');
+                    this.entities = res.data;
+                } catch (e) {
+                    console.error('Error fetching entities:', e);
                 }
             },
             formatCurrency(val) {
                 return CurrencyUtils.formatCurrency(val);
             },
             openCreateModal() {
-                this.formData = { nombre_cuenta: '', tipo_cuenta: 'Efectivo', id_divisa: 1, saldo_inicial: 0 };
+                this.isEdit = false;
+                this.formData = { nombre_cuenta: '', tipo_cuenta: 'Cash', id_divisa: 1, saldo_inicial: 0, id_identidad_financiera: '' };
+                this.bsModal.show();
+            },
+            editAccount(account) {
+                this.isEdit = true;
+                this.editId = account.id_cuenta;
+                this.formData = { 
+                    nombre_cuenta: account.nombre_cuenta, 
+                    tipo_cuenta: account.tipo_cuenta, 
+                    id_divisa: account.id_divisa, 
+                    saldo_inicial: account.saldo_inicial,
+                    id_identidad_financiera: account.id_identidad_financiera || ''
+                };
                 this.bsModal.show();
             },
             async saveAccount() {
                 this.saving = true;
                 try {
-                    await api.post('/cuentas/', this.formData);
+                    const data = { ...this.formData };
+                    if (data.id_identidad_financiera === '') data.id_identidad_financiera = null;
+                    
+                    if (this.isEdit) {
+                        await api.put(`/cuentas/${this.editId}`, data);
+                    } else {
+                        await api.post('/cuentas/', data);
+                    }
                     await this.fetchAccounts();
                     this.bsModal.hide();
                 } catch (e) {

@@ -1,22 +1,25 @@
 {% extends "base.html" %}
 
+{% block title %}<span x-text="$store.lang.t('audit.title')">REGISTRO DE SEGURIDAD</span>{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4" x-data="auditManager()">
     <!-- Header de Seguridad -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-4 rounded-4 border border-warning border-opacity-25 shadow-lg">
-                <div class="d-flex align-items-center">
-                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3 border border-warning border-opacity-50">
+            <div class="d-flex justify-content-between align-items-center bg-black bg-opacity-40 p-4 rounded-4 border border-warning border-opacity-25 shadow-sm overflow-hidden position-relative">
+                <div class="scanline opacity-25"></div>
+                <div class="d-flex align-items-center position-relative">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3 border border-warning border-opacity-20">
                         <i class="fa-solid fa-shield-halved text-warning fs-3 shadow-glow-warning"></i>
                     </div>
                     <div>
-                        <h2 class="Orbitron text-white mb-1">REGISTRO DE SEGURIDAD</h2>
-                        <p class="text-dim small mb-0">Trazabilidad completa de acciones y cambios en el sistema</p>
+                        <h2 class="hud-title text-warning mb-1" x-text="$store.lang.t('audit.title')">REGISTRO DE SEGURIDAD</h2>
+                        <p class="text-dim small mb-0 text-uppercase opacity-75" x-text="$store.lang.t('audit.subtitle')">Trazabilidad completa de acciones y cambios en el sistema</p>
                     </div>
                 </div>
-                <button @click="loadLogs()" class="btn btn-outline-warning rounded-pill px-4">
-                    <i class="fa-solid fa-rotate me-2"></i>Actualizar Feed
+                <button @click="loadLogs()" class="neon-btn px-4 py-2 shadow-sm border-warning text-warning">
+                    <i class="fa-solid fa-sync-alt me-2"></i><span x-text="$store.lang.t('audit.refresh_feed')">Actualizar Feed</span>
                 </button>
             </div>
         </div>
@@ -25,40 +28,39 @@
     <!-- Filtros Rápidos -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <label class="text-dim smaller mb-1">Acción</label>
-            <select class="form-select bg-dark border-secondary text-white" x-model="filters.accion" @change="loadLogs()">
-                <option value="">Todas las acciones</option>
-                <option value="CREATE">CREACIÓN</option>
-                <option value="UPDATE">ACTUALIZACIÓN</option>
-                <option value="DELETE">ELIMINACIÓN</option>
+            <label class="text-dim extra-small fw-bold text-uppercase mb-1" x-text="$store.lang.t('audit.col_action')">Acción</label>
+            <select class="form-select neon-input extra-small" x-model="filters.accion" @change="loadLogs()">
+                <option value="" x-text="$store.lang.t('audit.all_actions')">Todas las acciones</option>
+                <option value="CREATE" x-text="$store.lang.t('common.save')">CREACIÓN</option>
+                <option value="UPDATE" x-text="$store.lang.t('common.edit')">ACTUALIZACIÓN</option>
+                <option value="DELETE" x-text="$store.lang.t('common.delete')">ELIMINACIÓN</option>
             </select>
         </div>
         <div class="col-md-3">
-            <label class="text-dim smaller mb-1">Entidad</label>
-            <select class="form-select bg-dark border-secondary text-white" x-model="filters.entidad" @change="loadLogs()">
-                <option value="">Todas las entidades</option>
-                <option value="Transaccion">Transacciones</option>
-                <option value="Cuenta">Cuentas</option>
-                <option value="Activo">Activos</option>
+            <label class="text-dim extra-small fw-bold text-uppercase mb-1" x-text="$store.lang.t('audit.col_entity')">Entidad</label>
+            <select class="form-select neon-input extra-small" x-model="filters.entidad" @change="loadLogs()">
+                <option value="" x-text="$store.lang.t('audit.all_entities')">Todas las entidades</option>
+                <option value="Transaccion" x-text="$store.lang.t('nav.transactions')">Transacciones</option>
+                <option value="Cuenta" x-text="$store.lang.t('nav.accounts')">Cuentas</option>
+                <option value="Activo" x-text="$store.lang.t('nav.assets')">Activos</option>
             </select>
         </div>
     </div>
 
-    <!-- Tabla de Auditoría -->
     <div class="row">
         <div class="col-12">
-            <div class="card bg-dark border-secondary shadow-lg">
+            <div class="card neon-card overflow-hidden">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0 align-middle">
-                            <thead class="bg-black bg-opacity-50">
-                                <tr>
-                                    <th class="ps-4 py-3 border-secondary">Fecha y Hora</th>
-                                    <th class="py-3 border-secondary">Usuario</th>
-                                    <th class="py-3 border-secondary">Acción</th>
-                                    <th class="py-3 border-secondary">Entidad</th>
-                                    <th class="py-3 border-secondary">Detalles</th>
-                                    <th class="py-3 border-secondary">IP</th>
+                        <table class="table table-hover table-dark mb-0 align-middle">
+                            <thead class="bg-black bg-opacity-40">
+                                <tr class="extra-small text-uppercase tracking-wider fw-bold">
+                                    <th class="ps-4 py-3 text-primary" x-text="$store.lang.t('audit.col_time')">Fecha y Hora</th>
+                                    <th class="py-3 text-primary" x-text="$store.lang.t('audit.col_user')">Usuario</th>
+                                    <th class="py-3 text-primary" x-text="$store.lang.t('audit.col_action')">Acción</th>
+                                    <th class="py-3 text-primary" x-text="$store.lang.t('audit.col_entity')">Entidad</th>
+                                    <th class="py-3 text-primary" x-text="$store.lang.t('audit.col_details')">Detalles</th>
+                                    <th class="py-3 text-primary text-end" x-text="$store.lang.t('audit.col_ip')">IP</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,20 +70,23 @@
                                             <span x-text="formatDate(log.fecha)"></span>
                                         </td>
                                         <td class="py-3">
-                                            <span class="badge bg-secondary opacity-75" x-text="'ID: ' + log.id_usuario"></span>
+                                            <span class="badge extra-small bg-secondary bg-opacity-25" x-text="'ID: ' + log.id_usuario"></span>
                                         </td>
                                         <td class="py-3">
-                                            <span :class="getActionClass(log.accion)" x-text="log.accion"></span>
+                                            <span class="extra-small px-2 py-1 rounded border border-opacity-25" :class="getActionClass(log.accion)" x-text="log.accion"></span>
                                         </td>
                                         <td class="py-3">
                                             <span class="text-white fw-bold" x-text="log.entidad"></span>
-                                            <small class="text-dim" x-if="log.id_entidad" x-text="' (ID: ' + log.id_entidad + ')'"></small>
+                                            <template x-if="log.id_entidad">
+                                                <small class="text-dim" x-text="' (ID: ' + log.id_entidad + ')'"></small>
+                                            </template>
                                         </td>
+
                                         <td class="py-3">
-                                            <div class="text-wrap smaller text-dim" style="max-width: 300px;" x-text="log.detalles"></div>
+                                            <div class="text-wrap extra-small text-dim opacity-75" style="max-width: 300px;" x-text="log.detalles"></div>
                                         </td>
-                                        <td class="py-3">
-                                            <code class="text-info smaller" x-text="log.ip_address || 'N/A'"></code>
+                                        <td class="py-3 text-end ps-4">
+                                            <code class="text-info extra-small opacity-50" x-text="log.ip_address || 'N/A'"></code>
                                         </td>
                                     </tr>
                                 </template>
@@ -102,8 +107,7 @@
 </div>
 
 <style>
-    .shadow-glow-warning { text-shadow: 0 0 10px rgba(255, 193, 7, 0.4); }
-    .smaller { font-size: 0.8rem; }
+    .shadow-glow-warning { text-shadow: 0 0 15px rgba(255, 193, 7, 0.6); }
 </style>
 
 <script>
@@ -141,10 +145,10 @@
             
             getActionClass(accion) {
                 switch(accion) {
-                    case 'CREATE': return 'badge bg-success bg-opacity-25 text-success border border-success border-opacity-50';
-                    case 'UPDATE': return 'badge bg-info bg-opacity-25 text-info border border-info border-opacity-50';
-                    case 'DELETE': return 'badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50';
-                    default: return 'badge bg-secondary';
+                    case 'CREATE': return 'border-success text-success';
+                    case 'UPDATE': return 'border-info text-info';
+                    case 'DELETE': return 'border-danger text-danger';
+                    default: return 'border-secondary text-dim';
                 }
             }
         }

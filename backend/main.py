@@ -11,6 +11,7 @@ from .core.exceptions import APIException
 from slowapi.errors import RateLimitExceeded
 from .api.auth.router import router as auth_router
 from .api.accounts.router_divisa import router as currency_router
+from .core.database import init_db
 from .api.accounts.router import router as account_router
 from .api.categories.router import router as category_router
 from .api.beneficiaries.router import router as beneficiary_router
@@ -40,6 +41,9 @@ from .api.vault.router import router as vault_router
 from .api.audit.router import router as audit_router
 from .api.health.router import router as health_router
 from .api.reconciliation.router import router as reconciliation_router
+from .api.goals.router import router as goals_router
+from .api.import_rules.router import router as import_rules_router
+from .api.financial_entities.router import router as financial_entities_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
 from datetime import datetime
@@ -75,6 +79,7 @@ app.state.limiter = limiter
 
 @app.on_event("startup")
 def on_startup():
+    init_db()
     start_scheduler()
     import logging
     logging.info("🚀 FuturoForbes (3F) starting up...")
@@ -151,6 +156,9 @@ app.include_router(vault_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
 app.include_router(health_router, prefix="/api")
 app.include_router(reconciliation_router, prefix="/api")
+app.include_router(goals_router, prefix="/api")
+app.include_router(import_rules_router, prefix="/api")
+app.include_router(financial_entities_router, prefix="/api")
 
 @app.get("/")
 async def root(request: Request):
@@ -159,6 +167,14 @@ async def root(request: Request):
 @app.get("/login")
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/register")
+async def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+@app.get("/forgot-password")
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse("forgot-password.html", {"request": request})
 
 @app.get("/plugins")
 async def plugins_page(request: Request):
@@ -216,9 +232,26 @@ async def vault_page(request: Request):
 async def audit_page(request: Request):
     return templates.TemplateResponse("audit.html", {"request": request})
 
+@app.get("/reportes/flujo-caja", response_class=HTMLResponse)
+def page_reports_cashflow(request: Request):
+    return templates.TemplateResponse("reports/cashflow.html", {"request": request})
+
+@app.get("/reportes/heatmap", response_class=HTMLResponse)
+def page_reports_heatmap(request: Request):
+    return templates.TemplateResponse("reports/heatmap.html", {"request": request})
+
+
 @app.get("/import", response_class=HTMLResponse)
 async def import_page(request: Request):
     return templates.TemplateResponse("import_csv.html", {"request": request})
+
+@app.get("/metas", response_class=HTMLResponse)
+async def goals_page(request: Request):
+    return templates.TemplateResponse("goals.html", {"request": request})
+
+@app.get("/entidades", response_class=HTMLResponse)
+async def entities_page(request: Request):
+    return templates.TemplateResponse("financial_entities.html", {"request": request})
 
 @app.get("/api/estado")
 async def api_status():

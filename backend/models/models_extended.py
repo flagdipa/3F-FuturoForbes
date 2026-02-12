@@ -87,3 +87,23 @@ class HistorialDivisa(SQLModel, table=True):
         indexes = [
             ("id_divisa", "fecha_tasa")
         ]
+
+
+# ==================== IMPORT RULES (REGLAS DE IMPORTACIÓN) ====================
+
+class ReglaImportacion(SQLModel, table=True):
+    """
+    Rules for auto-categorizing transactions during CSV bank import.
+    When a CSV description matches 'patron', the rule suggests a category and/or beneficiary.
+    Rules are evaluated by priority (higher = first) and only active rules apply.
+    """
+    __tablename__ = "reglas_importacion"
+
+    id_regla: Optional[int] = Field(default=None, primary_key=True)
+    id_usuario: int = Field(foreign_key="usuarios.id_usuario", index=True)
+    patron: str = Field(max_length=255)  # Substring or regex pattern to match CSV descriptions
+    id_categoria: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria")
+    id_beneficiario: Optional[int] = Field(default=None, foreign_key="beneficiarios.id_beneficiario")
+    prioridad: int = Field(default=0)  # Higher = evaluated first
+    activo: int = Field(default=1)
+

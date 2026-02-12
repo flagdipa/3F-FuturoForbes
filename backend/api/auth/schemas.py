@@ -8,18 +8,39 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-class UsuarioLogin(BaseModel): # Renombrado a español
+class UsuarioLogin(BaseModel):
     email: EmailStr
     password: str
 
-class UsuarioCrear(BaseModel): # Renombrado a español
+class UsuarioCrear(BaseModel):
     email: EmailStr
     password: str
 
-class UsuarioLectura(BaseModel): # Renombrado a español
+class UsuarioLectura(BaseModel):
     id_usuario: int
     email: EmailStr
     bloqueado: bool
 
     class Config:
         from_attributes = True
+
+# --- Profile & Password ---
+
+class ProfileRead(BaseModel):
+    id_usuario: int
+    email: EmailStr
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    theme_preference: str = "dark_neon"
+
+    class Config:
+        from_attributes = True
+
+class ProfileUpdate(BaseModel):
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

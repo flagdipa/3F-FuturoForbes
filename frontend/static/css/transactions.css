@@ -1,0 +1,27 @@
+/* Transactions Table Sticky Header & enhancements */
+thead.sticky-top tr th {
+    background-color: #1a1d20 !important; /* AdminLTE dark bg */
+    z-index: 1020;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    border-bottom: 2px solid var(--3f-primary);
+    cursor: grab;
+}
+
+thead.sticky-top tr th:active {
+    cursor: grabbing;
+}
+
+/* Ensure truncate works */
+.text-truncate {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* On smaller screens, allow more width for key columns if shown */
+@media (max-width: 768px) {
+    .text-truncate {
+        max-width: 100px;
+    }
+}

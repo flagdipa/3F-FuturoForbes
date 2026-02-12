@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="64" height="64" rx="12" fill="#0b1219"/>
+<path d="M4 20H40L36 24H8V56L4 60V20Z" fill="#00f2ff" fill-opacity="0.2"/>
+<text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#00f2ff" style="text-shadow: 0 0 5px #00f2ff;">3F</text>
+<rect x="2" y="2" width="60" height="60" rx="10" stroke="#00f2ff" stroke-width="2" stroke-opacity="0.8"/>
+</svg>

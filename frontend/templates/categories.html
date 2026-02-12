@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Categorías{% endblock %}
-{% block header %}Gestión de Categorías HUD{% endblock %}
+{% block title %}<span x-text="$store.lang.t('nav.categories')">Categorías</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('categories.title')">Categorías de Gastos e Ingresos</span>{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -28,53 +28,102 @@
 {% block content %}
 <div x-data="categoriasPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between">
-            <button class="btn neon-btn" @click="nuevaCategoriaPadre()">
-                <i class="fa-solid fa-folder-plus me-2"></i>CREAR NODO RAÍZ
+        <div class="col-12 mb-4 d-flex justify-content-between align-items-center">
+            <button class="neon-btn px-4 py-2 shadow-sm" @click="openCreateModal">
+                <i class="fa-solid fa-folder-plus me-2"></i><span x-text="$store.lang.t('categories.new')">Nueva Categoría</span>
             </button>
-            <div class="d-flex align-items-center">
-                <span class="text-dim small me-3">SISTEMA JERÁRQUICO: <span class="text-primary">ACTIVO</span></span>
-                <i class="fa-solid fa-tree neon-glow text-accent"></i>
-            </div>
+            <i class="fa-solid fa-network-wired text-primary neon-glow-text fs-4 opacity-50"></i>
         </div>
     </div>
 
-    <!-- Contenedor del Árbol -->
-    <div class="neon-card">
-        <div class="p-3">
+    <!-- Tabla simple HUD para Categorías (Reemplaza el árbol experimental roto) -->
+    <div class="card neon-card">
+        <div class="card-body p-0 table-responsive">
             <template x-if="loading">
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="small mt-2">MAPEANDO JERARQUÍAS...</p>
+                <div class="text-center p-5 opacity-50">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="hud-title small mb-0">MAPEANDO JERARQUÍAS...</p>
                 </div>
             </template>
             
-            <div x-show="!loading">
-                <template x-for="cat in tree" :key="cat.id_categoria">
-                    <div class="mb-2">
-                        <div class="d-flex align-items-center p-2 border-bottom border-secondary">
-                            <span class="cat-color-dot" :style="'color: ' + (cat.color || '#00F0FF')"></span>
-                            <span class="fw-bold fs-5 neon-glow" x-text="cat.nombre_categoria"></span>
-                            <div class="ms-auto">
-                                <button class="btn btn-sm btn-outline-info me-1" @click="editar(cat)"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn btn-sm btn-outline-primary" @click="agregarHija(cat)"><i class="fa-solid fa-plus"></i></button>
-                            </div>
-                        </div>
-                        
-                        <!-- Subcategorías (Recursivo manual para MVP o componente) -->
-                        <div class="category-tree-item">
-                            <template x-for="sub in cat.subcategorias" :key="sub.id_categoria">
-                                <div class="p-2 d-flex align-items-center border-bottom border-dark">
-                                    <span class="cat-color-dot" :style="'color: ' + (sub.color || '#FF00FF')"></span>
-                                    <span x-text="sub.nombre_categoria"></span>
-                                    <div class="ms-auto">
-                                        <button class="btn btn-sm btn-link text-dim" @click="editar(sub)"><i class="fa-solid fa-pen"></i></button>
-                                    </div>
+            <table class="table table-hover table-dark mb-0" x-show="!loading">
+                <thead class="bg-black bg-opacity-40">
+                    <tr class="extra-small tracking-wider fw-bold text-uppercase">
+                        <th class="text-primary py-3" x-text="$store.lang.t('categories.col_name')">CATEGORÍA</th>
+                        <th class="text-primary py-3 text-center" x-text="$store.lang.t('categories.col_type')">TIPO</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('categories.parent')">CATEGORÍA SUPERIOR</th>
+                        <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    <template x-for="cat in categories" :key="cat.id_categoria">
+                        <tr class="cursor-pointer category-row" @click="editar(cat)">
+                            <td>
+                                <div class="d-flex align-items-center" :style="'padding-left: ' + ((cat.level || 0) * 20) + 'px'">
+                                    <i class="fa-solid extra-small text-dim me-2" 
+                                       :class="cat.children && cat.children.length > 0 ? 'fa-folder-open text-warning' : 'fa-folder'"></i>
+                                    <span x-text="cat.nombre_categoria" class="fw-bold" 
+                                          :class="cat.level === 0 ? 'text-white' : 'text-dim'"></span>
                                 </div>
-                            </template>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge extra-small border border-opacity-20" 
+                                      :class="cat.id_tipo_transaccion == 1 ? 'border-success text-success' : 'border-danger text-danger'"
+                                      x-text="cat.id_tipo_transaccion == 1 ? $store.lang.t('common.income') : $store.lang.t('common.expense')"></span>
+                            </td>
+                            <td class="text-dim extra-small">
+                                <span x-text="cat.nombre_categoria_padre || '-'"></span>
+                            </td>
+                            <td class="text-end">
+                            <td class="text-end text-dim opacity-50 extra-small">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Creación/Edición -->
+    <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content neon-modal">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary"><i class="fa-solid fa-folder me-2"></i> <span x-text="$store.lang.t('categories.reg_new')">REGISTRO_CATEGORIA</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveCategory">
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.col_name')">NOMBRE_CATEGORIA</label>
+                            <input type="text" class="form-control neon-input" x-model="formData.nombre_categoria" required>
                         </div>
-                    </div>
-                </template>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.col_type')">TIPO_CATEGORIA</label>
+                            <select class="form-select neon-input" x-model="formData.id_tipo_transaccion" required>
+                                <option value="1" x-text="$store.lang.t('common.income')">Ingreso</option>
+                                <option value="2" x-text="$store.lang.t('common.expense')">Gasto</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.parent')">CATEGORIA_PADRE</label>
+                            <select class="form-select neon-input" x-model="formData.id_categoria_padre">
+                                <option value="" x-text="$store.lang.t('common.none')">Ninguna</option>
+                                <template x-for="c in categories" :key="c.id_categoria">
+                                    <option :value="c.id_categoria" x-text="c.nombre_categoria"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                            <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                <span x-show="!saving" x-text="$store.lang.t('common.save')">SINCRONIZAR</span>
+                                <span x-show="saving" class="spinner-border spinner-border-sm"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -85,35 +134,98 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('categoriasPage', () => ({
-            tree: [],
+            categories: [],
             loading: true,
-            
+            saving: false,
+            formData: { nombre_categoria: '', id_tipo_transaccion: 2, id_categoria_padre: null },
+            isEdit: false,
+            editId: null,
+            bsModal: null,
+
             async init() {
-                await this.cargarArbol();
+                this.bsModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+                await this.fetchCategories();
             },
-            
-            async cargarArbol() {
+
+            async fetchCategories() {
                 this.loading = true;
                 try {
-                    const response = await api.get('/categorias/arbol');
-                    this.tree = response.data;
-                } catch (error) {
-                    console.error('Error al cargar árbol:', error);
+                    const res = await api.get('/categorias/');
+                    const rawCats = res.data.data || [];
+                    this.categories = this.buildCategoryTree(rawCats);
+                } catch (e) {
+                    console.error('Error:', e);
                 } finally {
                     this.loading = false;
                 }
             },
-            
-            nuevaCategoriaPadre() {
-                alert('Nuevo Nodo Raíz HUD: PRÓXIMAMENTE');
+
+            buildCategoryTree(cats) {
+                // 1. Map for easy lookup
+                const map = {};
+                cats.forEach(c => map[c.id_categoria] = { ...c, children: [] });
+                
+                // 2. Build tree structure
+                const tree = [];
+                cats.forEach(c => {
+                    if (c.id_categoria_padre && map[c.id_categoria_padre]) {
+                        map[c.id_categoria_padre].children.push(map[c.id_categoria]);
+                    } else {
+                        tree.push(map[c.id_categoria]);
+                    }
+                });
+
+                // 3. Flatten for display with levels
+                const flat = [];
+                const traverse = (nodes, level) => {
+                    // Sort locally if needed, or rely on backend sort
+                    nodes.sort((a, b) => a.nombre_categoria.localeCompare(b.nombre_categoria));
+                    
+                    nodes.forEach(n => {
+                        n.level = level;
+                        flat.push(n);
+                        if (n.children.length > 0) traverse(n.children, level + 1);
+                    });
+                };
+                traverse(tree, 0);
+                return flat;
             },
-            
-            agregarHija(padre) {
-                alert('Agregando subcategoría a: ' + padre.nombre_categoria);
+
+            openCreateModal() {
+                this.isEdit = false;
+                this.formData = { nombre_categoria: '', id_tipo_transaccion: 2, id_categoria_padre: '' };
+                this.bsModal.show();
             },
-            
+
             editar(cat) {
-                alert('Editando: ' + cat.nombre_categoria);
+                this.isEdit = true;
+                this.editId = cat.id_categoria;
+                this.formData = { 
+                    nombre_categoria: cat.nombre_categoria, 
+                    id_tipo_transaccion: cat.id_tipo_transaccion, 
+                    id_categoria_padre: cat.id_categoria_padre || ''
+                };
+                this.bsModal.show();
+            },
+
+            async saveCategory() {
+                this.saving = true;
+                try {
+                    const payload = { ...this.formData };
+                    if (payload.id_categoria_padre === '') payload.id_categoria_padre = null;
+                    
+                    if (this.isEdit) {
+                        await api.put(`/categorias/${this.editId}`, payload);
+                    } else {
+                        await api.post('/categorias/', payload);
+                    }
+                    await this.fetchCategories();
+                    this.bsModal.hide();
+                } catch (e) {
+                    alert('Error: ' + (e.response?.data?.detail || 'Fallo de red'));
+                } finally {
+                    this.saving = false;
+                }
             }
         }));
     });

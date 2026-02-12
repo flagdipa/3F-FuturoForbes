@@ -18,6 +18,8 @@ class Usuario(SQLModel, table=True):
     bloqueado: bool = Field(default=False)
     rol_id: Optional[int] = None
     theme_preference: str = Field(default="dark_neon")  # Theme ID
+    nombre: Optional[str] = Field(default=None, max_length=100)
+    apellido: Optional[str] = Field(default=None, max_length=100)
 
 # --- CATÁLOGOS ---
 
@@ -41,20 +43,44 @@ class Divisa(SQLModel, table=True):
     tipo_divisa: str # Fiat o Crypto
     decimal_places: int = Field(default=2)
 
+class TipoEntidadFinanciera(SQLModel, table=True):
+    """
+    Type classification for financial entities.
+    Examples: Banco, Broker, Fintech, Billetera Virtual, Cooperativa, Caja de Ahorro
+    """
+    __tablename__ = "tipos_entidad_financiera"
+    id_tipo: Optional[int] = Field(default=None, primary_key=True)
+    nombre_tipo: str = Field(unique=True)  # Banco, Broker, Fintech, etc.
+    descripcion: Optional[str] = None
+    icono: str = Field(default="fa-university")  # FontAwesome icon
+    color: str = Field(default="#0d6efd")  # Hex color for UI
+    activo: bool = Field(default=True)
+    
+    # Relationship
+    entidades: List["IdentidadFinanciera"] = Relationship(back_populates="tipo_entidad")
+
 class IdentidadFinanciera(SQLModel, table=True):
     """
-    General info about a bank or financial entity (Bank name, web, contact).
+    Specific financial institution (e.g., Santander, Balanz, Mercado Pago).
+    Linked to a type and can be associated with accounts.
     """
     __tablename__ = "identidades_financieras"
     id_identidad: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(unique=True)
-    tipo: Optional[str] = None
+    id_tipo: Optional[int] = Field(default=None, foreign_key="tipos_entidad_financiera.id_tipo")
     sucursal: Optional[str] = None
     direccion: Optional[str] = None
     web: Optional[str] = None
     contacto: Optional[str] = None
     telefono: Optional[str] = None
-    cuit: Optional[Decimal] = None
+    cuit: Optional[str] = None
+    logo_url: Optional[str] = None  # URL or path to logo
+    activo: bool = Field(default=True)
+    
+    # Relationships
+    tipo_entidad: Optional["TipoEntidadFinanciera"] = Relationship(back_populates="entidades")
+    cuentas: List["ListaCuentas"] = Relationship(back_populates="identidad_financiera")
+
 
 # --- CLASIFICACIÓN ---
 
@@ -112,7 +138,7 @@ class ListaCuentas(SQLModel, table=True):
     numero_cuenta: Optional[str] = None
     estado: str = Field(default="Open") # Open, Closed
     notas: Optional[str] = None
-    entidad_financiera: Optional[str] = None
+    id_identidad_financiera: Optional[int] = Field(default=None, foreign_key="identidades_financieras.id_identidad")
     sitio_web: Optional[str] = None
     info_contacto: Optional[str] = None
     info_acceso: Optional[str] = None
@@ -129,6 +155,7 @@ class ListaCuentas(SQLModel, table=True):
     fecha_inicial: Optional[str] = None
     
     # Relationships
+    identidad_financiera: Optional["IdentidadFinanciera"] = Relationship(back_populates="cuentas")
     transacciones: List["LibroTransacciones"] = Relationship(
         back_populates="cuenta",
         sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}
@@ -198,3 +225,28 @@ class Presupuesto(SQLModel, table=True):
     monto: Decimal = Field(default=0.00, max_digits=15, decimal_places=2)
     notas: Optional[str] = None
     activo: int = Field(default=1)
+    
+    # Phase 14: Rolling Budgets
+    es_rolling: bool = Field(default=False) 
+    monto_acumulado: Decimal = Field(default=0, max_digits=15, decimal_places=2)
+
+# -----------------------------------------------------------------------------
+# MODELO: METAS DE AHORRO (Saving Goals)
+# -----------------------------------------------------------------------------
+class MetaAhorro(SQLModel, table=True):
+    __tablename__ = "metas_ahorro"
+
+    id_meta: Optional[int] = Field(default=None, primary_key=True)
+    id_usuario: int = Field(foreign_key="usuarios.id_usuario")
+    id_cuenta: Optional[int] = Field(default=None, foreign_key="lista_cuentas.id_cuenta")
+    nombre_meta: str
+    monto_objetivo: Decimal = Field(default=0, max_digits=20, decimal_places=2)
+    monto_actual: Decimal = Field(default=0, max_digits=20, decimal_places=2)
+    fecha_limite: Optional[str] = None # ISO format YYYY-MM-DD
+    color: str = Field(default="#0d6efd") # Hex color for UI
+    icono: str = Field(default="fa-bullseye") # FontAwesome icon class
+    notas: Optional[str] = None
+    estado: str = Field(default="ACTIVA") # ACTIVA, COMPLETADA, PAUSADA
+    
+    fecha_creacion: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    fecha_actualizacion: str = Field(default_factory=lambda: datetime.utcnow().isoformat())

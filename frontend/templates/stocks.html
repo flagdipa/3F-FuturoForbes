@@ -34,9 +34,9 @@
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="hud-title mb-0" x-text="$store.lang.t('stocks.title')">Mercado de Valores HUD</h1>
-                <p class="text-dim small mb-0">TERMINAL DE INVERSIONES v2.1 | STATUS: ONLINE</p>
+                <p class="text-dim extra-small mb-0 opacity-50 tracking-wider font-monospace" x-text="$store.lang.t('stocks.terminal_title')">TERMINAL DE INVERSIONES v2.1 | STATUS: ONLINE</p>
             </div>
-            <button class="neon-btn shadow-sm" @click="nuevaInversion()">
+            <button class="neon-btn px-3 py-1 shadow-sm" @click="nuevaInversion()">
                 <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('stocks.new')">Añadir Posesión</span>
             </button>
         </div>
@@ -63,7 +63,7 @@
                             </h4>
                         </div>
                         <div class="col-md-3">
-                            <small class="text-dim d-block">RENDIMIENTO</small>
+                            <small class="text-dim d-block extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.performance')">RENDIMIENTO</small>
                             <h4 class="mb-0 fw-bold" :class="summary.profit_loss_percentage >= 0 ? 'profit-positive' : 'profit-negative'">
                                 <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
                                 <span x-text="(summary.profit_loss_percentage || 0).toFixed(2)"></span>%
@@ -95,7 +95,7 @@
                                 <span class="fw-bold" x-text="item.cantidad"></span>
                             </div>
                             <div class="col-6 text-end">
-                                <small class="text-dim d-block">VALOR_MKT</small>
+                                <small class="text-dim d-block extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.mkt_value')">VALOR_MKT</small>
                                 <span class="fw-bold text-accent" x-text="formatCurrency(item.cantidad * item.precio_actual)"></span>
                             </div>
                         </div>
@@ -119,16 +119,18 @@
                             </span>
                         </div>
 
-                        <div class="d-flex gap-2 border-top border-secondary border-opacity-25 pt-3">
-                            <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
-                                <i class="fa-solid fa-chart-area me-1"></i> HISTORIAL
+                        <div class="d-flex gap-2 border-top border-secondary border-opacity-10 pt-3">
+                            <button class="neon-btn flex-grow-1 border-info text-info py-2" @click="verHistorial(item)">
+                                <i class="fa-solid fa-chart-area me-2 smaller"></i> <span class="extra-small" x-text="$store.lang.t('stocks.history')">HISTORIAL</span>
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_inversion)">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary border-opacity-10 px-3" @click="editar(item)">
+                                    <i class="fa-solid fa-pen smaller"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger border-opacity-10 px-3" @click="eliminar(item.id_inversion)">
+                                    <i class="fa-solid fa-trash smaller"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,9 +142,9 @@
     <div class="modal fade" id="modalStock" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
         <div class="modal-dialog modal-lg">
             <div class="modal-content neon-card border-primary">
-                <div class="modal-header border-0 pb-0">
+                <div class="modal-header border-0 pb-0 text-uppercase tracking-wider">
                     <h5 class="modal-title hud-title text-primary">
-                        <i class="fa-solid fa-chart-line me-2"></i>STOCK_ENTITY_EDITOR
+                        <i class="fa-solid fa-chart-line me-2"></i> <span x-text="$store.lang.t('stocks.history')">STOCK_ENTITY_EDITOR</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -160,7 +162,7 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="text-dim small">CUENTA_VINCULADA</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.linked_account')">CUENTA_VINCULADA</label>
                             <select class="form-select neon-input" x-model="editItem.id_cuenta">
                                 <template x-for="acc in accounts" :key="acc.id_cuenta">
                                     <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
@@ -168,13 +170,13 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="text-dim small">TIPO_INVERSIÓN</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.investment_type')">TIPO_INVERSIÓN</label>
                             <select class="form-select neon-input" x-model="editItem.tipo_inversion">
-                                <option value="Stock">Acción (Stock)</option>
+                                <option value="Stock" x-text="$store.lang.t('assets.property')">Acción (Stock)</option>
                                 <option value="Crypto">Criptomoneda</option>
                                 <option value="ETF">ETF / Fondo</option>
                                 <option value="Bond">Bono</option>
-                                <option value="Other">Otro</option>
+                                <option value="Other" x-text="$store.lang.t('assets.other')">Otro</option>
                             </select>
                         </div>
                     </div>
@@ -196,20 +198,20 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="text-dim small" x-text="$store.lang.t('stocks.commission')"></label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.commission')"></label>
                             <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.comision">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="text-dim small">ESTADO</label>
+                        <div class="col-md-6 mb-3 text-uppercase">
+                            <label class="text-dim extra-small fw-bold" x-text="$store.lang.t('stocks.active_calc')">ESTADO</label>
                             <div class="form-check form-switch mt-1">
                                 <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
-                                <label class="form-check-label text-dim" for="checkActivo">ACTIVO PARA CÁLCULOS</label>
+                                <label class="form-check-label text-dim extra-small fw-bold" for="checkActivo">ACTIVO PARA CÁLCULOS</label>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="text-dim small">NOTAS/ESTRATEGIA</label>
+                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('stocks.notes_strat')">NOTAS/ESTRATEGIA</label>
                         <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
                     </div>
                 </div>
@@ -229,8 +231,8 @@
         <div class="modal-dialog">
             <div class="modal-content neon-card border-info">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title hud-title text-info">
-                        <i class="fa-solid fa-timeline me-2"></i>PRICE_EVOLUTION_LOG
+                    <h5 class="modal-title hud-title text-info tracking-wider text-uppercase">
+                        <i class="fa-solid fa-timeline me-2"></i> <span x-text="$store.lang.t('stocks.price_log')">PRICE_EVOLUTION_LOG</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -238,9 +240,9 @@
                     <div class="table-responsive" style="max-height: 400px;">
                         <table class="table table-dark table-hover border-secondary border-opacity-25">
                             <thead>
-                                <tr class="text-dim small font-monospace">
-                                    <th>TIMESTAMP</th>
-                                    <th class="text-end">UNIT_PRICE</th>
+                                <tr class="text-dim extra-small tracking-wider fw-bold text-uppercase">
+                                    <th x-text="$store.lang.t('stocks.timestamp')">TIMESTAMP</th>
+                                    <th class="text-end" x-text="$store.lang.t('stocks.unit_price')">UNIT_PRICE</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -393,7 +395,7 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
+        formatDate(d) { return d ? new Date(d).toLocaleDateString('es-AR') : '-'; },
         formatCurrency(v) { return CurrencyUtils.formatCurrency(v); }
     }));
 });

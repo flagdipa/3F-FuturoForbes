@@ -29,15 +29,15 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
             <div>
-                <h1 class="hud-title mb-0" x-text="$store.lang.t('assets.title')">Gestión de Activos Físicos HUD</h1>
-                <p class="text-dim small mb-0">SISTEMA DE SEGUIMIENTO PATRIMONIAL v1.0</p>
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('assets.title')">Gestión de Activos Físicos</h1>
+                <p class="text-dim extra-small mb-0 opacity-50 tracking-wider">SISTEMA_SEGUIMIENTO_PATRIMONIAL_V1.2 // STATUS_ACTIVE</p>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span id="layout-status" class="text-dim small"></span>
-                <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary me-2">
-                    <i class="fa-solid fa-rotate-left me-1"></i>Reset
+                <button @click="resetLayout()" class="neon-btn border-secondary text-dim px-3 py-1 btn-sm">
+                    <i class="fa-solid fa-rotate-left me-1"></i> <span x-text="$store.lang.t('dashboard.refresh')"></span>
                 </button>
-                <button class="neon-btn shadow-sm" @click="nuevoActivo()">
+                <button class="neon-btn px-3 py-1 shadow-sm" @click="nuevoActivo()">
                     <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('assets.new')">Registrar Activo</span>
                 </button>
             </div>
@@ -45,51 +45,60 @@
     </div>
 
     <!-- GridStack Layout -->
-    <div class="grid-stack">
+    <div class="grid-stack mt-2">
         <template x-for="item in assets" :key="item.id_activo">
-            <div class="grid-stack-item" gs-w="4" gs-h="6">
-                <div class="grid-stack-item-content h-100">
-                    <div class="widget-header">
-                        <span x-text="item.nombre_activo"></span>
+            <div class="grid-stack-item shadow-lg" gs-w="4" gs-h="6">
+                <div class="grid-stack-item-content neon-card overflow-hidden h-100 p-0 border-opacity-10 group-hover-action">
+                    <!-- Top accent bar -->
+                    <div class="position-absolute top-0 start-0 w-100" style="height: 3px; background: linear-gradient(90deg, var(--3f-primary), transparent 70%); opacity: 0.8"></div>
+                    
+                    <div class="widget-header d-flex justify-content-between px-3 py-2 border-bottom border-secondary border-opacity-10 bg-black bg-opacity-20">
+                        <span class="text-white fw-bold extra-small tracking-wider" x-text="item.nombre_activo"></span>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge" :class="item.activo ? 'bg-success text-dark' : 'bg-secondary'" 
-                                  style="font-size: 0.6rem;">ACT</span>
-                            <i class="fa-solid fa-grip-lines text-dim" style="cursor: grab"></i>
+                            <span class="badge extra-small p-1" :class="item.activo ? 'border border-success text-success' : 'border border-secondary text-dim'" 
+                                  x-text="item.activo ? 'ONLINE' : 'OFFLINE'"></span>
+                            <i class="fa-solid fa-grip-lines text-dim extra-small cursor-grab"></i>
                         </div>
                     </div>
-                    <div class="p-3 d-flex flex-column h-100">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="fa-solid fa-2x me-3 text-primary" :class="getIcon(item.tipo_activo)"></i>
+
+                    <div class="p-4 d-flex flex-column h-100">
+                        <div class="d-flex align-items-start mb-4">
+                            <div class="icon-square shadow-lg border border-primary border-opacity-20 me-3" style="width: 48px; height: 48px; background: rgba(0, 240, 255, 0.05)">
+                                <i :class="`fa-solid ${getIcon(item.tipo_activo)} fs-4 text-primary`"></i>
+                            </div>
                             <div>
-                                <span class="text-dim small d-block" x-text="getTypeLabel(item.tipo_activo)"></span>
-                                <h3 class="text-white fw-bold mb-0" x-text="formatCurrency(item.valor_actual)"></h3>
+                                <span class="text-dim extra-small d-block text-uppercase fw-bold mb-1 opacity-75" x-text="getTypeLabel(item.tipo_activo)"></span>
+                                <h3 class="text-white fw-bold mb-0 lh-1" x-text="formatCurrency(item.valor_actual)"></h3>
                             </div>
                         </div>
                         
-                        <p class="text-dim small mb-3 text-truncate" x-text="item.notas || 'Sin notas descriptivas'"></p>
+                        <p class="text-dim smaller mb-4 text-truncate opacity-75 italic" x-text="item.notas || $store.lang.t('common.none')"></p>
                         
                         <div class="mt-auto">
-                            <div class="d-flex justify-content-between mb-2 small text-dim border-top border-secondary border-opacity-25 pt-2">
-                                <span>Valor Inicial:</span>
-                                <span x-text="formatCurrency(item.valor_inicial)"></span>
+                            <div class="d-flex justify-content-between mb-2 smaller text-dim border-top border-secondary border-opacity-10 pt-3">
+                                <span class="text-uppercase fw-bold opacity-50" x-text="$store.lang.t('assets.initial_value')"></span>
+                                <span class="text-white" x-text="formatCurrency(item.valor_inicial)"></span>
                             </div>
-                            <div class="d-flex justify-content-between mb-3 small">
-                                <span>Variación:</span>
-                                <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold">
-                                    <span x-text="item.tasa_variacion"></span>% (<span x-text="item.metodo_variacion"></span>)
+                            <div class="d-flex justify-content-between mb-4 smaller">
+                                <span class="text-uppercase fw-bold opacity-50" x-text="$store.lang.t('assets.variation')"></span>
+                                <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold fs-6">
+                                    <i class="fa-solid me-1" :class="item.tasa_variacion >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
+                                    <span x-text="Math.abs(item.tasa_variacion)"></span>%
                                 </span>
                             </div>
 
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
-                                    <i class="fa-solid fa-chart-line"></i>
+                            <div class="d-flex gap-2 mb-2">
+                                <button class="neon-btn flex-grow-1 border-info text-info py-2" @click="verHistorial(item)">
+                                    <i class="fa-solid fa-chart-line me-2 smaller"></i> <span class="extra-small" x-text="$store.lang.t('assets.history')"></span>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_activo)">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary border-opacity-10 px-3" @click="editar(item)">
+                                        <i class="fa-solid fa-pen smaller"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger border-opacity-10 px-3" @click="eliminar(item.id_activo)">
+                                        <i class="fa-solid fa-trash smaller"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -97,57 +106,7 @@
             </div>
         </template>
     </div>
-            <div class="col-md-4 mb-4">
-                <div class="card neon-card h-100 bg-opacity-10 position-relative" :class="item.activo ? 'border-primary' : 'border-secondary opacity-75'">
-                    <!-- Status Indicator -->
-                    <div class="position-absolute top-0 end-0 p-2">
-                        <span class="badge" :class="item.activo ? 'bg-success text-dark' : 'bg-secondary'" 
-                              x-text="item.activo ? $store.lang.t('recurring.status_active') : $store.lang.t('recurring.status_paused')"></span>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="fa-solid fa-2x me-3 text-primary" :class="getIcon(item.tipo_activo)"></i>
-                            <div>
-                                <h5 class="text-primary fw-bold mb-0" x-text="item.nombre_activo"></h5>
-                                <span class="text-dim small" x-text="getTypeLabel(item.tipo_activo)"></span>
-                            </div>
-                        </div>
-                        
-                        <p class="text-dim small mb-3 text-truncate" x-text="item.notas || 'Sin notas descriptivas'"></p>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-dim small" x-text="$store.lang.t('assets.initial_value')"></span>
-                            <span class="fw-bold" x-text="formatCurrency(item.valor_inicial)"></span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-dim small" x-text="$store.lang.t('assets.current_value')"></span>
-                            <span class="text-warning fw-bold" x-text="formatCurrency(item.valor_actual)"></span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-3 border-top border-secondary border-opacity-25 pt-2">
-                            <span class="text-dim small" x-text="$store.lang.t('assets.variation')"></span>
-                            <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold">
-                                <span x-text="item.tasa_variacion"></span>% (<span x-text="item.metodo_variacion"></span>)
-                            </span>
-                        </div>
-
-                        <div class="d-grid gap-2 border-top border-secondary border-opacity-25 pt-3">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-info flex-grow-1" @click="verHistorial(item)">
-                                    <i class="fa-solid fa-chart-line me-1"></i> <span x-text="$store.lang.t('assets.history')"></span>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" @click="editar(item)">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(item.id_activo)">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-    </div>
+</div>
 
     <!-- Modal de Edición/Creación -->
     <div class="modal fade" id="modalAsset" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
@@ -155,7 +114,7 @@
             <div class="modal-content neon-card border-primary">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title hud-title text-primary">
-                        <i class="fa-solid fa-cube me-2"></i>ASSET_ENTITY_EDITOR
+                        <i class="fa-solid fa-cube me-2"></i> <span x-text="$store.lang.t('assets.valuation_log')">REGISTRO_VALORACION</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -216,13 +175,13 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="text-dim small">NOTAS/DETALLES</label>
+                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('recurring.notes')">NOTAS/DETALLES</label>
                         <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
                     </div>
 
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
-                        <label class="form-check-label text-dim small" for="checkActivo">ESTADO_ACTIVO</label>
+                        <label class="form-check-label text-dim extra-small fw-bold text-uppercase" for="checkActivo" x-text="$store.lang.t('assets.status_active')">ESTADO_ACTIVO</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -242,7 +201,7 @@
             <div class="modal-content neon-card border-info">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title hud-title text-info">
-                        <i class="fa-solid fa-history me-2"></i>VALUATION_LOG
+                        <i class="fa-solid fa-history me-2"></i> <span x-text="$store.lang.t('assets.history_log')">BÍTÁCORA DE VALORACIÓN</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -250,9 +209,9 @@
                     <div class="table-responsive">
                         <table class="table table-dark table-hover border-secondary border-opacity-25">
                             <thead>
-                                <tr class="text-dim small">
-                                    <th>FECHA</th>
-                                    <th class="text-end">VALOR</th>
+                                <tr class="text-dim extra-small tracking-wider fw-bold">
+                                    <th x-text="$store.lang.t('assets.timestamp')">FECHA</th>
+                                    <th class="text-end" x-text="$store.lang.t('assets.unit_price')">VALOR</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -407,7 +366,7 @@ document.addEventListener('alpine:init', () => {
             return this.$store.lang.t('assets.' + tipo.toLowerCase()) || tipo;
         },
 
-        formatDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; },
+        formatDate(d) { return d ? new Date(d).toLocaleDateString('es-AR') : '-'; },
         formatCurrency(v) { return CurrencyUtils.formatCurrency(v); }
     }));
 });

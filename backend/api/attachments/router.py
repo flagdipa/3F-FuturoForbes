@@ -2,7 +2,7 @@
 API Router for Attachments (Adjuntos)
 Provides file upload and polymorphic attachment management
 """
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -26,65 +26,99 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 @router.post("/", response_model=AdjuntoResponse, status_code=status.HTTP_201_CREATED)
 async def upload_attachment(
-    tipo_referencia: str,
-    id_referencia: int,
-    descripcion: str = None,
+    tipo_referencia: str = Form(...),
+    id_referencia: int = Form(...),
+    descripcion: Optional[str] = Form(None),
     file: UploadFile = File(...),
     session: Session = Depends(get_session)
 ):
     """Upload a file attachment with intelligent renaming"""
+    import logging
+    logging.info(f"ATTACHMENT: Received upload request for {tipo_referencia} ID {id_referencia}")
     
-    # Validate file size
-    file.file.seek(0, os.SEEK_END)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    
-    if file_size > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Archivo demasiado grande. Máximo: {MAX_FILE_SIZE // 1024 // 1024}MB"
-        )
-    
-    # Logic for intelligent renaming
-    prefix = tipo_referencia.upper()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    if tipo_referencia.lower() in ["transaccion", "transaction"]:
-        from ...models.models import LibroTransacciones, ListaCuentas
-        tx = session.get(LibroTransacciones, id_referencia)
-        if tx:
-            cuenta = session.get(ListaCuentas, tx.id_cuenta)
-            nombre_cuba = cuenta.nombre_cuenta.replace(" ", "_") if cuenta else f"CTA{tx.id_cuenta}"
-            fecha_tx = tx.fecha_transaccion.replace("-", "").replace(":", "") if tx.fecha_transaccion else timestamp
-            prefix = f"{nombre_cuba}_{fecha_tx}"
-    
-    extension = os.path.splitext(file.filename)[1]
-    safe_filename = f"{prefix}_{timestamp}{extension}"
-    file_path = UPLOAD_DIR / safe_filename
-    
-    # Save file
     try:
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # Validate file size
+        file.file.seek(0, os.SEEK_END)
+        file_size = file.file.tell()
+        file.file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Archivo demasiado grande. Máximo: {MAX_FILE_SIZE // 1024 // 1024}MB"
+            )
+        
+        # Logic for intelligent renaming
+        prefix = tipo_referencia.upper()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        if tipo_referencia.lower() in ["transaccion", "transaction"]:
+            from ...models.models import LibroTransacciones, ListaCuentas
+            tx = session.get(LibroTransacciones, id_referencia)
+            if tx:
+                cuenta = session.get(ListaCuentas, tx.id_cuenta)
+                nombre_cuba = cuenta.nombre_cuenta.replace(" ", "_") if cuenta else f"CTA{tx.id_cuenta}"
+                
+                # Handle fecha_transaccion which could be str or datetime
+                fecha_raw = tx.fecha_transaccion
+                if fecha_raw:
+                    if hasattr(fecha_raw, "replace"): # It's likely a string
+                        fecha_clean = fecha_raw.replace("-", "").replace(":", "").replace("T", "_")
+                    elif hasattr(fecha_raw, "strftime"): # It's likely a datetime
+                        fecha_clean = fecha_raw.strftime("%Y%m%d_%H%M%S")
+                    else:
+                        fecha_clean = str(fecha_raw).replace("-", "").replace(":", "")
+                    fecha_tx = fecha_clean
+                else:
+                    fecha_tx = timestamp
+                    
+                prefix = f"{nombre_cuba}_{fecha_tx}"
+        
+        extension = os.path.splitext(file.filename)[1]
+        safe_filename = f"{prefix}_{timestamp}{extension}"
+        file_path = UPLOAD_DIR / safe_filename
+        
+        # Save file
+        try:
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+        except Exception as e:
+            logging.error(f"ATTACHMENT ERROR: Failed to save file to {file_path}: {e}")
+            raise HTTPException(status_code=500, detail=f"Error al guardar archivo en disco: {str(e)}")
+        
+        # Create database record
+        try:
+            adjunto = Adjunto(
+                tipo_referencia=tipo_referencia,
+                id_referencia=id_referencia,
+                descripcion=descripcion,
+                nombre_archivo=file.filename,
+                ruta_archivo=str(file_path),
+                tipo_mime=file.content_type,
+                tamaño_bytes=file_size,
+                fecha_creacion=datetime.utcnow()
+            )
+            
+            session.add(adjunto)
+            session.commit()
+            session.refresh(adjunto)
+        except Exception as e:
+            logging.error(f"ATTACHMENT ERROR: Failed to save database record: {e}")
+            # Clean up file if DB record fails
+            if file_path.exists():
+                file_path.unlink()
+            raise HTTPException(status_code=500, detail=f"Error al guardar registro en base de datos: {str(e)}")
+        
+        logging.info(f"ATTACHMENT: Successfully created attachment {adjunto.id_adjunto} for {tipo_referencia} {id_referencia}")
+        return adjunto
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al guardar archivo: {str(e)}")
-    
-    # Create database record
-    adjunto = Adjunto(
-        tipo_referencia=tipo_referencia,
-        id_referencia=id_referencia,
-        descripcion=descripcion,
-        nombre_archivo=file.filename,
-        ruta_archivo=str(file_path),
-        tipo_mime=file.content_type,
-        tamaño_bytes=file_size
-    )
-    
-    session.add(adjunto)
-    session.commit()
-    session.refresh(adjunto)
-    
-    return adjunto
+        import traceback
+        error_msg = f"ATTACHMENT CRITICAL ERROR: {str(e)}\n{traceback.format_exc()}"
+        logging.error(error_msg)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.get("/{tipo_referencia}/{id_referencia}", response_model=List[AdjuntoResponse])

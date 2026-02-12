@@ -48,8 +48,11 @@ def listar_presupuestos(
         data.nombre_categoria = cat_name
         data.gasto_actual = abs(gasto_real)
         
-        if pres.monto > 0:
-            data.porcentaje = round((float(data.gasto_actual) / float(pres.monto)) * 100, 1)
+        # Logic Phase 14: Total Capacity = Monto Base + Monto Acumulado
+        capacidad_total = pres.monto + pres.monto_acumulado
+        
+        if capacidad_total > 0:
+            data.porcentaje = round((float(data.gasto_actual) / float(capacidad_total)) * 100, 1)
         else:
             data.porcentaje = 100.0 if data.gasto_actual > 0 else 0.0
             

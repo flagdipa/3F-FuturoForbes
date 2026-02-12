@@ -94,7 +94,49 @@ def listar_transacciones(
         for tag in all_tags:
             tags_by_tx.setdefault(tag.id_transaccion, []).append(tag.id_etiqueta)
     
-    data = [_enriquecer_rapido(tx, tags_by_tx.get(tx.id_transaccion, [])) for tx in results]
+    # Calculate Running Balance if filtered by account
+    from decimal import Decimal
+    running_balances = {}
+    
+    # Only calculate if filtering by a single account and utilizing default sort (ID DESC)
+    # Ideally should check for sort params if/when implemented
+    if id_cuenta and results:
+        # 1. Get Account Initial Balance
+        from ...models.models import ListaCuentas
+        account = session.get(ListaCuentas, id_cuenta)
+        initial_balance = account.saldo_inicial if account else Decimal(0)
+
+        # 2. Get Sum of ALL transactions for this account (Total Current Balance)
+        total_sum_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(LibroTransacciones.id_cuenta == id_cuenta)
+        total_sum = session.exec(total_sum_query).one() or Decimal(0)
+        current_balance = initial_balance + total_sum
+
+        # 3. Calculate "Future" movement (transactions newer than the first one in this page)
+        newest_id_in_page = results[0].id_transaccion
+        
+        future_sum_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(
+            LibroTransacciones.id_cuenta == id_cuenta,
+            LibroTransacciones.id_transaccion > newest_id_in_page
+        )
+        future_sum = session.exec(future_sum_query).one() or Decimal(0)
+
+        # 4. Determine Balance for the first row (Top of page)
+        # Balance After Row 0 = Total Balance - (Sum of transactions that happened AFTER Row 0)
+        starting_balance = current_balance - future_sum
+        
+        # 5. Iterate and assign downwards
+        current_iter_balance = starting_balance
+        for tx in results:
+            running_balances[tx.id_transaccion] = current_iter_balance
+            # Balance(Previous/Older) = Balance(Current) - Amount(Current)
+            current_iter_balance = current_iter_balance - tx.monto_transaccion
+
+    data = []
+    for tx in results:
+        enriched = _enriquecer_rapido(tx, tags_by_tx.get(tx.id_transaccion, []))
+        if tx.id_transaccion in running_balances:
+            enriched.saldo = running_balances[tx.id_transaccion]
+        data.append(enriched)
     
     return PaginatedResponse(
         data=data,

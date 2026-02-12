@@ -185,7 +185,8 @@ class NotificationManager {
 
         try {
             // Get JWT token for authentication
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('3f_token');
+
             if (!token) {
                 console.warn('No auth token, skipping notification stream');
                 return;
@@ -320,4 +321,7 @@ class NotificationManager {
 }
 
 // Global instance
-window.notificationManager = new NotificationManager();
+const manager = new NotificationManager();
+window.notificationManager = manager;
+window.notifications = manager; // Alias for shorter calls in templates
+

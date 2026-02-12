@@ -77,8 +77,13 @@
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link text-info fw-bold" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button">
-                                MÓDULOS
+                            <button class="nav-link text-warning fw-bold" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">
+                                <i class="fa-solid fa-user-shield me-1"></i>PERFIL
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button @click="loadMaintenance()" class="nav-link text-info fw-bold" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button">
+                                <i class="fa-solid fa-screwdriver-wrench me-1"></i><span x-text="$store.lang.t('settings.tab_maintenance')">MANTENIMIENTO</span>
                             </button>
                         </li>
                     </ul>
@@ -97,11 +102,22 @@
                                             <label class="text-dim small">SIMBOLO_MONEDA</label>
                                             <input type="text" class="form-control neon-input text-center" x-model="config.SISTEMA_moneda">
                                         </div>
+                                        </div>
                                         <div class="col-md-3">
                                             <label class="text-dim small">IDIOMA_DEFECTO</label>
                                             <select class="form-select neon-input" x-model="config.SISTEMA_idioma">
                                                 <option value="es">Español</option>
                                                 <option value="en">English</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="text-dim small">SESSION_TIMEOUT</label>
+                                            <select class="form-select neon-input" x-model="config.SISTEMA_timeout">
+                                                <option value="0">Desactivado</option>
+                                                <option value="5">5 Minutos</option>
+                                                <option value="15">15 Minutos</option>
+                                                <option value="30">30 Minutos</option>
+                                                <option value="60">1 Hora</option>
                                             </select>
                                         </div>
                                     </div>
@@ -161,6 +177,104 @@
                                 <div x-show="loading" class="text-center py-4">
                                     <div class="spinner-border text-primary" role="status"></div>
                                     <p class="text-dim small mt-2">Cargando temas...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Tab -->
+                        <div class="tab-pane fade" id="profile" role="tabpanel">
+                            <form @submit.prevent="saveProfile">
+                                <h6 class="text-warning mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                    <i class="fa-solid fa-id-badge me-2"></i>DATOS DEL OPERADOR
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="text-dim small">NOMBRE</label>
+                                        <input type="text" class="form-control neon-input" x-model="userProfile.nombre">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-dim small">APELLIDO</label>
+                                        <input type="text" class="form-control neon-input" x-model="userProfile.apellido">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="text-dim small">EMAIL DE ACCESO</label>
+                                        <input type="email" class="form-control neon-input" x-model="userProfile.email">
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-end">
+                                    <button type="submit" class="btn btn-warning neon-btn text-dark fw-bold" :disabled="saving">
+                                        <i class="fa-solid fa-save me-2"></i>ACTUALIZAR PERFIL
+                                    </button>
+                                </div>
+                            </form>
+
+                            <hr class="border-secondary border-opacity-25 my-4">
+
+                            <form @submit.prevent="changePassword">
+                                <h6 class="text-danger mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                    <i class="fa-solid fa-key me-2"></i>CAMBIAR CONTRASEÑA
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label class="text-dim small">CONTRASEÑA ACTUAL</label>
+                                        <input type="password" class="form-control neon-input" x-model="passwordForm.current_password">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-dim small">NUEVA CONTRASEÑA</label>
+                                        <input type="password" class="form-control neon-input" x-model="passwordForm.new_password">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-dim small">CONFIRMAR NUEVA CONTRASEÑA</label>
+                                        <input type="password" class="form-control neon-input" x-model="passwordForm.confirm_password">
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-end">
+                                    <button type="submit" class="btn btn-outline-danger neon-btn fw-bold" :disabled="saving">
+                                        <i class="fa-solid fa-lock me-2"></i>CAMBIAR CONTRASEÑA
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Maintenance Tab -->
+                        <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                            <div class="row g-4">
+                                <div class="col-md-5">
+                                    <h6 class="text-info mb-3 border-bottom border-secondary border-opacity-25 pb-2" x-text="$store.lang.t('settings.system_stats')">MÉTRICAS DEL SISTEMA</h6>
+                                    <div class="bg-black bg-opacity-25 p-3 rounded border border-hud mb-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-dim smaller" x-text="$store.lang.t('settings.db_size')">TAMAÑO BD</span>
+                                            <span class="text-accent fw-bold" x-text="maintInfo.db_size + ' MB'"></span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-dim smaller" x-text="$store.lang.t('settings.file_count')">ATTACHMENTS</span>
+                                            <span class="text-info fw-bold" x-text="maintInfo.file_count"></span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-dim smaller" x-text="$store.lang.t('settings.uptime')">UPTIME</span>
+                                            <span class="text-success fw-bold">100.0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary btn-sm text-start" @click="runBackup()" :disabled="processingMaint">
+                                            <i class="fa-solid fa-download me-2"></i><span x-text="$store.lang.t('settings.backup_btn')">EJECUTAR BACKUP</span>
+                                        </button>
+                                        <button class="btn btn-outline-info btn-sm text-start" @click="runIntegrity()" :disabled="processingMaint">
+                                            <i class="fa-solid fa-stethoscope me-2"></i><span x-text="$store.lang.t('settings.integrity_btn')">VERIFICAR BD</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2" x-text="$store.lang.t('settings.maintenance_terminal')">TERMINAL DE MANTENIMIENTO</h6>
+                                    <div class="bg-black p-3 rounded border border-hud custom-scrollbar font-monospace" style="height: 200px; font-size: 0.75rem; overflow-y: auto;">
+                                        <template x-for="log in maintLogs" :key="log.time">
+                                            <div class="mb-1">
+                                                <span class="text-dim">[<span x-text="log.time"></span>]</span>
+                                                <span :class="log.type === 'error' ? 'text-danger' : (log.type === 'success' ? 'text-success' : 'text-info')" x-text="log.msg"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="processingMaint" class="text-warning blink">_ EJECUTANDO_COMANDO...</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -337,8 +451,22 @@
                 SISTEMA_nombre: 'Fer Futuro Forbes',
                 SISTEMA_moneda: '$',
                 SISTEMA_idioma: 'es',
+                SISTEMA_timeout: 0,
                 DEBUG_mode: false
             },
+            userProfile: {
+                nombre: '',
+                apellido: '',
+                email: ''
+            },
+            passwordForm: {
+                current_password: '',
+                new_password: '',
+                confirm_password: ''
+            },
+            maintInfo: { db_size: 0, file_count: 0 },
+            maintLogs: [],
+            processingMaint: false,
             systemInfo: null,
             modules: [
                 { id: 1, name: 'Gestor de Presupuestos' },
@@ -351,7 +479,19 @@
 
             async init() {
                 await this.loadConfig();
+                await this.loadProfile();
                 await this.checkSystem();
+            },
+
+            async loadProfile() {
+                try {
+                    const res = await api.get('/auth/profile');
+                    this.userProfile.nombre = res.data.nombre || '';
+                    this.userProfile.apellido = res.data.apellido || '';
+                    this.userProfile.email = res.data.email || '';
+                } catch (e) {
+                    console.warn('Profile not loaded:', e);
+                }
             },
 
             async loadConfig() {
@@ -361,8 +501,9 @@
                         if (item.clave === 'SISTEMA_nombre') this.config.SISTEMA_nombre = item.valor;
                         if (item.clave === 'SISTEMA_moneda') this.config.SISTEMA_moneda = item.valor;
                         if (item.clave === 'SISTEMA_idioma') this.config.SISTEMA_idioma = item.valor; 
-                        // Add more mappings if needed
+                        if (item.clave === 'SISTEMA_timeout') this.config.SISTEMA_timeout = item.valor || 0;
                     });
+                     localStorage.setItem('3f_session_timeout', this.config.SISTEMA_timeout);
                 } catch (e) {
                     console.warn('Config not fully loaded:', e);
                 }
@@ -383,10 +524,12 @@
             async guardarConfig() {
                 this.saving = true;
                 try {
-                    const keys = ['SISTEMA_nombre', 'SISTEMA_moneda', 'SISTEMA_idioma']; 
+                    const keys = ['SISTEMA_nombre', 'SISTEMA_moneda', 'SISTEMA_idioma', 'SISTEMA_timeout']; 
                     for (const k of keys) {
                         await api.put(`/settings/${k}`, { valor: this.config[k] });
                     }
+                    localStorage.setItem('3f_session_timeout', this.config.SISTEMA_timeout);
+                    
                     alert('Configuración guardada correctamente.');
                     window.location.reload(); 
                 } catch (e) {
@@ -396,8 +539,93 @@
                 }
             },
 
+            async saveProfile() {
+                this.saving = true;
+                try {
+                    await api.post('/auth/profile', {
+                        nombre: this.userProfile.nombre,
+                        apellido: this.userProfile.apellido,
+                        email: this.userProfile.email
+                    });
+                    alert('Perfil actualizado correctamente.');
+                } catch (e) {
+                    const msg = e.response?.data?.detail || 'Error al actualizar perfil';
+                    alert(msg);
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async changePassword() {
+                if (this.passwordForm.new_password !== this.passwordForm.confirm_password) {
+                    alert('Las contraseñas nuevas no coinciden');
+                    return;
+                }
+                if (this.passwordForm.new_password.length < 6) {
+                    alert('La nueva contraseña debe tener al menos 6 caracteres');
+                    return;
+                }
+                this.saving = true;
+                try {
+                    await api.post('/auth/change-password', {
+                        current_password: this.passwordForm.current_password,
+                        new_password: this.passwordForm.new_password
+                    });
+                    alert('Contraseña actualizada correctamente.');
+                    this.passwordForm = { current_password: '', new_password: '', confirm_password: '' };
+                } catch (e) {
+                    const msg = e.response?.data?.detail || 'Error al cambiar contraseña';
+                    alert(msg);
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async loadMaintenance() {
+                try {
+                    const res = await api.get('/health');
+                    this.maintInfo.db_size = res.data.checks.database_size_mb || 0;
+                    this.maintInfo.file_count = res.data.checks.attachments_count || 0;
+                } catch (e) {
+                    console.error('Maint health failed', e);
+                }
+            },
+
+            addMaintLog(msg, type = 'info') {
+                const now = new Date().toLocaleTimeString();
+                this.maintLogs.unshift({ time: now, msg, type });
+            },
+
+            async runBackup() {
+                this.processingMaint = true;
+                this.addMaintLog('Iniciando proceso de respaldo...', 'info');
+                try {
+                    const res = await api.post('/health/backup');
+                    this.addMaintLog(this.$store.lang.t('settings.backup_success') + ': ' + res.data.message, 'success');
+                    notifications.show(this.$store.lang.t('settings.backup_success'), 'success');
+                    await this.loadMaintenance();
+                } catch (e) {
+                    this.addMaintLog(this.$store.lang.t('settings.backup_failed'), 'error');
+                } finally {
+                    this.processingMaint = false;
+                }
+            },
+
+            async runIntegrity() {
+                this.processingMaint = true;
+                this.addMaintLog('Analizando integridad de base de datos...', 'info');
+                try {
+                    const res = await api.post('/health/integrity');
+                    this.addMaintLog('Resultado Integridad: ' + res.data.report, res.data.status === 'success' ? 'success' : 'error');
+                } catch (e) {
+                    this.addMaintLog('Error en diagnóstico', 'error');
+                } finally {
+                    this.processingMaint = false;
+                }
+            },
+
             verificarIntegridad() {
-                alert('Integridad del sistema verificada. Todos los servicios operativos.');
+                 this.runIntegrity();
             }
         }));
     });

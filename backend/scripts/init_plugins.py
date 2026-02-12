@@ -35,14 +35,49 @@ def init_plugins():
             session.add(new_plugin)
             session.commit()
             print("Plugin registered successfully.")
-        else:
-            print("Plugin 'ia_forecasting' already exists.")
-            if not plugin.activo:
-                 print("Activating plugin...")
-                 plugin.activo = True
-                 session.add(plugin)
-                 session.commit()
-                 print("Plugin activated.")
+        # 2. IA OCR
+        statement_ocr = select(Plugin).where(Plugin.nombre_tecnico == "ia_ocr")
+        results_ocr = session.exec(statement_ocr)
+        plugin_ocr = results_ocr.first()
+
+        if not plugin_ocr:
+            print("Registering 'ia_ocr' plugin...")
+            new_ocr = Plugin(
+                nombre_tecnico="ia_ocr",
+                nombre_display="IA OCR Vision",
+                descripcion="Extracción inteligente de datos de facturas y tickets mediante Computer Vision.",
+                version="1.0.2",
+                autor="3F Core",
+                instalado=True,
+                activo=True,
+                configuracion={"provider": "google_genai", "confidence_threshold": 0.8},
+                hooks_suscritos="vault_upload"
+            )
+            session.add(new_ocr)
+            print("Plugin OCR registered.")
+
+        # 3. Export Tools (Utility)
+        statement_exp = select(Plugin).where(Plugin.nombre_tecnico == "export_tools")
+        results_exp = session.exec(statement_exp)
+        plugin_exp = results_exp.first()
+
+        if not plugin_exp:
+            print("Registering 'export_tools' plugin...")
+            new_exp = Plugin(
+                nombre_tecnico="export_tools",
+                nombre_display="Export Tools HQ",
+                descripcion="Exportación avanzada a Excel, PDF y formatos contables MMEX.",
+                version="1.0.0",
+                autor="3F Core",
+                instalado=True,
+                activo=False,
+                configuracion={"default_format": "xlsx"},
+                hooks_suscritos="reports_view"
+            )
+            session.add(new_exp)
+            print("Plugin Export registered.")
+
+        session.commit()
 
 if __name__ == "__main__":
     init_plugins()

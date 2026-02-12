@@ -78,22 +78,44 @@ class CSVParser:
         """Cleans currency strings into Decimal"""
         if not value: return Decimal("0")
         # Remove currency symbols and spaces
-        clean_val = value.replace("$", "").replace("€", "").replace("£", "").strip()
+        clean_val = str(value).replace("$", "").replace("€", "").replace("£", "").strip()
         
-        # Heuristic for continental vs anglo notation:
-        # If there's a comma AND a dot: remove comma (thousands) if dot is decimal
-        # If there's multiple dots: they are thousands
+        # Helper to check if string is a valid number
+        def is_number(s):
+            try:
+                float(s)
+                return True
+            except ValueError:
+                return False
+
+        if not clean_val:
+            return Decimal("0")
+
+        # Heuristics for thousands/decimal separators
         if "," in clean_val and "." in clean_val:
-            if clean_val.find(",") < clean_val.find("."):
-                clean_val = clean_val.replace(",", "") # Anglo: 1,000.00
+            # Both present. The one that appears last is likely the decimal separator
+            last_comma = clean_val.rfind(",")
+            last_dot = clean_val.rfind(".")
+            
+            if last_comma > last_dot:
+                # 1.000,00 -> remove dots, replace comma with dot
+                clean_val = clean_val.replace(".", "").replace(",", ".")
             else:
-                clean_val = clean_val.replace(".", "").replace(",", ".") # Continental: 1.000,00
-        elif "," in clean_val:
-            # Check if comma looks like decimal (last positions)
-            if clean_val.count(",") == 1 and len(clean_val.split(",")[1]) <= 2:
-                clean_val = clean_val.replace(",", ".")
-            else:
+                # 1,000.00 -> remove commas
                 clean_val = clean_val.replace(",", "")
+        elif "," in clean_val:
+            # Only comma. Ambiguous: 1,000 (one thousand) or 1,00 (one)
+            # Assumption: If 1 or 2 digits after comma, it's decimal. If 3, it's thousands.
+            parts = clean_val.split(",")
+            if len(parts) > 1 and len(parts[-1]) == 3 and is_number(parts[-1]): 
+                 # Likely thousands separator: 100,000
+                 clean_val = clean_val.replace(",", "")
+            else:
+                 # Likely decimal separator: 10,5 or 100,00
+                 clean_val = clean_val.replace(",", ".")
+        # If only dot, usually standard decimal (10.5) or thousands (1.000)
+        # But standard python float handles 10.5. 
+        # For 1.000 (one thousand), it's ambiguous. We assume dot is decimal unless multiple dots.
         
         try:
             return Decimal(clean_val)
@@ -104,11 +126,17 @@ class CSVParser:
         """Attempts to parse varied date formats into ISO string"""
         formats = [
             "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", 
-            "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y"
+            "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y",
+            "%d/%m/%y", "%m/%d/%y", "%d-%m-%y", # Short year
+            "%d %b %Y", "%d %B %Y" # Text months
         ]
+        value = str(value).strip()
         for fmt in formats:
             try:
-                return datetime.strptime(value.strip(), fmt).date().isoformat()
+                return datetime.strptime(value, fmt).date().isoformat()
             except:
                 continue
-        return value # Return as is if failed
+        
+        # Fail strategy: Return today or raise error? 
+        # For now, return the original string to let SQL/Pydantic fail or handle it
+        return value

@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('reports.heatmap.title')">Mapa de Calor - Hábitos de Gasto</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('reports.heatmap.operational_intensity')">Frecuencia de Gastos (Día vs Hora)</span>{% endblock %}
+
+{% block content %}
+<div x-data="heatmapPage" class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="hud-title mb-0" x-text="$store.lang.t('reports.heatmap.title') || 'Mapa de Calor de Gastos'"></h1>
+                <p class="text-dim small mb-0" x-text="$store.lang.t('reports.heatmap.analysis_terminal')">TERMINAL DE ANÁLISIS TEMPORAL | STATUS: ONLINE</p>
+            </div>
+            <div class="d-flex gap-2">
+                <select class="form-select neon-input form-select-sm" x-model.number="filtros.year" @change="cargarDatos()">
+                    <template x-for="y in years">
+                        <option :value="y" x-text="y"></option>
+                    </template>
+                </select>
+                <select class="form-select neon-input form-select-sm" x-model.number="filtros.month" @change="cargarDatos()">
+                    <option value="0" x-text="$store.lang.t('reports.heatmap.all_months')">TODOS LOS MESES</option>
+                    <template x-for="(name, index) in monthNames" :key="index">
+                        <option :value="index + 1" x-text="name"></option>
+                    </template>
+                </select>
+            </div>
+        </div>
+        
+        <div class="col-12">
+            <div class="card neon-card">
+                <div class="card-body p-4 text-center">
+                    <h5 class="text-primary mb-3 fw-bold"><i class="fa-solid fa-fire-flame-curved me-2"></i><span x-text="$store.lang.t('reports.heatmap.operational_intensity')">INTENSIDAD_OPERATIVA_HUB</span></h5>
+                    <p class="text-dim small mb-4" x-text="$store.lang.t('reports.heatmap.intensity_desc') + (filtros.month == 0 ? filtros.year : monthNames[filtros.month-1] + ' ' + filtros.year)"></p>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-dark rounded-circle me-2" style="width: 12px; height: 12px; border: 1px solid #444;"></div>
+                            <span class="extra-small text-dim" x-text="$store.lang.t('reports.heatmap.no_activity')">SIN ACTIVIDAD</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-25 rounded-circle me-2" style="width: 12px; height: 12px; border: 1px solid #0dcaf044;"></div>
+                            <span class="extra-small text-dim" x-text="$store.lang.t('reports.heatmap.low')">BAJA</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-75 rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                            <span class="extra-small text-dim" x-text="$store.lang.t('reports.heatmap.high')">ALTA</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded-circle me-2" style="width: 12px; height: 12px; box-shadow: 0 0 5px var(--neon-primary);"></div>
+                            <span class="extra-small text-dim" x-text="$store.lang.t('reports.heatmap.critical')">CRÍTICA</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <div class="heatmap-container" style="min-width: 800px;">
+                            <div class="d-flex mb-2">
+                                <div style="width: 80px;"></div>
+                                <div class="d-flex flex-grow-1">
+                                    <template x-for="h in 24">
+                                        <div class="text-dim extra-small flex-grow-1" x-text="(h-1).toString().padStart(2, '0') + 'h'"></div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <template x-for="(day, dIndex) in days" :key="dIndex">
+                                <div class="d-flex align-items-center mb-1">
+                                    <div style="width: 80px;" class="text-dim extra-small text-start fw-bold" x-text="day"></div>
+                                    <div class="d-flex flex-grow-1 gap-1">
+                                        <template x-for="h in 24">
+                                            <div class="heatmap-cell" 
+                                                 :class="getCellClass(dIndex + 1, h - 1)"
+                                                 :title="getCellTitle(dIndex + 1, h - 1)"
+                                                 style="height: 30px; flex-grow: 1; border-radius: 3px; cursor: help; transition: all 0.2s;">
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card neon-card h-100">
+                <div class="card-body">
+                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.ai_tip')">CONSEJO_IA_PROACTIVO</h6>
+                    <div class="p-3 bg-dark bg-opacity-50 rounded border border-warning border-opacity-25">
+                        <p class="small text-warning mb-0" x-text="insight"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card neon-card h-100">
+                <div class="card-body">
+                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.pattern_metrics')">MÉTRICAS_DE_PATRÓN</h6>
+                    <div class="row text-center">
+                        <div class="col-6 border-end border-secondary border-opacity-25">
+                            <small class="text-dim d-block mb-1" x-text="$store.lang.t('reports.heatmap.peak_hour')">HORA PICO</small>
+                            <span class="h4 fw-bold text-accent" x-text="peakHour">--:--</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-dim d-block mb-1" x-text="$store.lang.t('reports.heatmap.peak_day')">DÍA PICO</small>
+                            <span class="h4 fw-bold text-accent" x-text="peakDay">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.heatmap-cell:hover {
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 0 10px rgba(0,255,249,0.3);
+}
+.cell-level-0 { background: rgba(50, 50, 50, 0.2); border: 1px solid rgba(255,255,255,0.05); }
+.cell-level-1 { background: rgba(13, 202, 240, 0.2); border: 1px solid rgba(13, 202, 240, 0.3); }
+.cell-level-2 { background: rgba(13, 202, 240, 0.5); }
+.cell-level-3 { background: #00fff9; box-shadow: 0 0 10px #00fff966; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('heatmapPage', () => ({
+        days: [],
+        monthNames: [],
+        years: [],
+        filtros: {
+            year: new Date().getFullYear(),
+            month: new Date().getMonth() + 1
+        },
+        records: [],
+        insight: 'Calculando patrones de comportamiento físico...',
+        peakHour: '--',
+        peakDay: '--',
+        maxFrequency: 0,
+
+        async init() {
+            // Cargar nombres localizados
+            this.days = [
+                this.$store.lang.t('days.sunday') || 'Domingo',
+                this.$store.lang.t('days.monday') || 'Lunes',
+                this.$store.lang.t('days.tuesday') || 'Martes',
+                this.$store.lang.t('days.wednesday') || 'Miércoles',
+                this.$store.lang.t('days.thursday') || 'Jueves',
+                this.$store.lang.t('days.friday') || 'Viernes',
+                this.$store.lang.t('days.saturday') || 'Sábado'
+            ];
+            
+            this.monthNames = [
+                this.$store.lang.t('months.january') || 'Enero',
+                this.$store.lang.t('months.february') || 'Febrero',
+                this.$store.lang.t('months.march') || 'Marzo',
+                this.$store.lang.t('months.april') || 'Abril',
+                this.$store.lang.t('months.may') || 'Mayo',
+                this.$store.lang.t('months.june') || 'Junio',
+                this.$store.lang.t('months.july') || 'Julio',
+                this.$store.lang.t('months.august') || 'Agosto',
+                this.$store.lang.t('months.september') || 'Septiembre',
+                this.$store.lang.t('months.october') || 'Octubre',
+                this.$store.lang.t('months.november') || 'Noviembre',
+                this.$store.lang.t('months.december') || 'Diciembre'
+            ];
+
+            // Generar años (2024 hasta actual+1)
+            const currentYear = new Date().getFullYear();
+            for(let y = 2024; y <= currentYear + 1; y++) this.years.push(y);
+            
+            await this.cargarDatos();
+        },
+
+        async cargarDatos() {
+            try {
+                let url = '/api/reportes/heatmap?';
+                if(this.filtros.year) url += `year=${this.filtros.year}`;
+                if(this.filtros.month && this.filtros.month != 0) url += `&month=${this.filtros.month}`;
+                
+                const res = await api.get(url);
+                this.records = res.data;
+                this.analyzeData();
+            } catch (e) {
+                console.error("Heatmap Load Error:", e);
+                this.insight = "Error al conectar con la base de datos de actividad.";
+            }
+        },
+
+        analyzeData() {
+            if (this.records.length === 0) {
+                this.peakHour = '--';
+                this.peakDay = '--';
+                this.insight = "No hay datos registrados para este período.";
+                return;
+            }
+            
+            this.maxFrequency = Math.max(...this.records.map(r => r.count));
+            
+            // Peak day discovery
+            const dayCounts = {};
+            this.records.forEach(r => {
+                dayCounts[r.day] = (dayCounts[r.day] || 0) + r.count;
+            });
+            let bestDay = Object.keys(dayCounts).reduce((a, b) => dayCounts[a] > dayCounts[b] ? a : b);
+            this.peakDay = this.days[bestDay - 1];
+
+            // Peak hour discovery
+            const hourCounts = {};
+            this.records.forEach(r => {
+                hourCounts[r.hour] = (hourCounts[r.hour] || 0) + r.count;
+            });
+            let bestHour = Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b);
+            this.peakHour = bestHour.toString().padStart(2, '0') + ':00h';
+
+            // Generate Insight
+            const bh = parseInt(bestHour);
+            if (this.maxFrequency === 0) {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_no_data') || "Mantén el control de tus finanzas registrando tus gastos diarios.";
+            } else if (bh >= 22 || bh <= 5) {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_night') || "Tus gastos suelen ocurrir a altas horas de la noche. ¿Compras nocturnas? Intenta establecer un 'toque de queda' financiero.";
+            } else if (bh >= 19 && bh < 22) {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_evening') || "Concentras tus gastos al final de la jornada laboral. Podría ser estrés o recompensas diarias. ¡Ojo con el 'impulse buying'!";
+            } else if (bh >= 12 && bh <= 15) {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_lunch') || "El pico de actividad coincide con el almuerzo. Considera preparar comida en casa para reducir este patrón.";
+            } else if (bh >= 8 && bh < 11) {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_morning') || "Muchos movimientos matutinos detectados. Es un buen momento para planificar el resto del día.";
+            } else {
+                this.insight = this.$store.lang.t('reports.heatmap.insight_central') || "Tu patrón de gasto es equilibrado durante las horas centrales. Mantén la disciplina actual.";
+            }
+            
+            // Insight adicional por día
+            if (bestDay >= 6) { // Viernes, Sábado
+                this.insight += " " + (this.$store.lang.t('reports.heatmap.insight_weekend') || "Los fines de semana son tus días de mayor consumo.");
+            }
+        },
+
+        getCell(d, h) {
+            return this.records.find(r => r.day === d && r.hour === h);
+        },
+
+        getCellClass(d, h) {
+            const cell = this.getCell(d, h);
+            if (!cell || cell.count === 0) return 'cell-level-0';
+            
+            const ratio = cell.count / this.maxFrequency;
+            if (ratio < 0.3) return 'cell-level-1';
+            if (ratio < 0.7) return 'cell-level-2';
+            return 'cell-level-3';
+        },
+
+        getCellTitle(d, h) {
+            const cell = this.getCell(d, h);
+            if (!cell || cell.count === 0) return `${this.days[d-1]} ${h}h: Sin actividad`;
+            return `${this.days[d-1]} ${h}h: ${cell.count} transacciones | ${CurrencyUtils.formatCurrency(cell.value)}`;
+        }
+    }));
+});
+</script>
+{% endblock %}

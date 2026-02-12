@@ -22,7 +22,7 @@ class AdjuntoResponse(AdjuntoBase):
     ruta_archivo: str
     tipo_mime: Optional[str]
     tamaño_bytes: Optional[int]
-    fecha_creacion: datetime
+    fecha_creacion: Optional[datetime] = None
     fecha_actualizacion: Optional[datetime]
     url_descarga: Optional[str] = None  # Computed field
     

@@ -5,7 +5,15 @@ from typing import Optional, Any, Dict
 from sqlmodel import Session
 from ..models.models_audit import AuditLog
 
+from decimal import Decimal
+
 logger = logging.getLogger(__name__)
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 class AuditService:
     @staticmethod
@@ -22,13 +30,22 @@ class AuditService:
         Records an event in the audit trail.
         """
         try:
+            # Safely serialize details handling Decimal objects
+            detalles_json = "{}"
+            if detalles:
+                try:
+                    detalles_json = json.dumps(detalles, cls=DecimalEncoder)
+                except Exception as json_err:
+                    logger.warning(f"Failed to serialize audit details, falling back to str(): {json_err}")
+                    detalles_json = json.dumps({k: str(v) for k, v in detalles.items()})
+
             log_entry = AuditLog(
                 fecha=datetime.utcnow(),
                 id_usuario=user_id,
                 accion=accion,
                 entidad=entidad,
                 id_entidad=id_entidad,
-                detalles=json.dumps(detalles) if detalles else "{}",
+                detalles=detalles_json,
                 ip_address=ip_address
             )
             session.add(log_entry)

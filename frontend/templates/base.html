@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Fer Futuro Forbes (3F) | {% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
 
     <!-- Google Font: Inter & Orbitron -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap">
@@ -24,7 +25,9 @@
         }
     </style>
     
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <link rel="stylesheet" href="/static/css/transactions.css">
+    {% endblock %}
 </head>
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
     <div class="app-wrapper">
@@ -36,6 +39,51 @@
                     <li class="nav-item">
                         <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
                             <i class="fa-solid fa-bars"></i>
+                        </a>
+                    </li>
+                    <!-- Menú Herramientas -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i> Herramientas
+                        </a>
+                        <ul class="dropdown-menu border-secondary shadow-lg">
+                            <li><a class="dropdown-item" href="/entidades#entidades"><i class="fa-solid fa-building-columns small me-2 text-info"></i> Gestión de Financieras</a></li>
+                            <li><a class="dropdown-item" href="/entidades#tipos"><i class="fa-solid fa-layer-group small me-2 text-warning"></i> Tipos de Financiera</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/cuentas"><i class="fa-solid fa-wallet small me-2 text-success"></i> Gestión de Cuentas</a></li>
+                            <li><a class="dropdown-item" href="/beneficiarios"><i class="fa-solid fa-users small me-2 text-primary"></i> Gestión de Beneficiarios</a></li>
+                            <li><a class="dropdown-item" href="/categorias"><i class="fa-solid fa-folder-tree small me-2 text-info"></i> Gestión de Categorías</a></li>
+                        </ul>
+                    </li>
+                    <!-- Quick Access Icons -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/beneficiarios" title="Beneficiarios">
+                            <i class="fa-solid fa-users"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/categorias" title="Categorías">
+                            <i class="fa-solid fa-folder-tree"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/etiquetas" title="Etiquetas">
+                            <i class="fa-solid fa-tags"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings#divisas" title="Divisas">
+                            <i class="fa-solid fa-coins"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="window.print()" title="Imprimir">
+                            <i class="fa-solid fa-print"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dim" href="#" title="Ayuda (próximamente)">
+                            <i class="fa-solid fa-circle-question"></i>
                         </a>
                     </li>
                 </ul>
@@ -83,11 +131,25 @@
 
                     <!-- User Menu -->
                      <li class="nav-item dropdown user-menu">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                            <img src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg" class="user-image rounded-circle shadow" alt="User Image">
-                            <span class="d-none d-md-inline">Fer21gon</span>
+                        <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+                            <img src="https://ui-avatars.com/api/?name=Fer&background=00f2ff&color=000" class="user-image rounded-circle shadow me-2" alt="User Image" style="width: 32px; height: 32px;">
+                            <span class="d-none d-lg-inline" id="user-email">Cargando...</span>
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end border-secondary shadow-lg">
+                            <!-- Menu Header -->
+                            <li class="user-header bg-black bg-opacity-25 py-4">
+                                <img src="https://ui-avatars.com/api/?name=Fer&background=00f2ff&color=000" class="rounded-circle shadow mb-2" style="width: 80px;" alt="User Image">
+                                <p class="mb-0 font-orbitron text-primary">Fer21gon</p>
+                                <small class="text-dim">Explorador del Futuro</small>
+                            </li>
+                            <!-- Menu Footer -->
+                            <li class="user-footer d-flex justify-content-between p-3 border-top border-secondary border-opacity-25">
+                                <a href="/settings" class="btn btn-outline-info btn-sm neon-border px-3">PERFIL</a>
+                                <a href="#" onclick="logout()" class="btn btn-outline-danger btn-sm neon-border px-3">SALIR</a>
+                            </li>
+                        </ul>
                     </li>
+
                 </ul>
             </div>
         </nav>
@@ -96,16 +158,17 @@
         <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
              <div class="sidebar-brand">
                 <a href="/" class="brand-link">
-                    <span class="brand-text fw-light">Fer Central de Control</span>
+                    <span class="brand-text fw-light">3F | Finanzas</span>
                 </a>
             </div>
             <div class="sidebar-wrapper">
                 <nav class="mt-2">
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
+                        <!-- Todas las Transacciones (Primero) -->
                         <li class="nav-item">
-                            <a href="/" class="nav-link">
-                                <i class="nav-icon fa-solid fa-gauge-high"></i>
-                                <p x-text="$store.lang.t('nav.dashboard')">Central de Control</p>
+                            <a href="/transacciones" class="nav-link">
+                                <i class="nav-icon fa-solid fa-money-bill-transfer"></i>
+                                <p x-text="$store.lang.t('nav.transactions')">Transacciones</p>
                             </a>
                         </li>
                         <li class="nav-item menu-open" x-data="sidebarManager">
@@ -238,12 +301,6 @@
                                 </li>
                             </ul>
                         </li>
-                         <li class="nav-item">
-                            <a href="/transacciones" class="nav-link">
-                                <i class="nav-icon fa-solid fa-money-bill-transfer"></i>
-                                <p x-text="$store.lang.t('nav.transactions')">Transacciones</p>
-                            </a>
-                        </li>
                         <li class="nav-item">
                             <a href="/beneficiarios" class="nav-link">
                                 <i class="nav-icon fa-solid fa-users"></i>
@@ -266,6 +323,12 @@
                             <a href="/plugins" class="nav-link">
                                 <i class="nav-icon fa-solid fa-puzzle-piece"></i>
                                 <p x-text="$store.lang.t('nav.plugins')">Módulos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/metas" class="nav-link">
+                                <i class="nav-icon fa-solid fa-bullseye"></i>
+                                <p x-text="$store.lang.t('nav.goals') || 'Metas'">Metas</p>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -304,6 +367,19 @@
                                 <p x-text="$store.lang.t('nav.reports')">Reportes</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/reportes/flujo-caja" class="nav-link">
+                                <i class="nav-icon fa-solid fa-chart-bar"></i>
+                                <p x-text="$store.lang.t('reports.cashflow.title')">Flujo vs Presupuesto</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/reportes/heatmap" class="nav-link">
+                                <i class="nav-icon fa-solid fa-fire-flame-curved text-warning"></i>
+                                <p x-text="$store.lang.t('reports.heatmap.title')">Hábitos de Gasto</p>
+                            </a>
+                        </li>
+
                         <li class="nav-item">
                             <a href="/settings" class="nav-link">
                                 <i class="nav-icon fa-solid fa-gears"></i>

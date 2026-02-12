@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('nav.goals')">Metas de Ahorro</span>{% endblock %}
+{% block page_title %}<span x-text="$store.lang.t('nav.goals')">Metas de Ahorro</span>{% endblock %}
+
+{% block content %}
+<div x-data="goalsManager()" x-init="init()" class="content-wrapper bg-transparent">
+    
+    <!-- Header Strategy -->
+    <div class="col-12 mb-4">
+        <div class="row g-3">
+            <div class="col-md-7">
+                <div class="neon-card p-4 d-flex justify-content-between align-items-center h-100 position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 h-100 w-1 bg-primary opacity-50"></div>
+                    <div>
+                        <h2 class="text-white fw-bold mb-0 lh-1" x-text="totalSavedFormatted"></h2>
+                        <span class="text-dim extra-small text-uppercase fw-bold" x-text="$store.lang.t('goals.total_saved')">ahorrado en total</span>
+                    </div>
+                    <button class="neon-btn px-4" @click="openModal()">
+                        <i class="fa-solid fa-plus me-2"></i> <span x-text="$store.lang.t('goals.new')">Nueva Meta</span>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="neon-card p-3 border-info border-opacity-50 h-100 bg-info bg-opacity-5">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="text-info smaller fw-bold mb-0"><i class="fa-solid fa-wand-magic-sparkles me-2"></i><span x-text="$store.lang.t('goals.simulator')">SIMULADOR_ESTRATEGIA</span></h6>
+                        <span class="badge border border-info text-info extra-small">HYPER_DRIVE</span>
+                    </div>
+                    <div class="input-group input-group-sm mb-2 shadow-sm">
+                        <span class="input-group-text bg-transparent border-secondary text-info fw-bold">$</span>
+                        <input type="number" x-model.number="monthlySavings" class="form-control bg-transparent text-white border-secondary" :placeholder="$store.lang.t('goals.monthly_savings_placeholder')">
+                    </div>
+                    <p class="extra-small text-dim mb-0 opacity-75" x-text="$store.lang.t('goals.simulator_tip')">Indica cuánto puedes ahorrar por mes para ver proyecciones.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Goals Grid -->
+    <template x-if="goals.length === 0 && !loading">
+        <div class="col-12 text-center py-5 neon-card">
+            <div class="py-5">
+                <i class="fa-solid fa-bullseye fa-4x text-primary shadow-lg mb-4 opacity-25"></i>
+                <h4 class="text-dim mb-3" x-text="$store.lang.t('goals.no_goals')">No tienes metas de ahorro activas.</h4>
+                <button class="neon-btn btn-sm" @click="openModal()" x-text="$store.lang.t('goals.create_first')">Crear mi primera meta</button>
+            </div>
+        </div>
+    </template>
+
+    <div class="row g-4">
+        <template x-for="goal in goals" :key="goal.id_meta">
+            <div class="col-md-6 col-lg-4">
+                <div class="neon-card h-100 position-relative overflow-hidden group-hover-action border-opacity-25" :style="`border-color: ${goal.color}`">
+                    <!-- Progress Background -->
+                    <div class="position-absolute bottom-0 start-0 w-100 opacity-5" :style="`height: ${getPercent(goal)}%; background-color: ${goal.color}; transition: height 0.5s ease-out;`"></div>
+                <!-- Color Strip -->
+                <div class="position-absolute top-0 start-0 w-100" :style="`height: 4px; background-color: ${goal.color}`"></div>
+                
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-square shadow-lg border border-opacity-10" :style="`background-color: ${goal.color}20; color: ${goal.color}; border-color: ${goal.color}`">
+                                <i :class="`fa-solid ${goal.icono} fs-5`"></i>
+                            </div>
+                             <div>
+                                 <h5 class="text-white fw-bold mb-0" x-text="goal.nombre_meta"></h5>
+                                 <div class="d-flex align-items-center gap-2">
+                                     <small class="text-dim extra-small text-uppercase" x-text="formatDate(goal.fecha_limite)"></small>
+                                     <template x-if="goal.id_cuenta">
+                                         <span class="badge bg-secondary bg-opacity-25 text-dim border border-secondary border-opacity-25 extra-small">
+                                             <i class="fa-solid fa-link me-1"></i>VINCULADA
+                                         </span>
+                                     </template>
+                                 </div>
+                             </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm text-dim p-0 opacity-50 hover-opacity-100" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary shadow-lg">
+                                <li><a class="dropdown-item" href="#" @click="editGoal(goal)"><i class="fa-solid fa-pen small me-2 text-primary"></i> <span x-text="$store.lang.t('common.edit')"></span></a></li>
+                                <li><a class="dropdown-item" href="#" @click="deposit(goal)"><i class="fa-solid fa-piggy-bank small me-2 text-success"></i> <span x-text="$store.lang.t('goals.update_balance')"></span></a></li>
+                                <li><hr class="dropdown-divider border-secondary opacity-50"></li>
+                                <li><a class="dropdown-item text-danger" href="#" @click="deleteGoal(goal.id_meta)"><i class="fa-solid fa-trash small me-2"></i> <span x-text="$store.lang.t('common.delete')"></span></a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between extra-small fw-bold mb-1">
+                            <span class="text-dim text-uppercase">NIVEL_DE_LOGRO</span>
+                            <span class="text-white" x-text="getPercent(goal) + '%'"></span>
+                        </div>
+                        <div class="progress bg-white bg-opacity-5" style="height: 6px;">
+                            <div class="progress-bar rounded-pill shadow-sm" role="progressbar" 
+                                 :style="`width: ${getPercent(goal)}%; background-color: ${goal.color}`">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="d-flex justify-content-between align-items-end mt-4">
+                        <div>
+                            <small class="d-block text-dim extra-small text-uppercase fw-bold mb-1" x-text="$store.lang.t('goals.actual_amount')">Actual</small>
+                            <span class="fw-bold fs-4 text-white" x-text="formatCurrency(goal.monto_actual)"></span>
+                        </div>
+                        <div class="text-end">
+                            <small class="d-block text-dim extra-small text-uppercase fw-bold mb-1" x-text="$store.lang.t('goals.target_amount')">Meta</small>
+                            <span class="fw-bold text-dim" x-text="formatCurrency(goal.monto_objetivo)"></span>
+                        </div>
+                    </div>
+
+                    <!-- Projections -->
+                    <template x-if="monthlySavings > 0 && getPercent(goal) < 100">
+                        <div class="mt-4 p-3 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-10 position-relative">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-info smaller fw-bold text-uppercase" x-text="$store.lang.t('goals.projection_eta')">PROYECCIÓN_ETA</small>
+                                <span class="badge border border-info text-info extra-small" x-text="calculateRemainingMonths(goal) + ' ' + $store.lang.t('goals.months')"></span>
+                            </div>
+                            <p class="mb-0 extra-small text-dim">
+                                <span x-text="$store.lang.t('goals.projection_eta_tip')"></span> <span class="text-info fw-bold" x-text="calculateTargetDate(goal)"></span>
+                            </p>
+                        </div>
+                    </template>
+
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Create/Edit Modal -->
+    <div class="modal fade" id="goalModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content neon-card border-primary">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary" x-text="editing ? $store.lang.t('goals.edit') : $store.lang.t('goals.new')"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="saveGoal">
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.goal_name')"></label>
+                            <input type="text" x-model="form.nombre_meta" class="form-control neon-input" required placeholder="Ej: Vacaciones">
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.target_amount')"></label>
+                                <input type="number" x-model.number="form.monto_objetivo" class="form-control neon-input text-primary fw-bold" required step="0.01">
+                            </div>
+                             <div class="col-6 mb-3">
+                                 <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.deadline')"></label>
+                                 <input type="date" x-model="form.fecha_limite" class="form-control neon-input">
+                             </div>
+                         </div>
+                         <div class="mb-3">
+                             <label class="text-dim extra-small fw-bold text-uppercase">VINCULAR_A_CUENTA (AUTO-SNAPSHOT)</label>
+                             <select x-model.number="form.id_cuenta" class="form-select neon-input">
+                                 <option :value="null">-- MANUAL (Sin vinculación) --</option>
+                                 <template x-for="account in accounts" :key="account.id_cuenta">
+                                     <option :value="account.id_cuenta" x-text="account.nombre_cuenta"></option>
+                                 </template>
+                             </select>
+                             <small class="text-dim extra-small mt-1 d-block">Si vinculas una cuenta, el saldo actual se actualizará automáticamente basado en el saldo real.</small>
+                         </div>
+                         <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase">COLOR_SCHEME</label>
+                            <div class="d-flex gap-2 flex-wrap p-2 bg-black bg-opacity-25 rounded border border-secondary border-opacity-10">
+                                <template x-for="color in colors" :key="color">
+                                    <div class="rounded-circle cursor-pointer transition-all border-2" 
+                                         :class="form.color === color ? 'border-primary scale-110' : 'border-transparent'"
+                                         :style="`width: 24px; height: 24px; background-color: ${color}`"
+                                         @click="form.color = color">
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-dim extra-small fw-bold text-uppercase">SYM_ICON</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-secondary text-dim"><i :class="'fa-solid ' + form.icono"></i></span>
+                                <input type="text" x-model="form.icono" class="form-control neon-input" placeholder="fa-bullseye">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                            <button type="submit" class="neon-btn px-4" :disabled="loading">
+                                <span x-show="loading" class="spinner-border spinner-border-sm me-2"></span>
+                                <span x-text="$store.lang.t('common.save')"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Deposit Modal -->
+    <div class="modal fade" id="depositModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content neon-card border-success">
+                <div class="modal-body p-4">
+                    <h6 class="hud-title text-success text-center mb-4" x-text="$store.lang.t('goals.update_balance')"></h6>
+                    <div class="mb-3 text-center">
+                        <label for="depAmount" class="text-dim extra-small fw-bold text-uppercase mb-2" x-text="$store.lang.t('goals.new_balance_label')"></label>
+                        <input type="number" x-model.number="depositForm.amount" class="form-control bg-transparent text-success border-success border-opacity-25 fw-bold text-center fs-3 py-3" id="depAmount" placeholder="0.00" auto-focus>
+                    </div>
+                    <p class="text-dim extra-small text-center mb-4">
+                        <span x-text="$store.lang.t('goals.current_label')"></span> <span class="text-white fw-bold" x-text="formatCurrency(depositForm.current)"></span>
+                    </p>
+                    <button class="neon-btn w-100 py-2 border-success text-success" @click="saveDeposit()" x-text="$store.lang.t('common.save')"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .icon-square {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+    .cursor-pointer { cursor: pointer; }
+</style>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('goalsManager', () => ({
+         goals: [],
+         accounts: [],
+         loading: false,
+         editing: false,
+         modal: null,
+         depositModal: null,
+        
+        form: {
+            nombre_meta: '',
+            monto_objetivo: 0,
+            monto_actual: 0,
+            fecha_limite: '',
+            color: '#0d6efd',
+            icono: 'fa-bullseye'
+        },
+        
+        depositForm: {
+            id_meta: null,
+            current: 0,
+            amount: 0
+        },
+        
+        monthlySavings: 0,
+
+        calculateRemainingMonths(goal) {
+            const pending = goal.monto_objetivo - goal.monto_actual;
+            if (pending <= 0 || this.monthlySavings <= 0) return 0;
+            return Math.ceil(pending / this.monthlySavings);
+        },
+
+        calculateTargetDate(goal) {
+            const months = this.calculateRemainingMonths(goal);
+            if (months === 0) return "--";
+            const date = new Date();
+            date.setMonth(date.getMonth() + months);
+            return date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+        },
+        
+        colors: ['#0d6efd', '#6610f2', '#d63384', '#dc3545', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0', '#6c757d'],
+
+
+         init() {
+             this.modal = new bootstrap.Modal(document.getElementById('goalModal'));
+             this.depositModal = new bootstrap.Modal(document.getElementById('depositModal'));
+             this.loadGoals();
+             this.loadAccounts();
+         },
+ 
+         async loadAccounts() {
+             try {
+                 const res = await axios.get('/api/accounts/');
+                 this.accounts = res.data;
+             } catch (e) {
+                 console.error("Error loading accounts:", e);
+             }
+         },
+
+        async loadGoals() {
+            this.loading = true;
+            try {
+                const res = await axios.get('/api/goals/');
+                this.goals = res.data;
+            } catch (error) {
+                console.error("Error loading goals:", error);
+                showToast("Error al cargar metas", "error");
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        get totalSavedFormatted() {
+            const total = this.goals.reduce((acc, g) => acc + Number(g.monto_actual), 0);
+            return CurrencyUtils.formatCurrency(total);
+        },
+
+        getPercent(goal) {
+            if (!goal.monto_objetivo || goal.monto_objetivo == 0) return 0;
+            let p = (goal.monto_actual / goal.monto_objetivo) * 100;
+            return Math.min(100, Math.max(0, p)).toFixed(1);
+        },
+
+        formatCurrency(val) {
+             return CurrencyUtils.formatCurrency(val);
+        },
+        
+        formatDate(isoStr) {
+            if (!isoStr) return this.$store.lang.t('common.none');
+            return new Date(isoStr).toLocaleDateString('es-AR');
+        },
+
+        openModal() {
+            this.editing = false;
+            this.form = {
+                nombre_meta: '',
+                monto_objetivo: 0,
+                monto_actual: 0,
+                fecha_limite: '',
+                 color: '#0d6efd',
+                 icono: 'fa-bullseye',
+                 id_cuenta: null
+             };
+             this.modal.show();
+         },
+
+        editGoal(goal) {
+            this.editing = true;
+            this.form = { ...goal };
+            this.modal.show();
+        },
+        
+        async saveGoal() {
+            this.loading = true;
+            try {
+                if (this.editing) {
+                    await axios.put(`/api/goals/${this.form.id_meta}`, this.form);
+                    showToast("Meta actualizada", "success");
+                } else {
+                    await axios.post('/api/goals/', this.form);
+                    showToast("Meta creada", "success");
+                }
+                this.modal.hide();
+                this.loadGoals();
+            } catch (error) {
+                console.error("Error saving goal:", error);
+                showToast("Error al guardar meta", "error");
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        deleteGoal(id) {
+            if(!confirm("¿Estás seguro de eliminar esta meta?")) return;
+            axios.delete(`/api/goals/${id}`).then(() => {
+                showToast("Meta eliminada", "success");
+                this.loadGoals();
+            }).catch(e => showToast("Error al eliminar", "error"));
+        },
+        
+         deposit(goal) {
+             if (goal.id_cuenta) {
+                 if (confirm("Esta meta está vinculada a una cuenta. ¿Deseas forzar el recálculo desde el saldo real ahora?")) {
+                     axios.post(`/api/goals/${goal.id_meta}/recalculate`).then(() => {
+                         showToast("Recálculo completado", "success");
+                         this.loadGoals();
+                     }).catch(e => showToast("Error al recalcular", "error"));
+                 }
+                 return;
+             }
+             this.depositForm = {
+                 id_meta: goal.id_meta,
+                 current: Number(goal.monto_actual),
+                 amount: Number(goal.monto_actual) // Start with current amount for easy edit
+             };
+             this.depositModal.show();
+         },
+        
+        async saveDeposit() {
+            try {
+                // Update ONLY the amount
+                await axios.put(`/api/goals/${this.depositForm.id_meta}`, {
+                    monto_actual: this.depositForm.amount
+                });
+                showToast("Saldo actualizado", "success");
+                this.depositModal.hide();
+                this.loadGoals();
+            } catch (e) {
+                console.error(e);
+                showToast("Error al actualizar saldo", "error");
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}

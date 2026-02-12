@@ -41,6 +41,7 @@ class TransaccionLectura(TransaccionBase):
     nombre_cuenta: Optional[str] = None # Campo extra
     nombre_beneficiario: Optional[str] = None # Campo extra
     nombre_categoria: Optional[str] = None # Campo extra
+    saldo: Optional[Decimal] = None # Running balance
 
     class Config:
         from_attributes = True

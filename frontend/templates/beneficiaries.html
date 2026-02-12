@@ -1,20 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Beneficiarios{% endblock %}
-{% block header %}Gestión de Beneficiarios HUD{% endblock %}
+{% block header %}<span x-text="$store.lang.t('beneficiaries.title')">Gestión de Beneficiarios</span>{% endblock %}
 
 {% block content %}
 <div x-data="beneficiariosPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between">
-            <button class="btn neon-btn" @click="openCreateModal">
-                <i class="fa-solid fa-user-plus me-2"></i>NUEVO REGISTRO
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <button class="neon-btn px-4 py-2 shadow-sm" @click="openCreateModal">
+                <i class="fa-solid fa-user-plus me-2"></i><span x-text="$store.lang.t('beneficiaries.new')">NUEVO REGISTRO</span>
             </button>
             <div class="d-flex align-items-center">
-                <div class="input-group input-group-sm neon-border" style="width: 200px;">
-                    <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-search text-dim"></i></span>
-                    <input type="text" class="form-control bg-transparent border-0 text-white" 
-                           placeholder="FILTRAR_POR_NOMBRE..." x-model="searchQuery" @input="filterBeneficiaries">
+                <div class="input-group input-group-sm neon-border overflow-hidden" style="width: 250px; background: rgba(0,0,0,0.2)">
+                    <span class="input-group-text bg-transparent border-0 opacity-50"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" class="form-control bg-transparent border-0 text-white extra-small" 
+                           :placeholder="$store.lang.t('beneficiaries.filter_placeholder')" x-model="searchQuery" @input="filterBeneficiaries">
                 </div>
             </div>
         </div>
@@ -24,25 +23,25 @@
     <div class="card neon-card">
         <div class="card-body p-0 table-responsive">
             <template x-if="loading">
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="small mt-2">SINCRONIZANDO LISTADO...</p>
+                <div class="text-center p-5 opacity-50">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="hud-title small mb-0" x-text="$store.lang.t('beneficiaries.loading_list')">SINCRONIZANDO LISTADO...</p>
                 </div>
             </template>
             
             <table class="table table-hover table-dark mb-0" x-show="!loading && filteredBeneficiaries.length > 0">
-                <thead>
-                    <tr>
-                        <th class="text-primary">BENEFICIARIO</th>
-                        <th class="text-primary">ENTIDAD</th>
-                        <th class="text-primary">CBU/ALIAS</th>
-                        <th class="text-primary">CUIT</th>
-                        <th class="text-primary text-end">ACCIONES</th>
+                <thead class="bg-black bg-opacity-40">
+                    <tr class="extra-small tracking-wider fw-bold">
+                        <th class="text-primary py-3" x-text="$store.lang.t('transactions.columns.beneficiary')">BENEFICIARIO</th>
+                        <th class="text-primary py-3 text-uppercase" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.cbu_alias')">CBU/ALIAS</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.cuit_cuil')">CUIT</th>
+                        <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody class="align-middle">
                     <template x-for="ben in filteredBeneficiaries" :key="ben.id_beneficiario">
-                        <tr>
+                        <tr class="cursor-pointer" @dblclick="editBeneficiary(ben)">
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="beneficiary-avatar-sm me-2 text-primary">
@@ -68,9 +67,9 @@
             </table>
 
             <template x-if="!loading && filteredBeneficiaries.length === 0">
-                <div class="text-center p-5 text-dim">
+                <div class="text-center p-5 text-dim opacity-50">
                     <i class="fa-solid fa-user-slash fs-1 mb-3"></i>
-                    <p>NO SE ENCONTRARON REGISTROS</p>
+                    <p class="hud-title small mb-0" x-text="$store.lang.t('beneficiaries.not_found')">NO SE ENCONTRARON REGISTROS</p>
                 </div>
             </template>
         </div>
@@ -80,42 +79,42 @@
     <div class="modal fade" id="benModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content neon-modal">
-                <div class="modal-header neon-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-id-card me-2"></i>PERFIL_BENEFICIARIO</h5>
-                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary"><i class="fa-solid fa-id-card me-2"></i> <span x-text="$store.lang.t('beneficiaries.profile_title')">PERFIL_BENEFICIARIO</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="saveBeneficiary">
                         <div class="mb-3">
-                            <label class="text-dim small">NOMBRE_OFICIAL</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.official_name')">NOMBRE_OFICIAL</label>
                             <input type="text" class="form-control neon-input" x-model="formData.nombre_beneficiario" required>
                         </div>
                         <div class="mb-3">
-                            <label class="text-dim small">ENTIDAD_BANCARIA / BANCO</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.bank_entity')">ENTIDAD_BANCARIA / BANCO</label>
                             <input type="text" class="form-control neon-input" x-model="formData.banco">
                         </div>
                         <div class="mb-3">
-                            <label class="text-dim small">CBU_O_ALIAS_SBU</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.cbu_alias')">CBU_O_ALIAS_SBU</label>
                             <input type="text" class="form-control neon-input" x-model="formData.cbu">
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="text-dim small">CUIT_CUIL</label>
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.cuit_cuil')">CUIT_CUIL</label>
                                 <input type="text" class="form-control neon-input" x-model="formData.cuit">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="text-dim small">CATEGORÍA_ID</label>
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.category_id')">CATEGORÍA_ID</label>
                                 <input type="number" class="form-control neon-input" x-model="formData.id_categoria">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="text-dim small">NOTAS_INTERNAS</label>
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.internal_notes')">NOTAS_INTERNAS</label>
                             <textarea class="form-control neon-input" x-model="formData.notas" rows="2"></textarea>
                         </div>
                         <div class="mt-4 text-end">
-                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">CANCELAR</button>
-                            <button type="submit" class="btn btn-primary neon-border" :disabled="saving">
-                                <span x-show="!saving">SINCRONIZAR_PERFIL</span>
+                            <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                            <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                <span x-show="!saving" x-text="$store.lang.t('beneficiaries.sync_profile')">SINCRONIZAR_PERFIL</span>
                                 <span x-show="saving" class="spinner-border spinner-border-sm"></span>
                             </button>
                         </div>

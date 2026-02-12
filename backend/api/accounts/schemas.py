@@ -8,7 +8,7 @@ class CuentaBase(BaseModel):
     numero_cuenta: Optional[str] = None
     estado: str = "Open"
     notas: Optional[str] = None
-    entidad_financiera: Optional[str] = None
+    id_identidad_financiera: Optional[int] = None
     sitio_web: Optional[str] = None
     saldo_inicial: Optional[Decimal] = 0.00
     cuenta_favorita: int = 0
@@ -22,6 +22,10 @@ class CuentaCrear(CuentaBase): # Renombrado
 
 class CuentaLectura(CuentaBase): # Renombrado
     id_cuenta: int
+    identidad_financiera: Optional["IdentidadFinancieraResponse"] = None
 
     class Config:
         from_attributes = True
+
+from ..financial_entities.schemas import IdentidadFinancieraResponse
+CuentaLectura.model_rebuild()

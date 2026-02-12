@@ -33,7 +33,6 @@ api.interceptors.response.use(
 );
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('3F System initialized - Welcome to the Future.');
     checkAuth();
 });
 
@@ -48,6 +47,41 @@ async function checkAuth() {
 
     if (token && emailSpan) {
         // En un futuro aquí pediremos los datos del usuario actual
-        emailSpan.innerText = 'Explorador 3F';
+        emailSpan.innerText = 'Fer21gon';
     }
 }
+
+window.logout = function () {
+    localStorage.removeItem('3f_token');
+    window.location.href = '/login';
+};
+
+// Session Timeout Logic
+let idleTimer;
+const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+function resetIdleTimer() {
+    const timeoutMinutes = parseInt(localStorage.getItem('3f_session_timeout') || '0');
+    if (timeoutMinutes <= 0) return; // Disabled
+
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+        console.warn('Session timed out due to inactivity.');
+        window.logout();
+    }, timeoutMinutes * 60 * 1000);
+}
+
+// Initialize Timer
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+
+    // Check if timeout is enabled and set up listeners
+    const timeoutMinutes = parseInt(localStorage.getItem('3f_session_timeout') || '0');
+    if (timeoutMinutes > 0) {
+        events.forEach(event => {
+            document.addEventListener(event, resetIdleTimer, true);
+        });
+        resetIdleTimer(); // Start timer immediately
+    }
+});
+

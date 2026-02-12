@@ -3,13 +3,16 @@ from sqlmodel import Session, select
 from ...core.database import get_session
 from ...core.auth_utils import verify_password, create_access_token, get_password_hash
 from ...models.models import Usuario
-from .schemas import Token, UsuarioLogin, UsuarioCrear, UsuarioLectura
+from .schemas import (
+    Token, UsuarioLogin, UsuarioCrear, UsuarioLectura,
+    ProfileRead, ProfileUpdate, ChangePasswordRequest
+)
+from .deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-@router.post("/registro", response_model=UsuarioLectura) # Renombrado a español
+@router.post("/registro", response_model=UsuarioLectura)
 def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_session)):
-    # Verificar si el usuario ya existe
     existing_user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
     if existing_user:
         raise HTTPException(
@@ -17,7 +20,6 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
             detail="El correo electrónico ya está registrado"
         )
     
-    # Crear nuevo usuario
     hashed_password = get_password_hash(usuario_in.password)
     new_user = Usuario(
         email=usuario_in.email,
@@ -30,24 +32,96 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
 
 @router.post("/login", response_model=Token)
 def login_usuario(usuario_in: UsuarioLogin, session: Session = Depends(get_session)):
-    # MODO EMERGENCIA: Bypass para cuentas específicas si hay problemas de migración
-    if usuario_in.email in ["admin@3f.com", "test@forbes.com", "fer@3f.com"] and usuario_in.password == "Fer2026!":
-        access_token = create_access_token(data={"sub": usuario_in.email, "id": 1})
-        return {"access_token": access_token, "token_type": "bearer"}
+    import logging
+    try:
+        # MODO EMERGENCIA: Bypass para cuentas específicas si hay problemas de migración
+        if usuario_in.email in ["admin@3f.com", "test@forbes.com", "fer@3f.com"] and usuario_in.password == "Fer2026!":
+            access_token = create_access_token(data={"sub": usuario_in.email, "id": 1})
+            return {"access_token": access_token, "token_type": "bearer"}
 
-    user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
-    if not user or not verify_password(usuario_in.password, user.password):
+        user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
+        if not user or not verify_password(usuario_in.password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales incorrectas",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if user.bloqueado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario bloqueado"
+            )
+        
+        access_token = create_access_token(data={"sub": user.email, "id": user.id_usuario})
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logging.error(f"LOGIN ERROR: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error interno en login: {str(e)}")
+
+
+# ==================== PROFILE ENDPOINTS ====================
+
+@router.get("/profile", response_model=ProfileRead)
+def get_profile(current_user: Usuario = Depends(get_current_user)):
+    """Retrieve the authenticated user's profile."""
+    return current_user
+
+@router.post("/profile", response_model=ProfileRead)
+def update_profile(
+    profile_in: ProfileUpdate,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Update the authenticated user's profile (nombre, apellido, email)."""
+    if profile_in.email and profile_in.email != current_user.email:
+        existing = session.exec(
+            select(Usuario).where(Usuario.email == profile_in.email)
+        ).first()
+        if existing and existing.id_usuario != current_user.id_usuario:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El correo electrónico ya está en uso por otro usuario"
+            )
+        current_user.email = profile_in.email
+
+    if profile_in.nombre is not None:
+        current_user.nombre = profile_in.nombre
+    if profile_in.apellido is not None:
+        current_user.apellido = profile_in.apellido
+
+    from datetime import datetime
+    current_user.actualizado_el = datetime.utcnow()
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+@router.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Change the authenticated user's password after verifying the current one."""
+    if len(req.new_password) < 6:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe tener al menos 6 caracteres"
         )
-    
-    if user.bloqueado:
+
+    if not verify_password(req.current_password, current_user.password):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario bloqueado"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta"
         )
-    
-    access_token = create_access_token(data={"sub": user.email, "id": user.id_usuario})
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    current_user.password = get_password_hash(req.new_password)
+    from datetime import datetime
+    current_user.actualizado_el = datetime.utcnow()
+    session.add(current_user)
+    session.commit()
+    return {"message": "Contraseña actualizada correctamente"}

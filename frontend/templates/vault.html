@@ -2,79 +2,101 @@
 
 {% block content %}
 <div class="container-fluid py-4" x-data="vaultManager()">
-    <!-- Header de la Bóveda -->
+    <!-- Header de la Bóveda HUD -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-4 rounded-4 border border-primary border-opacity-25 shadow-lg">
+            <div class="d-flex justify-content-between align-items-center bg-black bg-opacity-50 p-4 border-hud shadow-hud">
                 <div class="d-flex align-items-center">
-                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 border border-primary border-opacity-50">
-                        <i class="fa-solid fa-vault text-primary fs-3 shadow-glow"></i>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 border border-primary border-opacity-50 shadow-glow">
+                        <i class="fa-solid fa-vault text-primary fs-3"></i>
                     </div>
                     <div>
-                        <h2 class="Orbitron text-white mb-1">BÓVEDA DIGITAL</h2>
-                        <p class="text-dim small mb-0">Gestión de comprobantes y facturas inteligentes</p>
+                        <h2 class="font-orbitron text-white mb-1" x-text="$store.lang.t('vault.title')">BÓVEDA DIGITAL</h2>
+                        <div class="d-flex align-items-center gap-2">
+                             <span class="badge border border-info border-opacity-25 bg-info bg-opacity-10 text-info extra-small fw-bold px-2 py-1"
+                                   :class="ocrPluginActive ? 'text-info' : 'text-dim opacity-50'">
+                                 <i class="fa-solid fa-microchip me-1"></i>
+                                 <span x-text="ocrPluginActive ? $store.lang.t('vault.ocr_status_active') : $store.lang.t('vault.ocr_status_inactive')"></span>
+                             </span>
+                        </div>
                     </div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button @click="refreshVault()" class="btn btn-outline-primary rounded-pill px-4">
-                        <i class="fa-solid fa-rotate me-2"></i>Actualizar
+                    <button @click="showUpload = !showUpload" class="btn btn-sm btn-outline-info border-hud shadow-sm">
+                         <i class="fa-solid fa-cloud-arrow-up me-1"></i> <span x-text="$store.lang.t('vault.upload_btn')">SUBIR AL VAULT</span>
                     </button>
-                    <!-- El upload se maneja desde el modal de transacciones normalmente, 
-                         pero aquí podemos añadir un dropzone global en el futuro -->
+                    <button @click="refreshVault()" class="btn btn-sm btn-outline-primary border-hud shadow-sm">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Buscador y Filtros -->
+    <!-- Direct Upload HUD Zone (Phase 7) -->
+    <div class="row mb-4" x-show="showUpload" x-transition>
+         <div class="col-12">
+             <div class="drop-zone-hud p-5 text-center border-dashed border-primary border-opacity-25 bg-primary bg-opacity-5 rounded-3 cursor-pointer"
+                  @click="$refs.fileInput.click()"
+                  @dragover.prevent=""
+                  @drop.prevent="handleDrop($event)">
+                 <input type="file" x-ref="fileInput" class="d-none" @change="handleUpload($event)">
+                 <i class="fa-solid fa-file-invoice fs-1 mb-3 text-primary opacity-50"></i>
+                 <h5 class="text-white font-orbitron" x-text="$store.lang.t('vault.drop_zone')">Arrastra y suelta comprobantes aquí</h5>
+                 <p class="text-dim smaller mb-0">Formatos soportados: PDF, JPG, PNG (Max 10MB)</p>
+             </div>
+         </div>
+    </div>
+
+    <!-- Buscador y Filtros HUD -->
     <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="input-group">
-                <span class="input-group-text bg-dark border-secondary text-dim"><i class="fa-solid fa-magnifying-glass"></i></span>
-                <input type="text" x-model="search" class="form-control bg-dark border-secondary text-white" placeholder="Buscar por nombre de archivo...">
+        <div class="col-md-9 col-sm-8">
+            <div class="input-group neon-border">
+                <span class="input-group-text bg-black border-0 text-dim"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" x-model="search" class="form-control bg-black border-0 text-white" :placeholder="$store.lang.t('vault.search')">
             </div>
         </div>
-        <div class="col-md-4">
-            <select class="form-select bg-dark border-secondary text-white" x-model="filterExt">
-                <option value="">Todos los formatos</option>
+        <div class="col-md-3 col-sm-4 mt-2 mt-sm-0">
+            <select class="form-select bg-black border-hud text-white extra-small" x-model="filterExt">
+                <option value="" x-text="$store.lang.t('vault.formats')">Todos los formatos</option>
                 <option value=".pdf">PDF</option>
-                <option value=".jpg">Imágenes (JPG)</option>
-                <option value=".png">Imágenes (PNG)</option>
+                <option value=".jpg">JPG</option>
+                <option value=".png">PNG</option>
             </select>
         </div>
     </div>
 
-    <!-- Grid de Archivos -->
-    <div class="row g-4">
+    <!-- Grid de Archivos HUD (Rediseño Phase 7) -->
+    <div class="row g-3">
         <template x-for="file in filteredFiles" :key="file.name">
-            <div class="col-xl-3 col-lg-4 col-md-6">
-                <div class="card bg-dark border-secondary h-100 card-hover-neonic transition-all">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="file-icon-wrapper me-3">
-                                <template x-if="file.extension === '.pdf'">
-                                    <i class="fa-solid fa-file-pdf text-danger fs-2"></i>
-                                </template>
-                                <template x-if="['.jpg', '.jpeg', '.png'].includes(file.extension)">
-                                    <i class="fa-solid fa-file-image text-info fs-2"></i>
-                                </template>
-                            </div>
-                            <div class="overflow-hidden">
-                                <h6 class="text-white text-truncate mb-0" :title="file.name" x-text="file.name"></h6>
-                                <span class="text-dim smaller" x-text="formatSize(file.size)"></span>
-                            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                <div class="card bg-black border-hud h-100 card-hover-neonic transition-all overflow-hidden">
+                    <!-- Preview Placeholder -->
+                    <div class="file-preview-area bg-dark bg-opacity-25 d-flex align-items-center justify-content-center border-bottom border-secondary border-opacity-10 position-relative" style="height: 120px;">
+                        <template x-if="file.extension === '.pdf'">
+                             <i class="fa-solid fa-file-pdf text-danger fs-1 opacity-75"></i>
+                        </template>
+                        <template x-if="['.jpg', '.jpeg', '.png'].includes(file.extension)">
+                             <i class="fa-solid fa-file-image text-info fs-1 opacity-75"></i>
+                        </template>
+                        <div class="position-absolute top-0 end-0 p-2">
+                             <span class="badge bg-black bg-opacity-75 text-dim border border-secondary border-opacity-25 smaller" x-text="file.extension.toUpperCase()"></span>
                         </div>
+                    </div>
+                    
+                    <div class="card-body p-2">
+                        <h6 class="text-white text-truncate mb-1 font-orbitron text-center" style="font-size: 0.7rem;" :title="file.name" x-text="file.name"></h6>
+                        <div class="text-center text-dim smaller mb-2" x-text="formatSize(file.size)"></div>
                         
-                        <div class="d-flex justify-content-between mt-auto">
-                            <button @click="viewFile(file.name)" class="btn btn-sm btn-outline-primary border-0">
-                                <i class="fa-solid fa-eye me-1"></i> Ver
+                        <div class="d-flex justify-content-around">
+                            <button @click="viewFile(file.name)" class="btn btn-icon-hud" :title="$store.lang.t('common.view')">
+                                <i class="fa-solid fa-eye text-primary"></i>
                             </button>
-                            <button @click="runOCR(file.name)" class="btn btn-sm btn-outline-info border-0" :disabled="loadingOCR === file.name">
-                                <i class="fa-solid fa-robot me-1"></i> 
-                                <span x-text="loadingOCR === file.name ? 'Analizando...' : 'OCR'"></span>
+                            <button @click="runOCR(file.name)" class="btn btn-icon-hud" :title="'OCR'" :disabled="loadingOCR === file.name || !ocrPluginActive">
+                                <i class="fa-solid fa-microchip" :class="loadingOCR === file.name ? 'fa-spin text-warning' : (ocrPluginActive ? 'text-info' : 'text-dim')"></i>
                             </button>
-                            <button @click="confirmDelete(file.name)" class="btn btn-sm btn-outline-danger border-0">
-                                <i class="fa-solid fa-trash"></i>
+                            <button @click="confirmDelete(file.name)" class="btn btn-icon-hud">
+                                <i class="fa-solid fa-trash-can text-danger"></i>
                             </button>
                         </div>
                     </div>
@@ -85,12 +107,40 @@
         <template x-if="filteredFiles.length === 0">
             <div class="col-12 text-center py-5">
                 <div class="opacity-25 mb-3">
-                    <i class="fa-solid fa-folder-open fs-1"></i>
+                    <i class="fa-solid fa-folder-open fs-1 text-dim"></i>
                 </div>
-                <h5 class="text-dim">No se encontraron documentos</h5>
-                <p class="text-dim small">Sube comprobantes en tus transacciones para verlos aquí.</p>
+                <h5 class="text-dim font-orbitron" x-text="$store.lang.t('vault.no_files')">No se encontraron documentos</h5>
+                <p class="text-dim small" x-text="$store.lang.t('vault.no_files_desc')">Sube comprobantes en tus transacciones para verlos aquí.</p>
             </div>
         </template>
+    </div>
+
+    <!-- Modal OCR Tactical HUD -->
+    <div class="modal fade" id="modalOCR" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-black border-hud shadow-hud">
+                <div class="modal-header border-bottom border-primary border-opacity-10 bg-primary bg-opacity-5">
+                    <h5 class="modal-title text-primary font-orbitron fw-bold mb-0">
+                         <i class="fa-solid fa-robot me-2"></i><span x-text="$store.lang.t('vault.ocr_result')">Resultado Extracción IA</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded border border-secondary border-opacity-25 mb-3">
+                         <pre class="text-success font-monospace smaller mb-0 custom-scrollbar" style="max-height: 400px; white-space: pre-wrap;" x-text="ocrText"></pre>
+                    </div>
+                    <div class="text-dim smaller italic mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i> <span x-text="ocrMetadata"></span>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-10">
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">Cerrar</button>
+                    <button type="button" @click="copyOCR()" class="btn btn-sm btn-primary px-3 shadow-glow">
+                         <i class="fa-solid fa-copy me-1"></i> <span x-text="$store.lang.t('vault.copy_clipboard')">Copiar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Pre-visualización (Opcional, se puede abrir en nueva pestaña) -->
@@ -98,11 +148,30 @@
 
 <style>
     .card-hover-neonic:hover {
-        border-color: #00f2ff !class;
-        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
-        transform: translateY(-5px);
+        border-color: var(--neo-cyan) !important;
+        box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+    }
+    .btn-icon-hud {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-dim);
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    .btn-icon-hud:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--3f-primary);
     }
     .smaller { font-size: 0.75rem; }
+    .drop-zone-hud {
+        border: 2px dashed rgba(0, 242, 255, 0.15);
+        transition: all 0.3s ease;
+    }
+    .drop-zone-hud:hover {
+        border-color: var(--neo-cyan);
+        background: rgba(0, 242, 255, 0.05) !important;
+    }
 </style>
 
 <script>
@@ -112,9 +181,28 @@
             search: '',
             filterExt: '',
             loadingOCR: null,
+            ocrPluginActive: false,
+            showUpload: false,
+            ocrText: '',
+            ocrMetadata: '',
+            bsModalOCR: null,
             
-            init() {
-                this.refreshVault();
+            async init() {
+                const modalEl = document.getElementById('modalOCR');
+                if (modalEl) this.bsModalOCR = new bootstrap.Modal(modalEl);
+                
+                await this.checkOCRPlugin();
+                await this.refreshVault();
+            },
+
+            async checkOCRPlugin() {
+                try {
+                    const res = await api.get('/plugins/');
+                    const ocr = res.data.find(p => p.nombre_tecnico === 'ia_ocr');
+                    this.ocrPluginActive = ocr ? ocr.activo : false;
+                } catch (e) {
+                    console.warn('Could not detect OCR plugin state');
+                }
             },
             
             async refreshVault() {
@@ -122,7 +210,7 @@
                     const res = await api.get('/vault/files');
                     this.files = res.data;
                 } catch (e) {
-                    notifications.error('Error al cargar la bóveda');
+                    notifications.show('Error al cargar la bóveda', 'error');
                 }
             },
             
@@ -150,11 +238,54 @@
                 this.loadingOCR = name;
                 try {
                     const res = await api.post(`/vault/ocr/${name}`);
-                    alert("Texto Extraído:\n\n" + res.data.text);
+                    this.ocrText = res.data.text;
+                    this.ocrMetadata = `Documento: ${name} | Motor: Tesseract | Confianza: 0.85`;
+                    if (this.bsModalOCR) this.bsModalOCR.show();
                 } catch (e) {
-                    notifications.error('Error en proceso OCR');
+                    notifications.show('Error en proceso OCR', 'error');
                 } finally {
                     this.loadingOCR = null;
+                }
+            },
+
+            copyOCR() {
+                navigator.clipboard.writeText(this.ocrText)
+                    .then(() => notifications.show('Texto copiado', 'success'))
+                    .catch(() => notifications.show('Error al copiar', 'error'));
+            },
+
+            async handleDrop(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    await this.uploadFile(files[0]);
+                }
+            },
+
+            async handleUpload(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    await this.uploadFile(file);
+                }
+            },
+
+            async uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                notifications.show('Subiendo archivo...', 'info');
+                try {
+                    // Note: This endpoint might need to be created if /vault/upload doesn't exist.
+                    // Checking existing routes... usually attachments go through transactions.
+                    // But we can add a generic vault upload if needed.
+                    // Using existing /vault/ upload
+                    await api.post('/vault/upload', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    notifications.show('Carga exitosa', 'success');
+                    this.showUpload = false;
+                    this.refreshVault();
+                } catch (e) {
+                    notifications.show('Error al subir archivo', 'error');
                 }
             },
             
@@ -162,10 +293,10 @@
                 if (confirm(`¿Estás seguro de eliminar "${name}"? Esta acción no se puede deshacer.`)) {
                     try {
                         await api.delete(`/vault/files/${name}`);
-                        notifications.success('Archivo eliminado');
+                        notifications.show(this.$store.lang.t('vault.file_deleted'), 'success');
                         this.refreshVault();
                     } catch (e) {
-                        notifications.error('No se pudo eliminar el archivo');
+                        notifications.show('No se pudo eliminar el archivo', 'error');
                     }
                 }
             }

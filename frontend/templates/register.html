@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3F | Registro</title>
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-beta2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="/static/css/neon-3f.css">
+</head>
+<body class="login-page bg-body-tertiary">
+    <canvas id="shader-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+    
+    <div class="register-box">
+        <div class="login-logo mb-4">
+            <a href="/" class="neon-glow fw-bold h1" style="font-family: 'Orbitron';">3F SYSTEM</a>
+        </div>
+        <div class="card neon-card">
+            <div class="card-body login-card-body bg-transparent">
+                <p class="login-box-msg text-dim">Registro de Nuevo Operador</p>
+                <form id="register-form" action="/login" method="get">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control bg-transparent border-primary text-white" placeholder="Nombre Completo" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-user"></span>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control bg-transparent border-primary text-white" placeholder="Email" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-envelope"></span>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control bg-transparent border-primary text-white" placeholder="Contraseña" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-lock"></span>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control bg-transparent border-primary text-white" placeholder="Confirmar Contraseña" required>
+                        <div class="input-group-text border-primary bg-transparent text-primary">
+                            <span class="fa-solid fa-lock"></span>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold neon-border">INICIAR ALTA</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="mt-3 text-center">
+                    <a href="/login" class="text-dim small">Ya tengo cuenta</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shader Logic -->
+    <script src="/static/js/shader-bg.js"></script>
+</body>
+</html>

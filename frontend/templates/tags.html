@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Etiquetas{% endblock %}
-{% block header %}Gestión de Etiquetas HUD{% endblock %}
+{% block title %}<span x-text="$store.lang.t('nav.tags')">Etiquetas</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('tags.title')">Gestión de Etiquetas HUD</span>{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
@@ -26,8 +26,8 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
-                <button class="btn neon-btn" @click="nuevaEtiqueta()">
-                    <i class="fa-solid fa-plus me-2"></i>CREAR_NUEVA_ETIQUETA
+                <button class="neon-btn px-4 py-2 shadow-sm" @click="nuevaEtiqueta()">
+                    <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('tags.new')">Nueva Etiqueta</span>
                 </button>
             </div>
             <div class="text-dim small">
@@ -50,10 +50,10 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end neon-border">
                                     <li><a class="dropdown-item" href="#" @click="editarEtiqueta(tag)">
-                                        <i class="fa-solid fa-pen-to-square me-2"></i>Editar</a></li>
+                                        <i class="fa-solid fa-pen-to-square me-2"></i> <span x-text="$store.lang.t('common.edit')">Editar</span></a></li>
                                     <li><hr class="dropdown-divider border-secondary opacity-25"></li>
                                     <li><a class="dropdown-item text-danger" href="#" @click="confirmarBorrar(tag)">
-                                        <i class="fa-solid fa-trash-can me-2"></i>Eliminar</a></li>
+                                        <i class="fa-solid fa-trash-can me-2"></i> <span x-text="$store.lang.t('common.delete')">Eliminar</span></a></li>
                                 </ul>
                             </div>
                         </div>
@@ -77,18 +77,18 @@
     <div class="modal fade" id="modalTag" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content neon-modal">
-                <div class="modal-header neon-header">
-                    <h5 class="modal-title">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title hud-title text-primary">
                         <i class="fa-solid fa-tag me-2"></i>
-                        <span x-text="editMode ? 'MODIFICAR_ETIQUETA' : 'CONFIGURAR_ETIQUETA'"></span>
+                        <span x-text="editMode ? $store.lang.t('common.edit') : $store.lang.t('tags.new')"></span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="guardarTag">
                         <div class="mb-3">
-                            <label class="text-dim small">IDENTIFICADOR_VISUAL</label>
-                            <input type="text" class="form-control neon-input" x-model="form.nombre_etiqueta" required placeholder="Nombre de la etiqueta...">
+                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('tags.tag_name')">IDENTIFICADOR_VISUAL</label>
+                            <input type="text" class="form-control neon-input" x-model="form.nombre_etiqueta" required :placeholder="$store.lang.t('tags.tag_name')">
                         </div>
                         <div class="mb-3">
                             <label class="text-dim small">CÓDIGO_COLOR</label>
@@ -99,9 +99,9 @@
                         </div>
                         <div class="row mt-4">
                             <div class="col-12 d-flex justify-content-end">
-                                <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">CANCELAR</button>
-                                <button type="submit" class="btn btn-primary neon-border" :disabled="saving">
-                                    <span x-show="!saving">SINCRONIZAR</span>
+                                <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
+                                <button type="submit" class="btn neon-btn px-4 shadow-sm" :disabled="saving">
+                                    <span x-show="!saving" x-text="$store.lang.t('common.save')">SINCRONIZAR</span>
                                     <span x-show="saving" class="spinner-border spinner-border-sm"></span>
                                 </button>
                             </div>

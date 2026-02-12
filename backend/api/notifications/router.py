@@ -76,14 +76,43 @@ async def notification_generator(user_id: int):
 @router.get("/stream")
 async def notification_stream(
     request: Request,
-    current_user: Usuario = Depends(get_current_user)
+    token: Optional[str] = None,
+    session: Session = Depends(get_session)
 ):
     """
     SSE endpoint for real-time notifications
     Client connects here to receive push notifications
     """
+    from backend.api.auth.deps import oauth2_scheme
+    from backend.core.config import settings
+    from jose import jwt, JWTError
+    
+    # Try to get token from query param if not in header
+    if not token:
+        try:
+            # Fallback to header if available
+            token = await oauth2_scheme(request)
+        except Exception as e:
+            print(f"⚠️ SSE: token header check failed: {e}")
+            pass
+            
+    if not token:
+        print("❌ SSE: No token found in query or header")
+        raise HTTPException(status_code=401, detail="Token missing")
+        
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: int = payload.get("id")
+        if not user_id:
+            print("❌ SSE: Token valid but 'id' missing in payload")
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError as e:
+        print(f"❌ SSE: JWT decode failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid token session")
+        
+    print(f"✅ SSE: Stream connection authorized for user_id={user_id}")
     return StreamingResponse(
-        notification_generator(current_user.id_usuario),
+        notification_generator(user_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -91,6 +120,8 @@ async def notification_stream(
             "Connection": "keep-alive"
         }
     )
+
+
 
 
 @router.get("/", response_model=List[UserNotification])
@@ -144,10 +175,12 @@ async def mark_all_as_read(
     session.commit()
     return {"message": "All notifications marked as read"}
 
+@router.delete("/")
 async def clear_notifications(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
+
     """Clear all user notifications"""
     statement = select(UserNotification).where(UserNotification.user_id == current_user.id_usuario)
     notifications = session.exec(statement).all()

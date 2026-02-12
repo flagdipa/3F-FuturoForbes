@@ -1,36 +1,30 @@
+import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from ..core.config import settings
-
-# Contexto para el hash de contraseñas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain text password against a bcrypt hash.
-    
-    Args:
-        plain_password: The candidate password.
-        hashed_password: The stored hash.
-        
-    Returns:
-        True if the password matches, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if isinstance(plain_password, str):
+            plain_password = plain_password.encode('utf-8')
+        if isinstance(hashed_password, str):
+            hashed_password = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(plain_password, hashed_password)
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
     """
     Generate a bcrypt hash from a plain text password.
-    
-    Args:
-        password: The password to hash.
-        
-    Returns:
-        The resulting bcrypt hash string.
     """
-    return pwd_context.hash(password)
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password, salt).decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """

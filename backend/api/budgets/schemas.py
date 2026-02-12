@@ -9,6 +9,9 @@ class PresupuestoBase(BaseModel):
     monto: Decimal = 0.00
     notas: Optional[str] = None
     activo: int = 1
+    # Phase 14
+    es_rolling: bool = False
+    monto_acumulado: Decimal = 0.00
 
 class PresupuestoCrear(PresupuestoBase):
     pass

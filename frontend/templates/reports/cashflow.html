@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}<span x-text="$store.lang.t('reports.cashflow.title')">Flujo de Caja vs Presupuesto</span>{% endblock %}
+
+{% block page_title %}<span x-text="$store.lang.t('reports.cashflow.title')">Flujo de Caja vs Presupuesto</span>{% endblock %}
+
+{% block content %}
+<div x-data="cashflowReport()" x-init="init()" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="neon-card p-3">
+                <label class="text-dim extra-small fw-bold mb-2" x-text="$store.lang.t('reports.cashflow.time_terminal')">TERMINAL_DE_TIEMPO</label>
+                <div class="input-group">
+                    <select x-model="selectedYear" @change="fetchData()" class="form-select bg-transparent border-secondary text-white fw-bold">
+                        <template x-for="y in availableYears" :key="y">
+                            <option :value="y" x-text="y"></option>
+                        </template>
+                    </select>
+                    <button class="btn btn-outline-primary neon-border" @click="fetchData()">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="neon-card p-3 h-100 position-relative overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-dim extra-small mb-1" x-text="$store.lang.t('reports.cashflow.total_income')">TOTAL INGRESOS (YTD)</p>
+                                <h4 class="text-success fw-bold mb-0" x-text="formatCurrency(summary.total_actual_income)"></h4>
+                            </div>
+                            <div class="icon-circle bg-success bg-opacity-10 text-success">
+                                <i class="fa-solid fa-arrow-trend-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="neon-card p-3 h-100 position-relative overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-dim extra-small mb-1" x-text="$store.lang.t('reports.cashflow.total_expense')">TOTAL GASTOS (YTD)</p>
+                                <h4 class="text-danger fw-bold mb-0" x-text="formatCurrency(summary.total_actual_expense)"></h4>
+                            </div>
+                            <div class="icon-circle bg-danger bg-opacity-10 text-danger">
+                                <i class="fa-solid fa-arrow-trend-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="neon-card p-3 h-100 position-relative overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-dim extra-small mb-1" x-text="$store.lang.t('reports.cashflow.annual_budget')">PRESUPUESTO ANUAL</p>
+                                <h4 class="text-info fw-bold mb-0" x-text="formatCurrency(summary.total_budget || 0)"></h4>
+                            </div>
+                            <div class="icon-circle bg-info bg-opacity-10 text-info">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="neon-card">
+                <div class="card-header bg-transparent border-secondary border-opacity-10 d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-chart-column me-2"></i><span x-text="$store.lang.t('reports.cashflow.monthly_flow_metrics')">MÉTRICAS_DE_FLUJO_MENSUAL</span></h5>
+                </div>
+                <div class="chart-container" style="position: relative; height: 400px;">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="neon-card">
+                <div class="card-header bg-transparent border-secondary border-opacity-10 mb-3">
+                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i><span x-text="$store.lang.t('reports.cashflow.deviation_log')">LOG_DE_DESVIACIONES_FINANCIERAS</span></h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 bg-transparent">
+                        <thead class="text-primary extra-small fw-bold">
+                            <tr>
+                                <th class="bg-transparent border-secondary border-opacity-25" x-text="$store.lang.t('reports.cashflow.col_month')">MES</th>
+                                <th class="bg-transparent border-secondary border-opacity-25 text-end" x-text="$store.lang.t('reports.cashflow.col_income')">INGRESOS</th>
+                                <th class="bg-transparent border-secondary border-opacity-25 text-end" x-text="$store.lang.t('reports.cashflow.col_expense')">GASTOS</th>
+                                <th class="bg-transparent border-secondary border-opacity-25 text-end" x-text="$store.lang.t('reports.cashflow.col_net')">NETO</th>
+                                <th class="bg-transparent border-secondary border-opacity-25 text-end text-info" x-text="$store.lang.t('reports.cashflow.col_budget')">PRESUPUESTO</th>
+                                <th class="bg-transparent border-secondary border-opacity-25 text-end" x-text="$store.lang.t('reports.cashflow.col_deviation')">DESVIACIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody class="extra-small">
+                            <template x-for="(label, index) in labels" :key="index">
+                                <tr class="align-middle">
+                                    <td x-text="label" class="fw-bold text-white border-secondary border-opacity-10"></td>
+                                    <td x-text="formatCurrency(datasets[0].data[index])" class="text-end text-success border-secondary border-opacity-10"></td>
+                                    <td x-text="formatCurrency(datasets[1].data[index])" class="text-end text-danger border-secondary border-opacity-10"></td>
+                                    <td x-text="formatCurrency(datasets[0].data[index] - datasets[1].data[index])" 
+                                        class="text-end fw-bold border-secondary border-opacity-10"
+                                        :class="(datasets[0].data[index] - datasets[1].data[index]) >= 0 ? 'text-primary' : 'text-danger'">
+                                    </td>
+                                    <td x-text="formatCurrency(datasets[2].data[index])" class="text-end text-info border-secondary border-opacity-10"></td>
+                                    <td class="text-end border-secondary border-opacity-10">
+                                        <span class="badge border neon-border py-1 px-2" 
+                                              :class="variances[index] >= 0 ? 'text-success border-success' : 'text-danger border-danger'"
+                                              x-text="formatCurrency(variances[index])">
+                                        </span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function cashflowReport() {
+    return {
+        selectedYear: new Date().getFullYear(),
+        availableYears: [2024, 2025, 2026, 2027],
+        labels: [],
+        datasets: [ {data:[]}, {data:[]}, {data:[]} ],
+        summary: {},
+        variances: [],
+        chart: null,
+
+        async init() {
+            await this.fetchData();
+        },
+
+        async fetchData() {
+            try {
+                const response = await axios.get(`/api/reportes/cashflow?year=${this.selectedYear}`);
+                const data = response.data;
+                
+                this.labels = data.labels;
+                this.datasets = data.datasets;
+                this.summary = data.summary;
+                this.variances = data.variances;
+                
+                this.renderChart();
+            } catch (err) {
+                console.error("Error fetching cashflow data:", err);
+            }
+        },
+
+        renderChart() {
+            const ctx = document.getElementById('cashflowChart').getContext('2d');
+            
+            if (this.chart) {
+                this.chart.destroy();
+            }
+
+            this.chart = new Chart(ctx, {
+                data: {
+                    labels: this.labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: this.$store.lang.t('reports.cashflow.col_income'),
+                            data: this.datasets[0].data,
+                            backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                            borderColor: '#198754',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        },
+                        {
+                            type: 'bar',
+                            label: this.$store.lang.t('reports.cashflow.col_expense'),
+                            data: this.datasets[1].data,
+                            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                            borderColor: '#dc3545',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        },
+                        {
+                            type: 'line',
+                            label: this.$store.lang.t('reports.cashflow.col_budget'),
+                            data: this.datasets[2].data,
+                            borderColor: '#00f2ff', // Cyan Neón
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1,
+                            pointStyle: 'rectRot',
+                            pointRadius: 6,
+                            pointBackgroundColor: '#fff'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#adb5bd' } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(173, 181, 189, 0.1)' },
+                            ticks: { 
+                                color: '#adb5bd',
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#adb5bd' }
+                        }
+                    }
+                }
+            });
+        },
+
+        formatCurrency(val) {
+            return CurrencyUtils.formatCurrency(val || 0);
+        }
+    }
+}
+</script>
+{% endblock %}

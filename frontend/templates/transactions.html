@@ -3,84 +3,105 @@
 {% block title %}Transacciones{% endblock %}
 {% block header %}{% endblock %}
 
+
+{% block extra_css %}
+<style>
+    /* Column Resizer Styles */
+    .resizer {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 5px;
+        cursor: col-resize;
+        user-select: none;
+        height: 100%;
+        background: transparent;
+        z-index: 10;
+        transition: background 0.2s;
+    }
+    .resizer:hover, .resizing {
+        background: var(--3f-primary); /* Use cyan theme color */
+        border-right: 2px solid var(--3f-primary);
+    }
+    th {
+        position: relative; /* Ensure resizer is positioned relative to header */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div x-data="transaccionesPage" class="content-wrapper bg-transparent">
+<div x-data="transaccionesPage" class="content-wrapper bg-transparent d-flex flex-column h-100" style="max-height: calc(100vh - 60px);">
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between">
-            <div class="col-sm-6">
-                <h1 class="hud-title mb-0" x-text="$store.lang.t('transactions.title')">Libro de Transacciones HUD</h1>
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h3 class="hud-title mb-0 fs-4" x-text="$store.lang.t('transactions.title')">Libro de Transacciones HUD</h3>
+                <p class="text-dim extra-small mb-0 opacity-50 tracking-wider font-monospace" x-text="$store.lang.t('transactions.audit_active') + ': OK | STATUS: CONNECTED'">AUDITORÍA ACTIVA: OK | STATUS: CONNECTED</p>
             </div>
-            <div class="col-sm-6 text-end">
-                <button class="neon-btn shadow-sm" @click="nuevaTransaccion()">
-                    <i class="fa-solid fa-plus me-2"></i><span x-text="$store.lang.t('transactions.new')">Inserción Data</span>
-                </button>
-            </div>
-            <div class="d-flex align-items-center">
-                <span class="text-primary me-3 fw-bold" x-text="'DEBUG: ' + transacciones.length + ' Items Cargados'"></span>
-                <span class="text-dim small me-3">AUDITORÍA ACTIVA: <span class="text-success">OK</span></span>
-                <i class="fa-solid fa-satellite-dish neon-glow"></i>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Top button removed as per request -->
+                <i class="fa-solid fa-satellite-dish text-primary neon-glow-text fs-5"></i>
             </div>
         </div>
     </div>
 
     <!-- Filtros Avanzados Ultra-Compactos -->
-    <div class="row mb-3">
+    <div class="row mb-1">
         <div class="col-12">
-            <div class="card neon-card bg-opacity-10 p-2">
+            <div class="card neon-card bg-opacity-10 p-0" style="max-width: 95%; margin: 0 auto; min-height: 0; padding: 2px !important;">
                 <div class="row g-1 align-items-end">
                     <div class="col-md-2">
-                        <label class="text-dim extra-small mb-1" x-text="$store.lang.t('transactions.search_text')"></label>
-                        <input type="text" class="form-control neon-input form-control-sm py-0" style="font-size: 0.75rem;" 
+                        <label class="text-dim extra-small mb-0" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.search_text')"></label>
+                        <input type="text" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" 
                                :placeholder="$store.lang.t('common.search')" 
                                x-model="filtros.busqueda" @input.debounce.500ms="aplicarFiltros()">
                     </div>
                     <div class="col-md-1">
-                        <label class="text-dim extra-small mb-1">DESDE</label>
-                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem;" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.date_from')">DESDE</label>
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
                     </div>
                     <div class="col-md-1">
-                        <label class="text-dim extra-small mb-1">HASTA</label>
-                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem;" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.date_to')">HASTA</label>
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
                     </div>
                     <div class="col-md-1">
-                        <label class="text-dim extra-small mb-1">CUENTA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
-                            <option value="">TODAS</option>
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('recurring.account')">CUENTA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
+                            <option value="" x-text="$store.lang.t('transactions.all')">TODAS</option>
                             <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
                                 <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="text-dim extra-small mb-1">BENEFICIARIO</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
-                            <option value="">TODOS</option>
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.columns.beneficiary')">BENEFICIARIO</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
+                            <option value="" x-text="$store.lang.t('transactions.all')">TODOS</option>
                             <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
                                 <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="text-dim extra-small mb-1">CATEGORÍA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_categoria" @change="aplicarFiltros()">
-                            <option value="">TODAS</option>
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.columns.category')">CATEGORÍA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_categoria" @change="aplicarFiltros()">
+                            <option value="" x-text="$store.lang.t('transactions.all')">TODAS</option>
                             <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
                                 <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="text-dim extra-small mb-1">ETIQUETA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.75rem;" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
-                            <option value="">SIN_FILTRO</option>
+                        <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('nav.tags')">ETIQUETA</label>
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
+                            <option value="" x-text="$store.lang.t('transactions.no_filter')">SIN_FILTRO</option>
                             <template x-for="tag in allTags" :key="tag.id_etiqueta">
                                 <option :value="tag.id_etiqueta" x-text="tag.nombre_etiqueta"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-1 text-end">
-                        <button class="btn btn-sm btn-outline-secondary w-100 py-0" style="height: 24px;" @click="limpiarFiltros()">
-                            <i class="fa-solid fa-eraser"></i>
+                        <button class="btn btn-sm btn-outline-secondary w-100 py-0" style="height: 22px;" @click="limpiarFiltros()">
+                            <i class="fa-solid fa-eraser" style="font-size: 0.7rem;"></i>
                         </button>
                     </div>
                 </div>
@@ -89,24 +110,39 @@
     </div>
 
     <!-- Listado principal -->
-    <div class="card neon-card">
-        <div class="card-body p-0">
-            <div class="table-responsive" 
-                 style="max-height: 70vh; overflow-y: auto;" 
+    <div class="card neon-card flex-grow-1 d-flex flex-column overflow-hidden min-height-0 mb-0">
+        <div class="card-body p-0 d-flex flex-column h-100 overflow-hidden">
+            <div class="table-responsive h-100" 
+                 style="overflow-y: auto;" 
                  @scroll="handleScroll">
-                <table class="table table-dark table-hover mb-0">
+                <table class="table table-dark table-hover table-compact mb-0">
                     <thead class="sticky-top bg-dark">
-                        <tr id="tx-headers">
+                        <tr id="tx-headers" class="bg-black bg-opacity-40">
                             <template x-for="col in columns" :key="col.key">
-                                <th :class="col.class" 
-                                    class="cursor-move py-3" 
-                                    x-text="col.label"></th>
+                                <th class="text-primary py-1 extra-small tracking-wider fw-bold text-uppercase resizable cursor-pointer user-select-none" 
+                                    :class="col.align === 'end' ? 'text-end' : ''"
+                                    style="font-size: 0.7rem; position: relative;"
+                                    @click="sortBy(col.key)">
+                                    <div class="d-flex align-items-center gap-1" :class="col.align === 'end' ? 'justify-content-end' : ''">
+                                        <span x-text="$store.lang.t('transactions.columns.' + col.key)"></span>
+                                        <i class="fa-solid extra-small text-dim opacity-50"
+                                           :class="{
+                                               'fa-sort': sortCol !== col.key,
+                                               'fa-sort-up text-info opacity-100': sortCol === col.key && sortAsc,
+                                               'fa-sort-down text-info opacity-100': sortCol === col.key && !sortAsc
+                                           }"></i>
+                                    </div>
+                                </th>
                             </template>
+
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="tx in transacciones" :key="tx.id_transaccion">
-                            <tr class="tx-row" @dblclick="editarTransaccion(tx)">
+                            <tr class="tx-row" 
+                                :class="{'bg-primary bg-opacity-10': selectedTxId === tx.id_transaccion}"
+                                @click="selectedTxId = tx.id_transaccion"
+                                @dblclick="editarTransaccion(tx)">
                                 <template x-for="col in columns" :key="col.key + '-' + tx.id_transaccion">
                                     <td class="align-middle text-nowrap">
                                         <template x-if="col.key === 'fecha'">
@@ -126,9 +162,17 @@
                                                   x-text="tx.es_dividida ? $store.lang.t('transactions.columns.is_split') : (tx.nombre_categoria || '-')"></span>
                                         </template>
                                         <template x-if="col.key === 'monto'">
-                                            <span :class="tx.monto_transaccion < 0 ? 'text-danger' : 'text-success'" 
-                                                  class="fw-bold fs-6"
-                                                  x-text="formatCurrency(tx.monto_transaccion)"></span>
+                                            <div class="text-end">
+                                                <span class="fs-6 fw-bold" :class="tx.monto_transaccion >= 0 ? 'text-success' : 'text-danger'" 
+                                                      x-text="formatCurrency(tx.monto_transaccion)">
+                                                </span>
+                                            </div>
+                                        </template>
+                                        <template x-if="col.key === 'saldo'">
+                                            <div class="text-end">
+                                                <span class="fs-6 fw-bold text-info" x-show="tx.saldo !== null && tx.saldo !== undefined" x-text="formatCurrency(tx.saldo)"></span>
+                                                <span class="text-dim opacity-25" x-show="tx.saldo === null || tx.saldo === undefined">-</span>
+                                            </div>
                                         </template>
                                         <template x-if="col.key === 'estado'">
                                             <span class="badge rounded-pill" 
@@ -153,6 +197,25 @@
                 <div x-show="loading" class="text-center p-4">
                     <div class="spinner-border text-primary" role="status"></div>
                 </div>
+            </div>
+            
+            <!-- Barra de Acciones Inferior -->
+            <div class="border-top border-secondary border-opacity-25 p-2 d-flex justify-content-center gap-2 bg-black bg-opacity-50">
+                <button class="btn btn-sm btn-outline-success px-4 neon-border" @click="nuevaTransaccion()">
+                    <i class="fa-solid fa-plus me-2"></i><span x-text="$store.lang.t('transactions.new')">Nuevo</span>
+                </button>
+                <button class="btn btn-sm btn-outline-primary px-4 neon-border" :disabled="!selectedTxId" 
+                        @click="if(selectedTxId) editarTransaccion(transacciones.find(t => t.id_transaccion === selectedTxId))">
+                    <i class="fa-solid fa-pen me-2"></i><span x-text="$store.lang.t('common.edit')">Editar</span>
+                </button>
+                <button class="btn btn-sm btn-outline-warning px-4 neon-border" :disabled="!selectedTxId"
+                        @click="if(selectedTxId) duplicarTransaccion(selectedTxId)">
+                    <i class="fa-solid fa-copy me-2"></i><span x-text="$store.lang.t('common.duplicate')">Duplicar</span>
+                </button>
+                <button class="btn btn-sm btn-outline-danger px-4 neon-border" :disabled="!selectedTxId"
+                        @click="if(selectedTxId && confirm($store.lang.t('common.delete_confirm'))) eliminarTransaccion(selectedTxId)">
+                    <i class="fa-solid fa-trash me-2"></i><span x-text="$store.lang.t('common.delete')">Borrar</span>
+                </button>
             </div>
         </div>
     </div>
@@ -370,10 +433,12 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('transaccionesPage', () => ({
             transacciones: [],
+            selectedTxId: null,
             offset: 0,
             limit: 100,
             loading: false,
             hasMore: true,
+            attachments: [],
             editTx: { etiquetas: [], divisiones: [], es_dividida: false },
             bsModal: null,
             saving: false,
@@ -394,19 +459,36 @@
             },
             
             defaultColumns: [
-                { key: 'fecha', label: 'FECHA', class: 'border-primary' },
-                { key: 'hora', label: 'HORA', class: 'border-primary' },
-                { key: 'cuenta', label: 'CUENTA', class: 'border-primary' },
-                { key: 'beneficiario', label: 'BENEFICIARIO', class: 'border-primary' },
-                { key: 'categoria', label: 'CATEGORÍA', class: 'border-primary' },
-                { key: 'monto', label: 'MONTO', class: 'border-primary text-end' },
-                { key: 'etiquetas', label: 'TAGS', class: 'border-primary' },
-                { key: 'estado', label: 'ESTADO', class: 'border-primary' }
+                { key: 'fecha', class: 'col-md-1 d-none d-md-table-cell border-primary' },
+                { key: 'hora', class: 'd-none d-lg-table-cell border-primary' },
+                { key: 'cuenta', class: 'col-md-2 border-primary text-truncate' },
+                { key: 'beneficiario', class: 'col-md-3 border-primary text-truncate' },
+                { key: 'categoria', class: 'col-md-2 d-none d-sm-table-cell border-primary text-truncate' },
+                { key: 'monto', class: 'col-md-1 border-primary', align: 'end' },
+                { key: 'saldo', class: 'col-md-1 d-none d-lg-table-cell border-primary', align: 'end' },
+                { key: 'etiquetas', class: 'd-none d-xl-table-cell border-primary' },
+                { key: 'estado', class: 'd-none d-md-table-cell border-primary' }
             ],
             columns: [],
+            sortable: null,
+            sortCol: 'fecha',
+            sortAsc: false, // Default desc order (newest first)
 
             async init() {
-                this.columns = [...this.defaultColumns];
+                // Load columns from localStorage if available
+                const savedOrder = localStorage.getItem('tx_columns_order_v1');
+                if (savedOrder) {
+                    const orderKeys = JSON.parse(savedOrder);
+                    this.columns = orderKeys.map(k => this.defaultColumns.find(c => c.key === k)).filter(Boolean);
+                    // Add any new columns that might have been added since save
+                    this.defaultColumns.forEach(c => {
+                        if (!this.columns.find(saved => saved.key === c.key)) {
+                            this.columns.push(c);
+                        }
+                    });
+                } else {
+                    this.columns = [...this.defaultColumns];
+                }
                 
                 let attempts = 0;
                 while (typeof bootstrap === 'undefined' && attempts < 20) {
@@ -426,6 +508,89 @@
 
                 await this.cargarColecciones();
                 await this.cargarMas();
+                
+                // Initialize Sortable and Resizers after data load and DOM update
+                this.$nextTick(() => {
+                    this.initSortable();
+                    this.initColumnResizers();
+                });
+            },
+
+            initColumnResizers() {
+                const headers = document.querySelectorAll('#tx-headers th');
+                headers.forEach(th => {
+                    if (th.querySelector('.resizer')) return;
+
+                    const resizer = document.createElement('div');
+                    resizer.classList.add('resizer');
+                    th.appendChild(resizer);
+
+                    let x = 0;
+                    let w = 0;
+
+                    const mouseMoveHandler = (e) => {
+                        const dx = e.clientX - x;
+                        th.style.width = `${w + dx}px`;
+                        th.classList.add('resizing'); // Optional style hook
+                        resizer.classList.add('resizing');
+                    };
+
+                    const mouseUpHandler = () => {
+                        document.removeEventListener('mousemove', mouseMoveHandler);
+                        document.removeEventListener('mouseup', mouseUpHandler);
+                        th.classList.remove('resizing');
+                        resizer.classList.remove('resizing');
+                    };
+
+                    const mouseDownHandler = (e) => {
+                        x = e.clientX;
+                        const styles = window.getComputedStyle(th);
+                        w = parseInt(styles.width, 10);
+
+                        document.addEventListener('mousemove', mouseMoveHandler);
+                        document.addEventListener('mouseup', mouseUpHandler);
+                        e.stopPropagation(); // Prevent sorting trigger
+                        e.preventDefault();
+                    };
+
+                    resizer.addEventListener('mousedown', mouseDownHandler);
+                    // Prevent sort click on resizer
+                    resizer.addEventListener('click', e => e.stopPropagation());
+                });
+            },
+
+            initSortable() {
+                const el = document.getElementById('tx-headers');
+                if (!el) return;
+                
+                this.sortable = new Sortable(el, {
+                    animation: 150,
+                    ghostClass: 'bg-primary',
+                    handle: 'th',
+                    onEnd: (evt) => {
+                        // Reorder columns array logic
+                        const item = this.columns.splice(evt.oldIndex, 1)[0];
+                        this.columns.splice(evt.newIndex, 0, item);
+                        
+                        // Force a refresh of the columns array reference to trigger render update
+                        this.columns = [...this.columns];
+
+                        // Save Order
+                        const keys = this.columns.map(c => c.key);
+                        localStorage.setItem('tx_columns_order_v1', JSON.stringify(keys));
+                    }
+                });
+            },
+
+            sortBy(key) {
+                if (this.sortCol === key) {
+                    this.sortAsc = !this.sortAsc;
+                } else {
+                    this.sortCol = key;
+                    this.sortAsc = true;
+                }
+                // Reset pagination and reload
+                this.aplicarFiltros();
             },
 
             async cargarColecciones() {
@@ -454,6 +619,9 @@
                             url += `&${key}=${encodeURIComponent(this.filtros[key])}`;
                         }
                     });
+                    
+                    // Add sorting params
+                    url += `&sort_by=${this.sortCol}&order=${this.sortAsc ? 'asc' : 'desc'}`;
 
                     const response = await api.get(url);
                     const payload = response.data;
@@ -474,9 +642,7 @@
                 if (scrollTop + clientHeight >= scrollHeight - 50) this.cargarMas();
             },
             
-            formatCurrency(val) {
-                return CurrencyUtils.formatCurrency(val);
-            },
+            formatCurrency(v) { return CurrencyUtils.formatCurrency(v); },
             formatFechaOnly(f) { return f ? new Date(f).toLocaleDateString() : '-'; },
             formatHoraOnly(f) { return f ? new Date(f).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'; },
             
@@ -626,6 +792,36 @@
                 } finally {
                     this.saving = false;
                 }
+            },
+
+            async eliminarTransaccion(id) {
+                try {
+                    await api.delete(`/transacciones/${id}`);
+                    this.transacciones = this.transacciones.filter(t => t.id_transaccion !== id);
+                    if (this.selectedTxId === id) this.selectedTxId = null;
+                } catch (error) {
+                    console.error('Error eliminando:', error);
+                    alert('Error al eliminar transacción');
+                }
+            },
+
+            async duplicarTransaccion(id) {
+                const tx = this.transacciones.find(t => t.id_transaccion === id);
+                if (!tx) return;
+                
+                // Clone and prepare for new insertion
+                this.editTx = JSON.parse(JSON.stringify(tx));
+                this.editTx.id_transaccion = 'NEW';
+                this.editTx.fecha_transaccion = new Date().toISOString().slice(0, 16);
+                
+                // Clear linked data that shouldn't be duplicated directly or needs reset
+                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
+                if (!this.editTx.divisiones) this.editTx.divisiones = [];
+                // Reset specialized fields if needed, e.g. recurrence
+                
+                this.attachments = []; // Don't duplicate attachments unless requested (complex)
+                
+                if (this.bsModal) this.bsModal.show();
             },
 
             toggleSplitMode() {

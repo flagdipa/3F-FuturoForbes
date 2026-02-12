@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Reportes Tácticos{% endblock %}
-{% block header %}Inteligencia Financiera Avanzada{% endblock %}
+{% block title %}<span x-text="$store.lang.t('reports.title')">Reportes Tácticos</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('reports.subtitle')">Inteligencia Financiera Avanzada</span>{% endblock %}
 
 {% block content %}
 <div x-data="reportesPage" class="content-wrapper bg-transparent">
-    <!-- Filtros y Acciones -->
+    <!-- Filtros y Acciones HUD -->
     <div class="row mb-4">
         <div class="col-md-6 d-flex align-items-center">
-            <div class="neon-card p-2 d-flex align-items-center me-3">
+            <div class="neon-card p-2 d-flex align-items-center me-3 border-hud">
                 <i class="fa-solid fa-calendar-alt text-primary me-2"></i>
-                <select class="form-select bg-transparent border-0 text-white fw-bold" style="width: auto;" x-model="selectedYear" @change="fetchData">
+                <select class="form-select bg-transparent border-0 text-white fw-bold font-orbitron" style="width: auto;" x-model="selectedYear" @change="fetchData">
                     <template x-for="year in years" :key="year">
                         <option :value="year" x-text="year"></option>
                     </template>
@@ -28,25 +28,25 @@
             </button>
         </div>
         <div class="col-md-6 text-end">
-            <span class="text-dim small me-2">ESTADO DEL SISTEMA:</span>
-            <span class="text-success fw-bold">ONLINE</span>
+            <span class="text-dim extra-small fw-bold me-2" x-text="$store.lang.t('reports.sys_status')">ESTADO DEL SISTEMA:</span>
+            <span class="text-success fw-bold shadow-glow-green">ONLINE</span>
         </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPIs HUD -->
     <div class="row mb-4" id="kpi-row">
         <!-- Ingresos -->
         <div class="col-md-4 mb-3">
-            <div class="neon-card p-3 position-relative overflow-hidden h-100">
+            <div class="neon-card p-3 position-relative overflow-hidden h-100 border-hud">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-dim small mb-1">
+                        <p class="text-dim extra-small fw-bold mb-1">
                             <i class="fa-solid fa-grip-vertical me-2 drag-handle text-secondary cursor-move" title="Arrastrar"></i>
-                            INGRESOS ANUALES
+                            <span x-text="$store.lang.t('reports.income_annual')">INGRESOS ANUALES</span>
                         </p>
-                        <h3 class="text-white fw-bold mb-0" x-text="formatCurrency(totalIngresos)"></h3>
+                        <h3 class="text-white fw-bold mb-0 font-orbitron" x-text="formatCurrency(totalIngresos)"></h3>
                     </div>
-                    <div class="icon-circle bg-success bg-opacity-10 text-success">
+                    <div class="icon-circle bg-success bg-opacity-10 text-success border border-success border-opacity-25 shadow-glow-green">
                         <i class="fa-solid fa-arrow-trend-up"></i>
                     </div>
                 </div>
@@ -54,16 +54,16 @@
         </div>
         <!-- Gastos -->
         <div class="col-md-4 mb-3">
-            <div class="neon-card p-3 position-relative overflow-hidden h-100">
+            <div class="neon-card p-3 position-relative overflow-hidden h-100 border-hud">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-dim small mb-1">
+                        <p class="text-dim extra-small fw-bold mb-1">
                             <i class="fa-solid fa-grip-vertical me-2 drag-handle text-secondary cursor-move" title="Arrastrar"></i>
-                            GASTOS ANUALES
+                            <span x-text="$store.lang.t('reports.expense_annual')">GASTOS ANUALES</span>
                         </p>
-                        <h3 class="text-white fw-bold mb-0" x-text="formatCurrency(totalGastos)"></h3>
+                        <h3 class="text-white fw-bold mb-0 font-orbitron" x-text="formatCurrency(totalGastos)"></h3>
                     </div>
-                    <div class="icon-circle bg-danger bg-opacity-10 text-danger">
+                    <div class="icon-circle bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 shadow-glow-red">
                         <i class="fa-solid fa-arrow-trend-down"></i>
                     </div>
                 </div>
@@ -71,33 +71,59 @@
         </div>
         <!-- Balance -->
         <div class="col-md-4 mb-3">
-            <div class="neon-card p-3 position-relative overflow-hidden h-100">
+            <div class="neon-card p-3 position-relative overflow-hidden h-100 border-hud">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-dim small mb-1">
+                        <p class="text-dim extra-small fw-bold mb-1">
                             <i class="fa-solid fa-grip-vertical me-2 drag-handle text-secondary cursor-move" title="Arrastrar"></i>
-                            BALANCE NETO
+                            <span x-text="$store.lang.t('reports.net_balance')">BALANCE NETO</span>
                         </p>
-                        <h3 class="fw-bold mb-0" 
-                            :class="totalNeto >= 0 ? 'text-primary' : 'text-danger'"
+                        <h3 class="fw-bold mb-0 font-orbitron" 
+                            :class="totalNeto >= 0 ? 'text-primary shadow-glow' : 'text-danger shadow-glow-red'"
                             x-text="formatCurrency(totalNeto)"></h3>
                     </div>
-                    <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                    <div class="icon-circle bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 shadow-glow">
                         <i class="fa-solid fa-scale-balanced"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Reportes Analíticos HUD -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="neon-card p-3 h-100 cursor-pointer hover-scale border-hud" onclick="window.location.href='/reportes/flujo-caja'">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-primary mb-1 fw-bold font-orbitron" x-text="$store.lang.t('reports.cashflow_vs_budget')">FLUJO VS. PRESUPUESTO</h6>
+                        <p class="text-dim extra-small mb-0" x-text="$store.lang.t('reports.cashflow_desc')">Análisis detallado de desviaciones y cumplimiento mensual.</p>
+                    </div>
+                    <i class="fa-solid fa-chart-bar fa-2x text-info opacity-25"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="neon-card p-3 h-100 cursor-pointer hover-scale border-hud" onclick="window.location.href='/reportes/heatmap'">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-primary mb-1 fw-bold font-orbitron" x-text="$store.lang.t('reports.heatmap_title')">MAPA DE CALOR TEMPORAL</h6>
+                        <p class="text-dim extra-small mb-0" x-text="$store.lang.t('reports.heatmap_desc')">Descubre tus horas pico y días de mayor consumo.</p>
+                    </div>
+                    <i class="fa-solid fa-fire-flame-curved fa-2x text-warning opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Gráficos -->
+
+    <!-- Gráficos HUD -->
     <div class="row mb-4" id="charts-row">
         <!-- Evolución Mensual -->
         <div class="col-lg-8 mb-4">
-            <div class="neon-card h-100">
-                <h5 class="text-primary mb-4">
+            <div class="neon-card h-100 border-hud">
+                <h5 class="text-primary mb-4 font-orbitron">
                     <i class="fa-solid fa-grip-vertical me-2 drag-handle text-secondary cursor-move" title="Arrastrar"></i>
-                    <i class="fa-solid fa-chart-column me-2"></i>EVOLUCIÓN MENSUAL
+                    <i class="fa-solid fa-chart-column me-2"></i><span x-text="$store.lang.t('reports.monthly_evolution')">EVOLUCIÓN MENSUAL</span>
                 </h5>
                 <div class="chart-container" style="position: relative; height: 300px;">
                     <canvas id="evolutionChart"></canvas>
@@ -106,25 +132,16 @@
         </div>
         <!-- Categorías -->
         <div class="col-lg-4 mb-4">
-            <div class="neon-card h-100">
+            <div class="neon-card h-100 border-hud">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="text-primary mb-0">
+                    <h5 class="text-primary mb-0 font-orbitron">
                         <i class="fa-solid fa-grip-vertical me-2 drag-handle text-secondary cursor-move" title="Arrastrar"></i>
-                        <i class="fa-solid fa-chart-pie me-2"></i>GASTOS POR CATEGORÍA
+                        <i class="fa-solid fa-chart-pie me-2"></i><span x-text="$store.lang.t('reports.category_spending')">GASTOS POR CATEGORÍA</span>
                     </h5>
-                    <select class="form-select form-select-sm bg-dark text-white border-secondary w-auto" x-model="selectedMonth" @change="fetchCategories">
-                        <option value="1">Enero</option>
-                        <option value="2">Febrero</option>
-                        <option value="3">Marzo</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Mayo</option>
-                        <option value="6">Junio</option>
-                        <option value="7">Julio</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Septiembre</option>
-                        <option value="10">Octubre</option>
-                        <option value="11">Noviembre</option>
-                        <option value="12">Diciembre</option>
+                    <select class="form-select form-select-sm bg-black text-white border-secondary w-auto font-orbitron" x-model="selectedMonth" @change="fetchCategories">
+                        <template x-for="(m, idx) in ['01','02','03','04','05','06','07','08','09','10','11','12']" :key="idx">
+                            <option :value="idx + 1" x-text="m"></option>
+                        </template>
                     </select>
                 </div>
                 <div class="chart-container" style="position: relative; height: 300px; display: flex; justify-content: center;">
@@ -132,39 +149,40 @@
                 </div>
             </div>
         </div>
-    <!-- Comparativa de Presupuesto -->
+    </div>
+    <!-- Comparativa de Presupuesto HUD -->
     <div class="row mb-4" id="budget-row">
         <div class="col-12">
-            <div class="neon-card">
+            <div class="neon-card border-hud">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="text-primary mb-0">
-                        <i class="fa-solid fa-scale-balanced me-2"></i>PRESUPUESTO VS. REALIDAD
+                    <h5 class="text-primary mb-0 font-orbitron">
+                        <i class="fa-solid fa-scale-balanced me-2"></i><span x-text="$store.lang.t('reports.budget_vs_real')">PRESUPUESTO VS. REALIDAD</span>
                     </h5>
-                    <span class="text-dim small" x-text="'Periodo: ' + selectedMonth + ' / ' + selectedYear"></span>
+                    <span class="text-dim extra-small fw-bold" x-text="$store.lang.t('reports.period') + ': ' + selectedMonth + ' / ' + selectedYear"></span>
                 </div>
                 
                 <div class="row">
                     <template x-for="item in budgetData" :key="item.categoria">
                         <div class="col-md-6 mb-4">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="text-white fw-bold" x-text="item.categoria"></span>
-                                <span class="text-dim small" x-text="formatCurrency(item.real) + ' / ' + formatCurrency(item.presupuestado)"></span>
+                                <span class="text-white fw-bold font-orbitron smaller" x-text="item.categoria"></span>
+                                <span class="text-dim extra-small" x-text="formatCurrency(item.real) + ' / ' + formatCurrency(item.presupuestado)"></span>
                             </div>
-                            <div class="progress bg-dark" style="height: 10px;">
+                            <div class="progress bg-black border border-secondary border-opacity-25" style="height: 6px;">
                                 <div class="progress-bar" role="progressbar" 
                                      :style="'width: ' + Math.min(item.porcentaje, 100) + '%'"
-                                     :class="item.porcentaje > 100 ? 'bg-danger shadow-danger' : (item.porcentaje > 80 ? 'bg-warning shadow-warning' : 'bg-success shadow-success')"
+                                     :class="item.porcentaje > 100 ? 'bg-danger shadow-glow-red' : (item.porcentaje > 80 ? 'bg-warning shadow-glow-orange' : 'bg-success shadow-glow-green')"
                                      :aria-valuenow="item.porcentaje" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div class="d-flex justify-content-between mt-1">
-                                <span class="extra-small" :class="item.porcentaje > 100 ? 'text-danger' : 'text-dim'" x-text="item.porcentaje + '% utilizado'"></span>
-                                <span class="extra-small text-dim" x-text="'Dif: ' + formatCurrency(item.diferencia)"></span>
+                                <span class="extra-small fw-bold" :class="item.porcentaje > 100 ? 'text-danger' : 'text-dim'" x-text="item.porcentaje + '% ' + $store.lang.t('reports.utilized')"></span>
+                                <span class="extra-small text-dim" x-text="'DIF: ' + formatCurrency(item.diferencia)"></span>
                             </div>
                         </div>
                     </template>
                     <template x-if="budgetData.length === 0">
                         <div class="col-12 text-center py-4">
-                            <p class="text-dim">No hay presupuestos definidos para este periodo.</p>
+                            <p class="text-dim font-orbitron smaller" x-text="$store.lang.t('reports.no_budget')">No hay presupuestos definidos para este periodo.</p>
                         </div>
                     </template>
                 </div>
@@ -184,7 +202,7 @@
         let chartCategoria = null;
 
         Alpine.data('reportesPage', () => ({
-            years: [2024, 2025, 2026],
+            years: [2024, 2025, 2026, 2027],
             selectedYear: 2026, // Default a 2026
             selectedMonth: new Date().getMonth() + 1,
             loadingPDF: false,
@@ -372,13 +390,13 @@
                 chartEvolucion.data.labels = labels;
                 chartEvolucion.data.datasets = [
                     {
-                        label: 'Ingresos',
+                        label: this.$store.lang.t('common.income'),
                         data: ingresos,
                         backgroundColor: '#00f2ff', // Cyan Neón
                         borderRadius: 4
                     },
                     {
-                        label: 'Gastos',
+                        label: this.$store.lang.t('common.expense'),
                         data: gastos,
                         backgroundColor: '#ff0055', // Magenta Neón
                         borderRadius: 4

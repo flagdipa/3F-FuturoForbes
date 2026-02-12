@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
 from ...core.database import get_session
-from ...models.models import LibroTransacciones, ListaCuentas, Beneficiario, Categoria, Presupuesto
+from ...models.models import LibroTransacciones, ListaCuentas, Beneficiario, Categoria, Presupuesto, Usuario
 from ...models.models_config import AnioPresupuesto
 from ...models.models_plugins import Plugin
 from ...core.reports_service import reports_service
@@ -330,3 +330,124 @@ def proyeccion_cuenta(
     proyeccion = forecasting_service.forecast_account_balance(Decimal(saldo_actual), recurring_data, dias)
     
     return proyeccion
+@router.get("/cashflow")
+def reporte_cashflow(
+    year: int = Query(datetime.now().year),
+    session: Session = Depends(get_session)
+):
+    """
+    Retorna Ingresos Reales, Gastos Reales y Presupuesto Mensual Agregado por mes.
+    """
+    # 1. Obtener Presupuesto Mensual Total del año (Asumimos Monthly por simplicidad)
+    # Sumamos todos los presupuestos activos del año 2026 por categoría
+    budget_query = select(
+        func.sum(Presupuesto.monto).label('total')
+    ).join(AnioPresupuesto)\
+     .where(AnioPresupuesto.anio == year, Presupuesto.activo == 1)
+    
+    total_budget_monthly = session.exec(budget_query).one() or 0
+    total_budget_monthly = float(total_budget_monthly)
+
+    # 2. Obtener Ingresos Reales por mes
+    ingresos_query = select(
+        func.extract('month', LibroTransacciones.fecha_transaccion).label('mes'),
+        func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
+    ).where(
+        func.extract('year', LibroTransacciones.fecha_transaccion) == year,
+        LibroTransacciones.codigo_transaccion == 'Deposit'
+    ).group_by(func.extract('month', LibroTransacciones.fecha_transaccion))
+    
+    ingresos_mes = {int(mes): float(total) for mes, total in session.exec(ingresos_query).all() if mes}
+    
+    # 3. Obtener Gastos Reales por mes
+    gastos_query = select(
+        func.extract('month', LibroTransacciones.fecha_transaccion).label('mes'),
+        func.sum(func.abs(LibroTransacciones.monto_transaccion)).label('total')
+    ).where(
+        func.extract('year', LibroTransacciones.fecha_transaccion) == year,
+        LibroTransacciones.codigo_transaccion == 'Withdrawal'
+    ).group_by(func.extract('month', LibroTransacciones.fecha_transaccion))
+    
+    gastos_mes = {int(mes): float(total) for mes, total in session.exec(gastos_query).all() if mes}
+
+    # 4. Consolidar datos
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    actual_income = []
+    actual_expense = []
+    budget_expense = []
+    variances = []
+
+    for i in range(1, 13):
+        inc = ingresos_mes.get(i, 0.0)
+        exp = gastos_mes.get(i, 0.0)
+        actual_income.append(inc)
+        actual_expense.append(exp)
+        budget_expense.append(total_budget_monthly)
+        
+        # Desviación (Presupuesto - Real) -> Positivo es bueno (menos gasto), Negativo es malo (exceso)
+        variance = total_budget_monthly - exp
+        variances.append(variance)
+
+    return {
+        "labels": labels,
+        "datasets": [
+            {"label": "Ingresos Reales", "data": actual_income, "type": "bar"},
+            {"label": "Gastos Reales", "data": actual_expense, "type": "bar"},
+            {"label": "Presupuesto (Gastos)", "data": budget_expense, "type": "line"}
+        ],
+        "summary": {
+            "total_actual_income": sum(actual_income),
+            "total_actual_expense": sum(actual_expense),
+            "total_budget": total_budget_monthly * 12,
+            "monthly_budget": total_budget_monthly
+        },
+        "variances": variances
+    }
+
+@router.get("/heatmap")
+def reporte_heatmap(
+    month: int = Query(None),
+    year: int = Query(None),
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Agrupa gastos por día de la semana y hora para visualización de frecuencia.
+    """
+    from sqlalchemy import text
+    
+    where_clause = "WHERE codigo_transaccion = 'Withdrawal'"
+    params = {}
+    
+    if month:
+        where_clause += " AND MONTH(fecha_transaccion) = :month"
+        params["month"] = month
+    if year:
+        where_clause += " AND YEAR(fecha_transaccion) = :year"
+        params["year"] = year
+        
+    # Query nativo para MySQL: DAYOFWEEK (1=Dom, 7=Sab), HOUR
+    query = text(f"""
+        SELECT 
+            DAYOFWEEK(fecha_transaccion) as dia_semana,
+            HOUR(fecha_transaccion) as hora,
+            COUNT(*) as frecuencia,
+            SUM(ABS(monto_transaccion)) as volumen
+        FROM libro_transacciones
+        {where_clause}
+        GROUP BY dia_semana, hora
+        ORDER BY dia_semana, hora
+    """)
+    
+    results = session.execute(query, params).all()
+    
+    return [
+        {
+            "day": r.dia_semana, 
+            "hour": r.hora, 
+            "count": r.frecuencia, 
+            "value": float(r.volumen)
+        } 
+        for r in results
+    ]
+

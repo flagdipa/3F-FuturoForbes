@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Importar CSV - Reconciliación{% endblock %}
-{% block header %}Conciliación Bancaria Automática{% endblock %}
+{% block title %}<span x-text="$store.lang.t('import.title')">Importar CSV - Reconciliación</span>{% endblock %}
+{% block header %}<span x-text="$store.lang.t('import.title')">Conciliación Bancaria</span>{% endblock %}
 
 {% block content %}
 <div x-data="reconciliationWizard" class="container-fluid py-4">
@@ -9,28 +9,28 @@
         <div class="col-12 col-xl-10 mx-auto">
             
             <!-- Wizard Header -->
-            <div class="card bg-dark border-primary mb-4">
+            <div class="card neon-card mb-4 overflow-hidden">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="mb-0 text-primary fw-bold"><i class="fa-solid fa-file-import me-2"></i>WIZARD_DE_IMPORTACION</h5>
-                        <small class="text-dim">PASO <span x-text="step"></span> DE 3: <span x-text="stepTitles[step-1]"></span></small>
+                        <h5 class="mb-0 text-primary hud-title extra-small"><i class="fa-solid fa-file-import me-2"></i><span x-text="$store.lang.t('import.wizard')">WIZARD_DE_IMPORTACION</span></h5>
+                        <small class="text-dim extra-small text-uppercase"><span x-text="$store.lang.t('import.step')">PASO</span> <span x-text="step"></span> <span x-text="$store.lang.t('import.of')">DE</span> 3: <span x-text="stepTitles[step-1]"></span></small>
                     </div>
                 </div>
             </div>
 
             <!-- Step 1: Upload & Account Selection -->
             <div x-show="step === 1" x-transition.opacity>
-                <div class="card bg-dark border-secondary">
+                <div class="card neon-card">
                     <div class="card-body p-5 text-center">
-                        <i class="fa-solid fa-cloud-arrow-up fa-4x mb-4 text-primary opacity-50"></i>
-                        <h3 class="mb-4">Seleccione la cuenta y el archivo</h3>
+                        <i class="fa-solid fa-cloud-arrow-up fa-4x mb-4 text-primary opacity-25"></i>
+                        <h3 class="hud-title text-primary mb-4" x-text="$store.lang.t('import.select_acc')">Seleccione la cuenta y el archivo</h3>
                         
                         <div class="row justify-content-center">
                             <div class="col-md-6">
                                 <div class="mb-4 text-start">
-                                    <label class="form-label text-dim small">CUENTA_DESTINO</label>
-                                    <select x-model="selectedAccount" class="form-select bg-black text-white border-secondary">
-                                        <option value="">Seleccione una cuenta...</option>
+                                    <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('import.select_acc')">CUENTA_DESTINO</label>
+                                    <select x-model="selectedAccount" class="form-select neon-input">
+                                        <option value="" x-text="$store.lang.t('common.loading')">Seleccione una cuenta...</option>
                                         <template x-for="acc in accounts" :key="acc.id_cuenta">
                                             <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
                                         </template>
@@ -38,12 +38,12 @@
                                 </div>
                                 
                                 <div class="mb-4 text-start">
-                                    <label class="form-label text-dim small">ARCHIVO_CSV (EXTRACTO)</label>
-                                    <input type="file" @change="handleFileUpload" class="form-control bg-black text-white border-secondary" accept=".csv">
+                                    <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('import.select_file')">ARCHIVO_CSV (EXTRACTO)</label>
+                                    <input type="file" @change="handleFileUpload" class="form-control neon-input" accept=".csv">
                                 </div>
 
-                                <button @click="getPreview" :disabled="!selectedAccount || !file" class="btn btn-primary w-100 py-3 fw-bold">
-                                    GENERAR_VISTA_PREVIA <i class="fa-solid fa-arrow-right ms-2"></i>
+                                <button @click="getPreview" :disabled="!selectedAccount || !file" class="btn neon-btn w-100 py-3 shadow-sm">
+                                    <span x-text="$store.lang.t('import.gen_preview')">GENERAR_VISTA_PREVIA</span> <i class="fa-solid fa-bolt ms-2"></i>
                                 </button>
                             </div>
                         </div>
@@ -53,21 +53,22 @@
 
             <!-- Step 2: Preview & Matching -->
             <div x-show="step === 2" x-transition.opacity>
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-black d-flex justify-content-between align-items-center">
-                        <span class="text-primary fw-bold">TRANSACCIONES_DETECTADAS (<span x-text="previewData.length"></span>)</span>
-                        <button @click="step = 1" class="btn btn-sm btn-outline-secondary">Atrás</button>
+                <div class="card neon-card">
+                    <div class="card-header bg-black bg-opacity-40 d-flex justify-content-between align-items-center">
+                        <span class="text-primary hud-title extra-small"><span x-text="$store.lang.t('import.detected')">TRANSACCIONES_DETECTADAS</span> (<span x-text="previewData.length"></span>)</span>
+                        <button @click="step = 1" class="btn btn-sm btn-outline-secondary border-opacity-10 text-uppercase extra-small px-3" x-text="$store.lang.t('common.back')">Atrás</button>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive" style="max-height: 500px;">
                             <table class="table table-dark table-hover mb-0">
-                                <thead>
-                                    <tr class="text-dim small">
-                                        <th>ESTADO</th>
-                                        <th>FECHA</th>
-                                        <th>DESCRIPCION</th>
-                                        <th class="text-end">MONTO</th>
-                                        <th>ACCION</th>
+                                <thead class="sticky-top bg-black bg-opacity-40">
+                                    <tr class="extra-small text-uppercase tracking-wider fw-bold">
+                                        <th class="py-3 text-primary" x-text="$store.lang.t('transactions.columns.status')">ESTADO</th>
+                                        <th class="py-3 text-primary" x-text="$store.lang.t('transactions.columns.date')">FECHA</th>
+                                        <th class="py-3 text-primary" x-text="$store.lang.t('common.description')">DESCRIPCION</th>
+                                        <th class="py-3 text-primary" style="width: 250px;"><span x-text="$store.lang.t('transactions.columns.beneficiary')">BENEFICIARIO</span> / <span x-text="$store.lang.t('transactions.columns.category')">CATEGORIA</span></th>
+                                        <th class="py-3 text-primary text-end" x-text="$store.lang.t('transactions.columns.amount')">MONTO</th>
+                                        <th class="py-3 text-primary text-center" x-text="$store.lang.t('common.actions')">ACCION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -75,18 +76,46 @@
                                         <tr :class="tx.match_id ? 'border-start border-4 border-info' : 'border-start border-4 border-success'">
                                             <td class="align-middle">
                                                 <template x-if="tx.match_id">
-                                                    <span class="badge bg-info bg-opacity-25 text-info">EXISTENTE (Match 90%)</span>
+                                                    <span class="badge extra-small border border-info border-opacity-25 text-info" x-text="$store.lang.t('import.match')">EXISTENTE</span>
                                                 </template>
                                                 <template x-if="!tx.match_id">
-                                                    <span class="badge bg-success bg-opacity-25 text-success">NUEVA</span>
+                                                    <span class="badge extra-small border border-success border-opacity-25 text-success" x-text="$store.lang.t('import.new_tx')">NUEVA</span>
                                                 </template>
                                             </td>
                                             <td x-text="tx.fecha" class="align-middle fw-bold"></td>
                                             <td class="align-middle">
-                                                <div x-text="tx.descripcion"></div>
+                                                <div x-text="tx.descripcion" class="text-truncate" style="max-width: 250px;"></div>
                                                 <template x-if="tx.match_id">
                                                     <small class="text-dim">ID Matched: <span x-text="tx.match_id"></span></small>
                                                 </template>
+                                            </td>
+                                            <td class="align-middle">
+                                                <!-- If Matched: Show existing info (readonly) -->
+                                                <template x-if="tx.match_id">
+                                                    <small class="text-dim d-block fst-italic">Ya asignado</small>
+                                                </template>
+                                                
+                                                 <!-- If New: Allow assignment -->
+                                                 <template x-if="!tx.match_id">
+                                                     <div class="d-flex flex-column gap-1">
+                                                         <!-- Category Selector -->
+                                                         <select x-model="tx.id_categoria" class="form-select form-select-sm neon-input extra-small">
+                                                             <option :value="null" x-text="'(' + $store.lang.t('common.none') + ')'">(Auto: Sin Categ.)</option>
+                                                             <template x-for="cat in categories" :key="cat.id_categoria">
+                                                                 <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                                             </template>
+                                                         </select>
+                                                         <!-- Payee name override (optional) -->
+                                                         <input type="text" x-model="tx.new_payee" class="form-control form-control-sm neon-input extra-small" :placeholder="tx.descripcion">
+                                                         
+                                                         <!-- Rule Applied Indicator -->
+                                                         <template x-if="tx.rule_applied">
+                                                              <small class="text-info extra-small fw-bold opacity-75">
+                                                                  <i class="fa-solid fa-wand-magic-sparkles me-1"></i>REGLA: <span x-text="tx.rule_applied"></span>
+                                                              </small>
+                                                         </template>
+                                                     </div>
+                                                 </template>
                                             </td>
                                             <td x-text="formatAmount(tx.monto)" class="text-end align-middle fw-bold" :class="tx.monto > 0 ? 'text-success' : 'text-danger'"></td>
                                             <td class="align-middle">
@@ -99,14 +128,14 @@
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer bg-black p-3">
+                    <div class="card-footer bg-black bg-opacity-40 p-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-dim small">
-                                Total a crear: <span class="text-success fw-bold" x-text="previewData.filter(t => t.is_new).length"></span> | 
-                                Matcheadas: <span class="text-info fw-bold" x-text="previewData.filter(t => !t.is_new).length"></span>
+                            <div class="text-dim extra-small text-uppercase fw-bold">
+                                <span x-text="$store.lang.t('import.new_tx')">Total a crear</span>: <span class="text-success fw-bold" x-text="previewData.filter(t => t.is_new).length"></span> | 
+                                <span x-text="$store.lang.t('import.match')">Matcheadas</span>: <span class="text-info fw-bold" x-text="previewData.filter(t => !t.is_new).length"></span>
                             </div>
-                            <button @click="processReconciliation" class="btn btn-success fw-bold">
-                                FINALIZAR_CONCILIACION <i class="fa-solid fa-check-double ms-2"></i>
+                            <button @click="processReconciliation" class="btn neon-btn px-4 shadow-sm">
+                                <span x-text="$store.lang.t('import.finalize')">FINALIZAR_CONCILIACION</span> <i class="fa-solid fa-check-double ms-2"></i>
                             </button>
                         </div>
                     </div>
@@ -115,26 +144,26 @@
 
             <!-- Step 3: Success -->
             <div x-show="step === 3" x-transition.opacity>
-                <div class="card bg-dark border-success text-center p-5">
-                    <i class="fa-solid fa-circle-check fa-5x text-success mb-4"></i>
-                    <h2>¡Conciliación Exitosa!</h2>
-                    <p class="text-dim mb-4">Se han procesado las transacciones del extracto bancario.</p>
+                <div class="card neon-card text-center p-5 border-success">
+                    <i class="fa-solid fa-circle-check fa-5x text-success mb-4 opacity-50"></i>
+                    <h2 class="hud-title text-success mb-3" x-text="$store.lang.t('import.success')">¡Conciliación Exitosa!</h2>
+                    <p class="text-dim extra-small text-uppercase opacity-75 mb-4">Sincronización de extracto completada con éxito</p>
                     
                     <div class="row justify-content-center">
                         <div class="col-md-4">
                             <div class="p-3 bg-black rounded mb-4">
                                 <div class="row">
-                                    <div class="col-6 border-end">
-                                        <h4 class="text-success mb-0" x-text="stats.created">0</h4>
-                                        <small class="text-dim">CREADAS</small>
+                                    <div class="col-6 border-end border-secondary border-opacity-25">
+                                        <h4 class="text-success hud-title mb-0" x-text="stats.created">0</h4>
+                                        <small class="text-dim extra-small" x-text="$store.lang.t('import.stats_created')">CREADAS</small>
                                     </div>
                                     <div class="col-6">
-                                        <h4 class="text-info mb-0" x-text="stats.matched">0</h4>
-                                        <small class="text-dim">MATCHED</small>
+                                        <h4 class="text-info hud-title mb-0" x-text="stats.matched">0</h4>
+                                        <small class="text-dim extra-small" x-text="$store.lang.t('import.stats_matched')">MATCHED</small>
                                     </div>
                                 </div>
                             </div>
-                            <a href="/transacciones" class="btn btn-outline-primary w-100">Ver Transacciones</a>
+                            <a href="/transacciones" class="btn neon-btn w-100 py-2 shadow-sm"><span x-text="$store.lang.t('nav.transactions')">Ver Transacciones</span></a>
                         </div>
                     </div>
                 </div>
@@ -156,16 +185,20 @@ document.addEventListener('alpine:init', () => {
         file: null,
         previewData: [],
         stats: {created: 0, matched: 0},
+        categories: [],
         loading: false,
 
         async init() {
             // Load accounts for dropdown
             try {
                 const res = await api.get('/lista_cuentas/');
-                // Handle paginated or direct list
                 this.accounts = res.data.data || res.data;
+                
+                // Load categories for selector
+                const catRes = await api.get('/categorias/');
+                this.categories = catRes.data;
             } catch (e) {
-                console.error("Error loading accounts:", e);
+                console.error("Error loading resources:", e);
             }
         },
 
@@ -185,7 +218,12 @@ document.addEventListener('alpine:init', () => {
                 const res = await api.post('/reconciliation/preview', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                this.previewData = res.data;
+                 // Initialize values using backend suggestions from Reglas if available
+                 this.previewData = res.data.map(tx => ({
+                     ...tx,
+                     id_categoria: tx.id_categoria || 1, 
+                     new_payee: tx.new_payee || tx.descripcion
+                 }));
                 this.step = 2;
             } catch (e) {
                 alert("Error al procesar el archivo: " + (e.response?.data?.detail || e.message));
