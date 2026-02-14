@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# Database & Local Env
+.env
+*.db
+*.sqlite3
+data/
+
+# Frontend builds/temp
+node_modules/
+.npm/
+
+# Logs
+*.log
+logs/
+
+# Misc
+.gemini/
+.agent/
+.vscode/
+.idea/
+tmp/
+vendor/

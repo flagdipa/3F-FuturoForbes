@@ -1,28 +1,25 @@
-# Production Dockerfile for FuturoForbes
-FROM python:3.11-slim
+# Usar una imagen de Python oficial compacta
+FROM python:3.12-slim
 
+# Directorio de trabajo
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Instalar dependencias del sistema necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    default-libmysqlclient-dev \
-    pkg-config \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Copiar requirements primero para aprovechar la caché de Docker
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir uvicorn
 
-# Copy application code
+# Copiar el resto de la aplicación
 COPY . .
 
-# Environment defaults
-ENV PORT=8000
-ENV HOST=0.0.0.0
-
+# Exponer el puerto que usa FastAPI
 EXPOSE 8000
 
-# Run with uvicorn
-CMD ["sh", "-c", "python -m uvicorn backend.main:app --host $HOST --port $PORT"]
+# Comando para ejecutar la aplicación
+# Usamos uvicorn directamente
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
