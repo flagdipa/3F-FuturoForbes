@@ -35,6 +35,21 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(current_dir, "templates"))
 
+from backend.core.install_checker import is_installed
+
+# --- Fail-safe: Si ya está instalado, el wizard no debe correr ---
+@app.middleware("http")
+async def check_installed_middleware(request: Request, call_next):
+    # Permitir estáticos siempre para que las páginas de error se vean bien
+    if request.url.path.startswith("/static"):
+        return await call_next(request)
+        
+    # Si ya hay evidencia de instalación (.env y .installed), fuera de aquí redirección
+    if is_installed():
+        return RedirectResponse(url="/")
+        
+    return await call_next(request)
+
 # --- Modelos Pydantic ---
 class DatabaseConfig(BaseModel):
     db_type: str

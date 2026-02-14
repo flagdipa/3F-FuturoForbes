@@ -95,35 +95,22 @@ async def installation_middleware(request: Request, call_next):
         "monitoring" in path):
         return await call_next(request)
     
-    # 2. Bloqueo de Seguridad (Instalado pero carpeta install existe)
-    if is_install_blocked():
-        return HTMLResponse(content=f"""
-        <div style="background:#0d1117; color:#c9d1d9; font-family:sans-serif; height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding: 20px;">
-            <div style="max-width:600px; border:1px solid #30363d; padding:40px; border-radius:12px; background:#161b22; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
-                <h1 style="color:#ff7b72; font-size:24px;">⚠️ RIESGO DE SEGURIDAD</h1>
-                <p>El sistema 3F ha detectado que la carpeta de instalación todavía existe.</p>
-                <p style="color:#8b949e;">Por razones de seguridad, el sistema permanecerá bloqueado hasta que elimines o desactives la carpeta <code>/install</code>.</p>
-                
-                <div style="background:#0d1117; padding:20px; border-radius:8px; text-align:left; margin-top:24px; border-left:4px solid #58a6ff;">
-                    <b style="color:#58a6ff;">Acción Requerida (Elija una):</b><br><br>
-                    1. <b>Elimine</b> la carpeta <code>{os.getcwd()}/install</code>.<br>
-                    2. O si no tiene permisos: Agregue la variable de entorno <b><code>SKIP_INSTALL_FOLDER_CHECK=true</code></b> en su panel de Dokploy/VPS y reinicie.
-                </div>
-                
-                <p style="margin-top:24px;"><button onclick="location.reload()" style="background:#238636; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:600;">Ya lo hice, refrescar</button></p>
-            </div>
-        </div>
-        """, status_code=403)
-
-    # 3. Redirección si no está instalado
+    # 2. Redirección si no está instalado (Falta .env o .installed)
+    # Una vez instalado, este middleware ya no interfiere más.
+    # NO HAY BLOQUEO POR CARPETA.
     if not is_installed() and install_app:
         return RedirectResponse(url="/install/")
         
     return await call_next(request)
 
-# --- Montar Aplicación de Instalación ---
-if install_app:
+# --- Montar Aplicación de Instalación (Dinámico) ---
+# Solo se monta si NO hay evidencia de instalación para evitar riesgos
+if install_app and not is_installed():
     app.mount("/install", install_app)
+elif install_app:
+    # Si está instalado, montamos una ruta vacía o nada para evitar acceso al wizard
+    # Opcionalmente podrías montar una página de "Ya instalado"
+    pass
 
 # Rate limiter state
 app.state.limiter = limiter

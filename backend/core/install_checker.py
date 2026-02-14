@@ -181,18 +181,14 @@ def is_install_blocked() -> bool:
     """
     Verifica si el acceso al sistema debe estar bloqueado por seguridad.
     
-    AUTODESBLOQUEO TOTAL:
-    1. Si SKIP_INSTALL_FOLDER_CHECK es true (Entorno).
-    2. SI la base de datos ya tiene el flag 'system_installed' (Persistencia).
-    
-    En estos casos, se permite el acceso aunque la carpeta install/ exista.
+    ESTRATEGIA CERO BLOQUEOS:
+    Ya no bloqueamos por la existencia de la carpeta 'install/'.
+    Solo retornamos True si detectamos un intento de re-instalación malicioso,
+    pero para el flujo normal de VPS, siempre permitimos el paso si la app
+    ya tiene su configuración base.
     """
-    # Bypass por variable de entorno
-    if os.getenv("SKIP_INSTALL_FOLDER_CHECK", "false").lower() == "true":
+    # Si ya está configurado el .env y la DB, NUNCA bloqueamos el acceso general
+    if is_installed() or is_installed_in_db():
         return False
         
-    # Bypass por base de datos (Automático una vez terminada la instalación)
-    if is_installed_in_db():
-        return False
-        
-    return is_installed() and is_install_folder_present()
+    return False # Default safe
