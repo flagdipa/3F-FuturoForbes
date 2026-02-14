@@ -1,0 +1,21 @@
+#!/bin/bash
+clear
+echo "===================================="
+echo "  WIZARD DE INSTALACION FUTUROFORBES 3F"
+echo "===================================="
+echo ""
+echo "Iniciando servidor del wizard..."
+echo ""
+echo "El wizard estara disponible en:"
+echo "  http://localhost:8080"
+echo ""
+echo "IMPORTANTE:"
+echo " - Asegurate de tener Python 3.9+ instalado"
+echo " - Asegurate de tener MySQL o PostgreSQL configurado"
+echo " - Ten a mano las credenciales de tu base de datos"
+echo ""
+read -p "Presiona Enter para continuar..."
+echo ""
+echo "Iniciando..."
+cd "$(dirname "$0")"
+python -m uvicorn install.app:app --reload --host 0.0.0.0 --port 8080

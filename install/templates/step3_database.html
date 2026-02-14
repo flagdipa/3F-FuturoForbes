@@ -1,49 +1,119 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="step-container">
-    <h2 class="step-title">Base de Datos</h2>
-    <form onsubmit="test(event)">
-        <div class="form-group"><label>Tipo</label><select id="db_type" class="form-control"><option value="mysql">MySQL</option></select></div>
-        <div class="form-group"><label>Host</label><input type="text" id="host" class="form-control" value="localhost"></div>
-        <div class="form-group"><label>User</label><input type="text" id="user" class="form-control" value="root"></div>
-        <div class="form-group"><label>Pass</label><input type="password" id="pass" class="form-control"></div>
-        <div class="form-group"><label>DB Name</label><input type="text" id="db" class="form-control" value="3f_db"></div>
-        <button type="submit" class="btn btn-outline" id="btn-test">🔌 Probar Conexión</button>
+    <h2>Configuración de Base de Datos</h2>
+    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">
+        Ingresa las credenciales de tu servidor de base de datos.
+    </p>
+
+    <div class="alert alert-info">
+        <strong>💡 Tip para Docker/VPS:</strong> 
+        Si usas Dokploy, usa el <b>Internal Host</b> (ej: <code>db</code> o <code>f3-3f-xxx</code>) en lugar de <code>localhost</code>.
+    </div>
+
+    <form onsubmit="testConnection(event)">
+        <div class="form-group">
+            <label>Motor de Base de Datos</label>
+            <select id="db_type" class="form-control">
+                <option value="mysql">MySQL / MariaDB</option>
+                <option value="postgresql">PostgreSQL</option>
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label>Host</label>
+                <input type="text" id="host" class="form-control" value="localhost" placeholder="ej: db o f3-3f-t48idh">
+            </div>
+            <div class="form-group">
+                <label>Puerto</label>
+                <input type="number" id="port" class="form-control" value="3306">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Usuario</label>
+            <input type="text" id="user" class="form-control" value="root">
+        </div>
+
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="pass" class="form-control" placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+            <label>Nombre de la Base de Datos</label>
+            <input type="text" id="db" class="form-control" value="futuroforbes">
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="create_db" checked style="margin-right: 8px;">
+                Crear base de datos si no existe
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-outline" style="width: 100%; margin-top: 10px;" id="btn-test">
+            🧪 Probar Conexión
+        </button>
     </form>
+
     <div class="action-buttons">
         <button class="btn btn-secondary" onclick="location.href='/install/step/2'">Atrás</button>
-        <button id="btn-next" class="btn btn-primary" style="display:none" onclick="location.href='/install/step/4'">Continuar</button>
+        <button id="btn-next" class="btn btn-primary" style="visibility: hidden" onclick="location.href='/install/step/4'">Continuar</button>
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
-async function test(e) {
+async function testConnection(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-test');
+    const nextBtn = document.getElementById('btn-next');
+    
     btn.disabled = true;
+    btn.innerText = '⌛ Conectando...';
+
     const body = {
         db_type: document.getElementById('db_type').value,
         host: document.getElementById('host').value,
-        port: 3306,
+        port: parseInt(document.getElementById('port').value),
         user: document.getElementById('user').value,
         password: document.getElementById('pass').value,
         database: document.getElementById('db').value,
-        create_if_not_exists: true
+        create_if_not_exists: document.getElementById('create_db').checked
     };
-    const res = await fetch('/install/api/test-database', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if(data.success) {
-        localStorage.setItem('dbConfig', JSON.stringify(body));
-        document.getElementById('btn-next').style.display='inline-block';
-        alert('Conexión Exitosa');
-    } else {
-        alert('Error: ' + data.message);
+
+    try {
+        const res = await fetch('/install/api/test-database', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            localStorage.setItem('dbConfig', JSON.stringify(body));
+            nextBtn.style.visibility = 'visible';
+            alert('✅ ¡Conexión exitosa!');
+            btn.innerText = '🧪 Probar de nuevo';
+            btn.classList.add('alert-success');
+        } else {
+            alert('❌ Error: ' + data.message);
+            btn.innerText = '🧪 Reintentar';
+        }
+    } catch (error) {
+        alert('❌ Error de red: ' + error.message);
+        btn.innerText = '🧪 Probar Conexión';
+    } finally {
+        btn.disabled = false;
     }
-    btn.disabled = false;
 }
+
+// Auto-ajustar puerto según motor
+document.getElementById('db_type').addEventListener('change', (e) => {
+    document.getElementById('port').value = e.target.value === 'mysql' ? 3306 : 5432;
+});
 </script>
 {% endblock %}
