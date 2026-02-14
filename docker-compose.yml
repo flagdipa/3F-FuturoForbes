@@ -1,5 +1,5 @@
 services:
-  app:
+  3f:
     build: .
     container_name: 3f-system
     ports:
