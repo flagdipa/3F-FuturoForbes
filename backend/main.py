@@ -97,34 +97,23 @@ async def installation_middleware(request: Request, call_next):
     
     # 2. Bloqueo de Seguridad (Instalado pero carpeta install existe)
     if is_install_blocked():
-        return HTMLResponse(content="""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Seguridad Crítica - 3F</title>
-                <style>
-                    body { background: #0b0e14; color: #e0e6ed; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                    .warning-box { border: 2px solid #ff4444; padding: 40px; border-radius: 20px; background: rgba(255, 68, 68, 0.05); max-width: 650px; text-align: center; box-shadow: 0 0 30px rgba(255, 68, 68, 0.1); }
-                    h1 { color: #ff4444; margin-top: 0; font-size: 2em; text-transform: uppercase; letter-spacing: 2px; }
-                    code { background: #1a1f29; padding: 4px 8px; border-radius: 4px; color: #00d4ff; font-weight: bold; }
-                    .action { margin-top: 25px; padding: 20px; background: rgba(0, 212, 255, 0.1); border-radius: 12px; border-left: 4px solid #00d4ff; text-align: left; }
-                </style>
-            </head>
-            <body>
-                <div class="warning-box">
-                    <h1>⚠️ Riesgo de Seguridad</h1>
-                    <p style="font-size: 1.2em;">El sistema <b>3F</b> ha detectado que la carpeta de instalación todavía existe.</p>
-                    <p>Por razones de seguridad, el sistema permanecerá bloqueado hasta que elimines o renombres la carpeta <code>/install</code>.</p>
-                    <div class="action">
-                        <strong>Acción Requerida:</strong><br>
-                        1. Ve a la carpeta raíz de tu proyecto.<br>
-                        2. Elimina o mueve la carpeta <code>c:/xampp/htdocs/3F/install</code>.<br>
-                        3. Refresca esta página.
-                    </div>
+        return HTMLResponse(content=f"""
+        <div style="background:#0d1117; color:#c9d1d9; font-family:sans-serif; height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding: 20px;">
+            <div style="max-width:600px; border:1px solid #30363d; padding:40px; border-radius:12px; background:#161b22; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                <h1 style="color:#ff7b72; font-size:24px;">⚠️ RIESGO DE SEGURIDAD</h1>
+                <p>El sistema 3F ha detectado que la carpeta de instalación todavía existe.</p>
+                <p style="color:#8b949e;">Por razones de seguridad, el sistema permanecerá bloqueado hasta que elimines o desactives la carpeta <code>/install</code>.</p>
+                
+                <div style="background:#0d1117; padding:20px; border-radius:8px; text-align:left; margin-top:24px; border-left:4px solid #58a6ff;">
+                    <b style="color:#58a6ff;">Acción Requerida (Elija una):</b><br><br>
+                    1. <b>Elimine</b> la carpeta <code>{os.getcwd()}/install</code>.<br>
+                    2. O si no tiene permisos: Agregue la variable de entorno <b><code>SKIP_INSTALL_FOLDER_CHECK=true</code></b> en su panel de Dokploy/VPS y reinicie.
                 </div>
-            </body>
-            </html>
-        """, status_code=503)
+                
+                <p style="margin-top:24px;"><button onclick="location.reload()" style="background:#238636; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:600;">Ya lo hice, refrescar</button></p>
+            </div>
+        </div>
+        """, status_code=403)
 
     # 3. Redirección si no está instalado
     if not is_installed() and install_app:
