@@ -208,6 +208,20 @@ h4,
 .app-sidebar {
     background: var(--3f-bg-darker) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    width: 250px;
+    transition: width 0.3s ease;
+}
+
+.sidebar-collapse .app-sidebar {
+    width: 0;
+    overflow: hidden;
+}
+
+@media (min-width: 992px) {
+    .sidebar-mini.sidebar-collapse .app-sidebar {
+        width: 70px;
+        overflow: visible;
+    }
 }
 
 .brand-link {
@@ -299,18 +313,21 @@ h4,
 }
 
 /* Custom Scrollbar for resized cards */
-.neon-card::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+.neon-card::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
 }
 
-.neon-card::-webkit-scrollbar-thumb {
+.neon-card::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(37, 150, 190, 0.2);
     border-radius: 3px;
 }
 
-.neon-card::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+.neon-card::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
 /* --- Mobile Sidebar Fixes (Phase 14 Hotfix) --- */

@@ -14,9 +14,9 @@ document.addEventListener('alpine:init', () => {
             try {
                 // Fetch all data in parallel
                 const [rCuentas, rInvestments, rAssets] = await Promise.all([
-                    api.get('/cuentas/'),
-                    api.get('/stocks/'),
-                    api.get('/assets/')
+                    api.get('cuentas/'),
+                    api.get('stocks/'),
+                    api.get('assets/')
                 ]);
 
                 this.cuentas = rCuentas.data.data || [];

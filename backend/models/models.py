@@ -156,6 +156,7 @@ class ListaCuentas(SQLModel, table=True):
     
     # Relationships
     identidad_financiera: Optional["IdentidadFinanciera"] = Relationship(back_populates="cuentas")
+    divisa: Optional["Divisa"] = Relationship()
     transacciones: List["LibroTransacciones"] = Relationship(
         back_populates="cuenta",
         sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}

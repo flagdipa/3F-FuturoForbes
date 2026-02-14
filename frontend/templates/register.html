@@ -21,27 +21,27 @@
         <div class="card neon-card">
             <div class="card-body login-card-body bg-transparent">
                 <p class="login-box-msg text-dim">Registro de Nuevo Operador</p>
-                <form id="register-form" action="/login" method="get">
+                <form id="register-form">
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control bg-transparent border-primary text-white" placeholder="Nombre Completo" required>
+                        <input type="text" id="nombre" class="form-control bg-transparent border-primary text-white" placeholder="Nombre Completo" required>
                         <div class="input-group-text border-primary bg-transparent text-primary">
                             <span class="fa-solid fa-user"></span>
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="email" class="form-control bg-transparent border-primary text-white" placeholder="Email" required>
+                        <input type="email" id="email" class="form-control bg-transparent border-primary text-white" placeholder="Email" required>
                         <div class="input-group-text border-primary bg-transparent text-primary">
                             <span class="fa-solid fa-envelope"></span>
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="password" class="form-control bg-transparent border-primary text-white" placeholder="Contraseña" required>
+                        <input type="password" id="password" class="form-control bg-transparent border-primary text-white" placeholder="Contraseña" required>
                         <div class="input-group-text border-primary bg-transparent text-primary">
                             <span class="fa-solid fa-lock"></span>
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="password" class="form-control bg-transparent border-primary text-white" placeholder="Confirmar Contraseña" required>
+                        <input type="password" id="confirm_password" class="form-control bg-transparent border-primary text-white" placeholder="Confirmar Contraseña" required>
                         <div class="input-group-text border-primary bg-transparent text-primary">
                             <span class="fa-solid fa-lock"></span>
                         </div>
@@ -59,7 +59,29 @@
         </div>
     </div>
 
-    <!-- Shader Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/static/js/shader-bg.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+            
+            if (password !== confirm_password) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            try {
+                await axios.post('/api/auth/registro', { nombre, email, password });
+                alert('Registro exitoso. Ya puede iniciar sesión.');
+                window.location.href = '/login';
+            } catch (error) {
+                alert('Error al registrarse: ' + (error.response?.data?.detail || 'Error desconocido'));
+            }
+        });
+    </script>
 </body>
 </html>

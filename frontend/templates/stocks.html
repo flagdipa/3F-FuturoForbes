@@ -285,7 +285,7 @@ document.addEventListener('alpine:init', () => {
         async listar() {
             this.loading = true;
             try {
-                const response = await api.get('/stocks/');
+                const response = await api.get('stocks/');
                 this.stocks = response.data;
                 
                 this.$nextTick(() => {
@@ -313,7 +313,7 @@ document.addEventListener('alpine:init', () => {
 
         async loadAccounts() {
             try {
-                const response = await api.get('/cuentas/');
+                const response = await api.get('cuentas/');
                 this.accounts = response.data;
             } catch (error) {
                 console.error('Error al cargar cuentas:', error);
@@ -322,7 +322,7 @@ document.addEventListener('alpine:init', () => {
 
         async loadSummary() {
             try {
-                const response = await api.get('/stocks/summary');
+                const response = await api.get('stocks/summary');
                 this.summary = response.data;
             } catch (error) {
                 console.error('Error al cargar resumen:', error);
@@ -361,9 +361,9 @@ document.addEventListener('alpine:init', () => {
             this.saving = true;
             try {
                 if (this.editItem.id_inversion === 'NEW') {
-                    await api.post('/stocks/', this.editItem);
+                    await api.post('stocks/', this.editItem);
                 } else {
-                    await api.put(`/stocks/${this.editItem.id_inversion}`, this.editItem);
+                    await api.put(`stocks/${this.editItem.id_inversion}`, this.editItem);
                 }
                 await Promise.all([this.listar(), this.loadSummary()]);
                 this.bsModal.hide();
@@ -377,7 +377,7 @@ document.addEventListener('alpine:init', () => {
         async eliminar(id) {
             if (!confirm('¿Deseas eliminar esta inversión y todo su historial?')) return;
             try {
-                await api.delete(`/stocks/${id}`);
+                await api.delete(`stocks/${id}`);
                 // listar() will automatically re-init the grid
                 await Promise.all([this.listar(), this.loadSummary()]);
             } catch (error) {
@@ -387,7 +387,7 @@ document.addEventListener('alpine:init', () => {
 
         async verHistorial(item) {
             try {
-                const response = await api.get(`/stocks/${item.id_inversion}/history`);
+                const response = await api.get(`stocks/${item.id_inversion}/history`);
                 this.history = response.data;
                 this.bsHistoryModal.show();
             } catch (error) {

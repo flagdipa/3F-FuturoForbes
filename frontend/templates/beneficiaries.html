@@ -32,10 +32,10 @@
             <table class="table table-hover table-dark mb-0" x-show="!loading && filteredBeneficiaries.length > 0">
                 <thead class="bg-black bg-opacity-40">
                     <tr class="extra-small tracking-wider fw-bold">
-                        <th class="text-primary py-3" x-text="$store.lang.t('transactions.columns.beneficiary')">BENEFICIARIO</th>
-                        <th class="text-primary py-3 text-uppercase" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD</th>
-                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.cbu_alias')">CBU/ALIAS</th>
-                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.cuit_cuil')">CUIT</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.col_name')">BENEFICIARIO</th>
+                        <th class="text-primary py-3 text-uppercase" x-text="$store.lang.t('beneficiaries.col_entity')">ENTIDAD</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.col_cbu')">CBU/ALIAS</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.col_cuit')">CUIT</th>
                         <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
                     </tr>
                 </thead>
@@ -166,7 +166,7 @@
             async fetchBeneficiaries() {
                 this.loading = true;
                 try {
-                    const res = await api.get('/beneficiarios/');
+                    const res = await api.get('beneficiarios/');
                     this.beneficiaries = res.data.data || [];
                     this.filterBeneficiaries();
                 } catch (e) {
@@ -201,9 +201,9 @@
                 this.saving = true;
                 try {
                     if (this.isEdit) {
-                        await api.put(`/beneficiarios/${this.editId}`, this.formData);
+                        await api.put(`beneficiarios/${this.editId}`, this.formData);
                     } else {
-                        await api.post('/beneficiarios/', this.formData);
+                        await api.post('beneficiarios/', this.formData);
                     }
                     await this.fetchBeneficiaries();
                     this.bsModal.hide();

@@ -15,6 +15,8 @@ class UsuarioLogin(BaseModel):
 class UsuarioCrear(BaseModel):
     email: EmailStr
     password: str
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
 
 class UsuarioLectura(BaseModel):
     id_usuario: int
@@ -44,3 +46,6 @@ class ProfileUpdate(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+
+class RecuperarPasswordRequest(BaseModel):
+    email: EmailStr

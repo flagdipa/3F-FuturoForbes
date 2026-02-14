@@ -8,10 +8,14 @@ class CategoriaBase(BaseModel):
     color: Optional[str] = None
     notas: Optional[str] = None
 
-class CategoriaCrear(CategoriaBase): # Renombrado
+class CategoriaCrear(CategoriaBase): 
     pass
 
-class CategoriaLectura(CategoriaBase): # Renombrado
+class CategoriaUpdate(CategoriaBase):
+    nombre_categoria: Optional[str] = None
+    activo: Optional[int] = None
+
+class CategoriaLectura(CategoriaBase): 
     id_categoria: int
 
     class Config:

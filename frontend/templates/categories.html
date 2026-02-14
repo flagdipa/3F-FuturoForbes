@@ -50,7 +50,6 @@
                 <thead class="bg-black bg-opacity-40">
                     <tr class="extra-small tracking-wider fw-bold text-uppercase">
                         <th class="text-primary py-3" x-text="$store.lang.t('categories.col_name')">CATEGORÍA</th>
-                        <th class="text-primary py-3 text-center" x-text="$store.lang.t('categories.col_type')">TIPO</th>
                         <th class="text-primary py-3" x-text="$store.lang.t('categories.parent')">CATEGORÍA SUPERIOR</th>
                         <th class="text-primary py-3 text-end" x-text="$store.lang.t('common.actions')">ACCIONES</th>
                     </tr>
@@ -66,15 +65,9 @@
                                           :class="cat.level === 0 ? 'text-white' : 'text-dim'"></span>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <span class="badge extra-small border border-opacity-20" 
-                                      :class="cat.id_tipo_transaccion == 1 ? 'border-success text-success' : 'border-danger text-danger'"
-                                      x-text="cat.id_tipo_transaccion == 1 ? $store.lang.t('common.income') : $store.lang.t('common.expense')"></span>
-                            </td>
                             <td class="text-dim extra-small">
                                 <span x-text="cat.nombre_categoria_padre || '-'"></span>
                             </td>
-                            <td class="text-end">
                             <td class="text-end text-dim opacity-50 extra-small">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </td>
@@ -100,15 +93,8 @@
                             <input type="text" class="form-control neon-input" x-model="formData.nombre_categoria" required>
                         </div>
                         <div class="mb-3">
-                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.col_type')">TIPO_CATEGORIA</label>
-                            <select class="form-select neon-input" x-model="formData.id_tipo_transaccion" required>
-                                <option value="1" x-text="$store.lang.t('common.income')">Ingreso</option>
-                                <option value="2" x-text="$store.lang.t('common.expense')">Gasto</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.parent')">CATEGORIA_PADRE</label>
-                            <select class="form-select neon-input" x-model="formData.id_categoria_padre">
+                            <select class="form-select neon-input" x-model="formData.id_padre">
                                 <option value="" x-text="$store.lang.t('common.none')">Ninguna</option>
                                 <template x-for="c in categories" :key="c.id_categoria">
                                     <option :value="c.id_categoria" x-text="c.nombre_categoria"></option>
@@ -137,7 +123,7 @@
             categories: [],
             loading: true,
             saving: false,
-            formData: { nombre_categoria: '', id_tipo_transaccion: 2, id_categoria_padre: null },
+            formData: { nombre_categoria: '', id_padre: null },
             isEdit: false,
             editId: null,
             bsModal: null,
@@ -150,7 +136,7 @@
             async fetchCategories() {
                 this.loading = true;
                 try {
-                    const res = await api.get('/categorias/');
+                    const res = await api.get('categorias/');
                     const rawCats = res.data.data || [];
                     this.categories = this.buildCategoryTree(rawCats);
                 } catch (e) {
@@ -193,7 +179,7 @@
 
             openCreateModal() {
                 this.isEdit = false;
-                this.formData = { nombre_categoria: '', id_tipo_transaccion: 2, id_categoria_padre: '' };
+                this.formData = { nombre_categoria: '', id_padre: '' };
                 this.bsModal.show();
             },
 
@@ -202,8 +188,7 @@
                 this.editId = cat.id_categoria;
                 this.formData = { 
                     nombre_categoria: cat.nombre_categoria, 
-                    id_tipo_transaccion: cat.id_tipo_transaccion, 
-                    id_categoria_padre: cat.id_categoria_padre || ''
+                    id_padre: cat.id_padre || ''
                 };
                 this.bsModal.show();
             },
@@ -212,12 +197,12 @@
                 this.saving = true;
                 try {
                     const payload = { ...this.formData };
-                    if (payload.id_categoria_padre === '') payload.id_categoria_padre = null;
+                    if (payload.id_padre === '') payload.id_padre = null;
                     
                     if (this.isEdit) {
-                        await api.put(`/categorias/${this.editId}`, payload);
+                        await api.put(`categorias/${this.editId}`, payload);
                     } else {
-                        await api.post('/categorias/', payload);
+                        await api.post('categorias/', payload);
                     }
                     await this.fetchCategories();
                     this.bsModal.hide();

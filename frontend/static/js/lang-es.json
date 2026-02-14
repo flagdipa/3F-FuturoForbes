@@ -41,19 +41,20 @@
     },
     "nav": {
         "dashboard": "Central de Control",
-        "accounts": "Cuentas HUD",
+        "accounts": "Cuentas",
         "transactions": "Transacciones",
-        "beneficiaries": "Beneficiarios HUD",
+        "beneficiaries": "Beneficiarios",
         "categories": "Categorías",
         "tags": "Etiquetas",
         "scheduled": "Programadas",
         "assets": "Activos",
         "stocks": "Inversiones",
         "reports": "Reportes",
-        "plugins": "Módulos"
+        "plugins": "Módulos",
+        "settings": "Configuración"
     },
     "accounts": {
-        "title": "Cuentas Bancarias y Efectivo HUD",
+        "title": "Cuentas Bancarias y Efectivo",
         "new": "Nueva Cuenta",
         "system_status": "SISTEMA MULTI-DIVISA: CONECTADO",
         "vault_loading": "LLAMANDO A LA BÓVEDA...",
@@ -61,30 +62,34 @@
         "col_entity": "ENTIDAD / BANCO",
         "col_type": "TIPO",
         "col_balance": "SALDO INICIAL",
-        "reg_new": "REGISTRO_NUEVA_CUENTA",
-        "name": "NOMBRE_CUENTA",
-        "type": "TIPO_CUENTA",
-        "divisa_id": "DIVISA_ID (1=ARS, 2=USD)",
-        "config_btn": "CONFIGURAR_CUENTA"
+        "reg_new": "REGISTRO NUEVA CUENTA",
+        "name": "NOMBRE CUENTA",
+        "type": "TIPO CUENTA",
+        "divisa_id": "DIVISA (1=ARS, 2=USD)",
+        "config_btn": "CONFIGURAR CUENTA"
     },
     "beneficiaries": {
-        "title": "Gestión de Beneficiarios HUD",
+        "title": "Gestión de Beneficiarios",
         "new": "NUEVO REGISTRO",
-        "filter_placeholder": "FILTRAR_POR_NOMBRE...",
+        "filter_placeholder": "FILTRAR POR NOMBRE...",
         "loading_list": "SINCRONIZANDO LISTADO...",
         "not_found": "NO SE ENCONTRARON REGISTROS",
-        "profile_title": "PERFIL_BENEFICIARIO",
-        "official_name": "NOMBRE_OFICIAL",
-        "bank_entity": "ENTIDAD_BANCARIA / BANCO",
-        "cbu_alias": "CBU_O_ALIAS_SBU",
-        "cuit_cuil": "CUIT_CUIL",
+        "profile_title": "PERFIL BENEFICIARIO",
+        "official_name": "NOMBRE OFICIAL",
+        "bank_entity": "ENTIDAD BANCARIA / BANCO",
+        "cbu_alias": "CBU/CVU O ALIAS",
+        "cuit_cuil": "CUIT/CUIL",
         "category_id": "CATEGORÍA_ID",
-        "internal_notes": "NOTAS_INTERNAS",
-        "sync_profile": "SINCRONIZAR_PERFIL",
-        "manage_entities": "Gestionar entidades"
+        "internal_notes": "NOTAS INTERNAS",
+        "sync_profile": "SINCRONIZAR PERFIL",
+        "manage_entities": "Gestionar entidades",
+        "col_name": "BENEFICIARIO",
+        "col_entity": "ENTIDAD",
+        "col_cbu": "CBU/ALIAS",
+        "col_cuit": "CUIT/CUIL"
     },
     "recurring": {
-        "title": "Configuración de Recurrentes HUD",
+        "title": "Configuración de Recurrentes",
         "new": "Crear Programación",
         "execute_now": "Ejecutar Ahora",
         "next_date": "Próxima Fecha",
@@ -97,7 +102,7 @@
         "status_active": "Activa",
         "status_paused": "Pausada",
         "executions": "Ejecuciones",
-        "type": "TIPO_TRANSACCION",
+        "type": "TIPO TRANSACCION",
         "account": "CUENTA SISTEMA",
         "target_account": "CUENTA DESTINO",
         "beneficiary": "BENEFICIARIO DESTINO",
@@ -108,7 +113,7 @@
         "auto_execute": "EJECUCION AUTOMATICA"
     },
     "goals": {
-        "title": "Metas de Ahorro HUD",
+        "title": "Metas de Ahorro",
         "total_saved": "ahorrado en total",
         "new": "Nueva Meta",
         "edit": "Editar Meta",
@@ -129,7 +134,7 @@
         "months": "meses"
     },
     "assets": {
-        "title": "Gestión de Activos Físicos HUD",
+        "title": "Gestión de Activos Físicos",
         "new": "Registrar Activo",
         "name": "Nombre de Activo",
         "type": "Tipo de Activo",
@@ -154,7 +159,7 @@
         "valuation_log": "REGISTRO VALORACION"
     },
     "transactions": {
-        "title": "Libro de Transacciones HUD",
+        "title": "Libro de Transacciones",
         "new": "Inserción Data",
         "filters": "Filtros Avanzados",
         "search_text": "Búsqueda de Texto",
@@ -162,14 +167,15 @@
         "date_to": "HASTA",
         "audit_active": "AUDITORÍA ACTIVA",
         "columns": {
-            "date": "Fecha",
-            "time": "Hora",
-            "account": "Cuenta",
-            "beneficiary": "Beneficiario",
-            "category": "Categoría",
-            "amount": "Monto",
-            "tags": "Tags",
-            "status": "Estado",
+            "fecha": "Fecha",
+            "hora": "Hora",
+            "cuenta": "Cuenta",
+            "beneficiario": "Beneficiario",
+            "categoria": "Categoría",
+            "monto": "Monto",
+            "saldo": "Saldo",
+            "etiquetas": "Tags",
+            "estado": "Estado",
             "is_split": "Dividida"
         },
         "split": "Dividir Transacción",
@@ -182,10 +188,10 @@
         "items_loaded": "Items Cargados"
     },
     "stocks": {
-        "title": "Mercado de Valores HUD",
+        "title": "Mercado de Valores",
         "new": "Añadir Posesión",
         "symbol": "Símbolo",
-        "name": "Nombre / Ticker",
+        "name": "Nombre/Ticker",
         "quantity": "Cantidad",
         "buy_price": "Precio Compra",
         "current_price": "Precio Actual",
@@ -208,7 +214,7 @@
         "notes_strat": "NOTAS / ESTRATEGIA"
     },
     "categories": {
-        "title": "Categorías de Gastos e Ingresos HUD",
+        "title": "Categorías de Gastos e Ingresos",
         "new": "Nueva Categoría",
         "col_name": "CATEGORÍA",
         "col_type": "TIPO",
@@ -217,13 +223,13 @@
         "icon": "ICONO MODULO"
     },
     "tags": {
-        "title": "Gestión de Etiquetas HUD",
+        "title": "Gestión de Etiquetas",
         "new": "Nueva Etiqueta",
         "col_tag": "ETIQUETA",
         "tag_name": "NOMBRE ETIQUETA"
     },
     "budgets": {
-        "title": "Presupuesto y Control HUD",
+        "title": "Presupuesto y Control",
         "new": "Configurar Presupuesto",
         "col_category": "CATEGORÍA",
         "col_limit": "LÍMITE MÁXIMO",
@@ -233,7 +239,7 @@
         "not_set": "Presupuesto no asignado"
     },
     "entities": {
-        "title": "Entidades Financieras HUD",
+        "title": "Entidades Financieras",
         "tab_types": "Tipos de Entidad",
         "tab_list": "Entidades",
         "new_type": "Nuevo Tipo",
@@ -242,7 +248,7 @@
         "col_name": "ENTIDAD",
         "col_type": "TIPO",
         "col_web": "WEB",
-        "col_id": "CUIT / ID",
+        "col_id": "CUIT/ ID",
         "col_phone": "TELÉFONO",
         "col_branch": "SUCURSAL",
         "col_contact": "CONTACTO",
@@ -251,8 +257,8 @@
         "empty_inst": "No hay entidades registradas"
     },
     "import": {
-        "title": "Conciliación Bancaria HUD",
-        "wizard": "WIZARD_IMPORTACIÓN",
+        "title": "Conciliación Bancaria",
+        "wizard": "WIZARD IMPORTACIÓN",
         "step": "PASO",
         "of": "DE",
         "select_acc": "CUENTA DESTINO",
@@ -261,13 +267,13 @@
         "detected": "TRANSACCIONES_DETECTADAS",
         "match": "EXISTENTE (MATCH)",
         "new_tx": "NUEVA",
-        "finalize": "FINALIZAR_CONCILIACION",
+        "finalize": "FINALIZAR CONCILIACION",
         "success": "¡Conciliación Exitosa!",
         "stats_created": "CREADAS",
         "stats_matched": "MATCHED"
     },
     "plugins": {
-        "title": "Centro de Control de Módulos HUD",
+        "title": "Centro de Control de Módulos",
         "subtitle": "Gestión avanzada de extensiones del sistema",
         "active": "ACTIVO",
         "inactive": "INACTIVO",
@@ -282,7 +288,7 @@
         "modular_system": "SISTEMA MODULAR:"
     },
     "audit": {
-        "title": "REGISTRO DE SEGURIDAD HUD",
+        "title": "REGISTRO DE SEGURIDAD",
         "subtitle": "Trazabilidad completa de acciones y cambios en el sistema",
         "refresh_feed": "Actualizar Feed",
         "col_time": "Fecha y Hora",
@@ -314,7 +320,15 @@
         "title": "CONFIGURACIÓN DEL SISTEMA",
         "tab_general": "GENERAL",
         "tab_themes": "TEMAS",
+        "tab_profile": "PERFIL",
+        "tab_email": "CORREO (SMTP)",
         "tab_maintenance": "MANTENIMIENTO",
+        "smtp_host": "SERVIDOR_SMTP",
+        "smtp_port": "PUERTO",
+        "smtp_user": "USUARIO_SMTP",
+        "smtp_pass": "CONTRASEÑA_SMTP",
+        "smtp_from": "REMITENTE (FROM)",
+        "smtp_test": "ENVIAR CORREO PRUEBA",
         "identity_format": "IDENTIDAD & FORMATO",
         "system_name": "NOMBRE_SISTEMA",
         "currency_symbol": "SIMBOLO_MONEDA",
@@ -334,6 +348,15 @@
         "backup_success": "Respaldo creado con éxito",
         "backup_failed": "Fallo al crear el respaldo",
         "maintenance_terminal": "TERMINAL DE MANTENIMIENTO"
+    },
+    "localization": {
+        "title": "GESTOR DE IDIOMAS",
+        "col_key": "CLAVE (PATH)",
+        "col_value": "TRADUCCIÓN / VALOR",
+        "add_key_placeholder": "Nueva clave (ej: nav.dashboard)",
+        "add_value_placeholder": "Valor de traducción",
+        "loading": "Cargando diccionario neural...",
+        "updated": "Diccionario actualizado correctamente."
     },
     "reports": {
         "title": "Reportes Tácticos",
@@ -378,8 +401,8 @@
             "critical": "CRÍTICA",
             "peak_hour": "HORA PICO",
             "peak_day": "DÍA PICO",
-            "ai_tip": "CONSEJO_IA_PROACTIVO",
-            "pattern_metrics": "MÉTRICAS_DE_PATRÓN",
+            "ai_tip": "CONSEJO IA PROACTIVO",
+            "pattern_metrics": "MÉTRICAS DE PATRÓN",
             "all_months": "TODOS LOS MESES"
         }
     }

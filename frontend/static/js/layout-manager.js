@@ -60,7 +60,7 @@ class LayoutManager {
         try {
             const layout = this.grid.save(false); // Get current positions
 
-            await api.post(`/layouts/${this.pageName}`, {
+            await api.post(`layouts/${this.pageName}`, {
                 layout_config: layout
             });
 
@@ -78,7 +78,7 @@ class LayoutManager {
      */
     async loadLayout() {
         try {
-            const response = await api.get(`/layouts/${this.pageName}`);
+            const response = await api.get(`layouts/${this.pageName}`);
 
             if (response.data && response.data.layout_config) {
                 this.grid.load(response.data.layout_config);
@@ -106,7 +106,7 @@ class LayoutManager {
         }
 
         try {
-            await api.delete(`/layouts/${this.pageName}`);
+            await api.delete(`layouts/${this.pageName}`);
 
             // Reload page to apply defaults
             window.location.reload();

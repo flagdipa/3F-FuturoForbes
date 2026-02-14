@@ -164,7 +164,14 @@
             <div class="sidebar-wrapper">
                 <nav class="mt-2">
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
-                        <!-- Todas las Transacciones (Primero) -->
+                        <!-- Dashboard -->
+                        <li class="nav-item">
+                            <a href="/" class="nav-link">
+                                <i class="nav-icon fa-solid fa-gauge-high"></i>
+                                <p x-text="$store.lang.t('nav.dashboard')">Dashboard</p>
+                            </a>
+                        </li>
+                        <!-- Todas las Transacciones -->
                         <li class="nav-item">
                             <a href="/transacciones" class="nav-link">
                                 <i class="nav-icon fa-solid fa-money-bill-transfer"></i>

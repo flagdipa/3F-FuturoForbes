@@ -44,6 +44,7 @@ from .api.reconciliation.router import router as reconciliation_router
 from .api.goals.router import router as goals_router
 from .api.import_rules.router import router as import_rules_router
 from .api.financial_entities.router import router as financial_entities_router
+from .api.localization.router import router as localization_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
 from datetime import datetime
@@ -155,6 +156,7 @@ app.include_router(fx_router, prefix="/api")
 app.include_router(vault_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
 app.include_router(health_router, prefix="/api")
+app.include_router(localization_router, prefix="/api")
 app.include_router(reconciliation_router, prefix="/api")
 app.include_router(goals_router, prefix="/api")
 app.include_router(import_rules_router, prefix="/api")

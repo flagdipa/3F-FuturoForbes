@@ -5,7 +5,8 @@ from ...core.auth_utils import verify_password, create_access_token, get_passwor
 from ...models.models import Usuario
 from .schemas import (
     Token, UsuarioLogin, UsuarioCrear, UsuarioLectura,
-    ProfileRead, ProfileUpdate, ChangePasswordRequest
+    ProfileRead, ProfileUpdate, ChangePasswordRequest,
+    RecuperarPasswordRequest
 )
 from .deps import get_current_user
 
@@ -23,7 +24,9 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
     hashed_password = get_password_hash(usuario_in.password)
     new_user = Usuario(
         email=usuario_in.email,
-        password=hashed_password
+        password=hashed_password,
+        nombre=usuario_in.nombre,
+        apellido=usuario_in.apellido
     )
     session.add(new_user)
     session.commit()
@@ -125,3 +128,33 @@ def change_password(
     session.add(current_user)
     session.commit()
     return {"message": "Contraseña actualizada correctamente"}
+
+@router.post("/recuperar-password")
+def recuperar_password(req: RecuperarPasswordRequest, session: Session = Depends(get_session)):
+    """
+    Simulates sending a password reset link.
+    In a real app, this would generate a secure token and send an email via SMTP.
+    """
+    user = session.exec(select(Usuario).where(Usuario.email == req.email)).first()
+    if not user:
+        # We return success even if user not found to prevent user enumeration
+        return {"message": "Si el correo está registrado, recibirá un enlace de recuperación."}
+    
+    # STUB: In production, generate token and send email
+    from ...core.mail_utils import send_email
+    import uuid
+    reset_token = str(uuid.uuid4())
+    
+    # Send actual email if SMTP is configured
+    subject = "3F SYSTEM | Recuperación de Contraseña"
+    html = f"""
+    <h1>Recuperar Acceso</h1>
+    <p>Has solicitado restablecer tu contraseña en el sistema 3F SYSTEM.</p>
+    <p>Su código de seguridad temporal es: <strong>{reset_token}</strong></p>
+    <p><i>Nota: Por ahora este código no es ejecutable, pero la función de envío de correo ya está operativa.</i></p>
+    """
+    
+    send_email(to_email=req.email, subject=subject, html_content=html)
+    
+    # For now, we return a success message
+    return {"message": "Si el correo está registrado, recibirá un enlace de recuperación."}

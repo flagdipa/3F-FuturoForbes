@@ -81,3 +81,21 @@ async def run_integrity_check(current_user: Any = Depends(get_current_user), ses
         return {"status": "success", "report": report}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+@router.post("/test-mail")
+async def test_mail(data: Dict[str, str], current_user: Any = Depends(get_current_user)):
+    """Sends a test email to verify SMTP settings"""
+    from ...core.mail_utils import send_email
+    email = data.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Falta el correo destinatario")
+    
+    success = send_email(
+        to_email=email,
+        subject="3F SYSTEM | Prueba de Conexión SMTP",
+        html_content=f"<h1>Conexión Exitosa</h1><p>Esta es una prueba del sistema FuturoForbes (3F).<br>Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>"
+    )
+    
+    if success:
+        return {"status": "success", "message": "Email enviado correctamente"}
+    else:
+        raise HTTPException(status_code=500, detail="Fallo al enviar email. Revise la consola para detalles.")

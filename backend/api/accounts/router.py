@@ -49,6 +49,27 @@ def obtener_cuenta(cuenta_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
     return cuenta
 
+@router.put("/{cuenta_id}", response_model=CuentaLectura)
+def actualizar_cuenta(
+    cuenta_id: int,
+    cuenta_in: CuentaCrear, # Using CuentaCrear or CuentaUpdate. 
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Update an account with audit"""
+    db_obj = account_service.get(session, cuenta_id)
+    if not db_obj:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+    
+    return account_service.update(
+        session,
+        db_obj=db_obj,
+        obj_in=cuenta_in,
+        user_id=current_user.id_usuario,
+        ip_address=request.client.host
+    )
+
 @router.delete("/{cuenta_id}")
 def eliminar_cuenta(
     cuenta_id: int, 

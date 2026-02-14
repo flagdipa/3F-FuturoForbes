@@ -64,6 +64,27 @@ def obtener_categoria(categoria_id: int, session: Session = Depends(get_session)
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     return cat
 
+@router.put("/{categoria_id}", response_model=CategoriaLectura)
+def actualizar_categoria(
+    categoria_id: int,
+    categoria_in: CategoriaCrear, # Using CategoriaCrear for now or CategoriaUpdate
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Update a category with audit"""
+    db_obj = category_service.get(session, categoria_id)
+    if not db_obj:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    return category_service.update(
+        session,
+        db_obj=db_obj,
+        obj_in=categoria_in,
+        user_id=current_user.id_usuario,
+        ip_address=request.client.host
+    )
+
 @router.delete("/{categoria_id}")
 def eliminar_categoria(
     categoria_id: int, 

@@ -82,7 +82,12 @@
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button @click="loadMaintenance()" class="nav-link text-info fw-bold" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button">
+                            <button class="nav-link text-info fw-bold" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button">
+                                <i class="fa-solid fa-envelope me-1"></i><span x-text="$store.lang.t('settings.tab_email')">CORREO</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button @click="loadMaintenance()" class="nav-link text-secondary fw-bold" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button">
                                 <i class="fa-solid fa-screwdriver-wrench me-1"></i><span x-text="$store.lang.t('settings.tab_maintenance')">MANTENIMIENTO</span>
                             </button>
                         </li>
@@ -101,7 +106,6 @@
                                         <div class="col-md-3">
                                             <label class="text-dim small">SIMBOLO_MONEDA</label>
                                             <input type="text" class="form-control neon-input text-center" x-model="config.SISTEMA_moneda">
-                                        </div>
                                         </div>
                                         <div class="col-md-3">
                                             <label class="text-dim small">IDIOMA_DEFECTO</label>
@@ -236,6 +240,45 @@
                             </form>
                         </div>
 
+                        <!-- Email Tab -->
+                        <div class="tab-pane fade" id="email" role="tabpanel">
+                            <form @submit.prevent="guardarSMTP()">
+                                <h6 class="text-info mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                    <i class="fa-solid fa-envelope-open-text me-2"></i>CONFIGURACIÓN SMTP
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-9">
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.smtp_host')">SERVIDOR_SMTP</label>
+                                        <input type="text" class="form-control neon-input" x-model="config.SMTP_host" placeholder="smtp.ejemplo.com">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.smtp_port')">PUERTO</label>
+                                        <input type="number" class="form-control neon-input text-center" x-model="config.SMTP_port" placeholder="587">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.smtp_user')">USUARIO_SMTP</label>
+                                        <input type="text" class="form-control neon-input" x-model="config.SMTP_user">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.smtp_pass')">CONTRASEÑA_SMTP</label>
+                                        <input type="password" class="form-control neon-input" x-model="config.SMTP_password">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.smtp_from')">REMITENTE (FROM)</label>
+                                        <input type="email" class="form-control neon-input" x-model="config.SMTP_from" placeholder="noreply@tu-dominio.com">
+                                    </div>
+                                </div>
+                                <div class="mt-4 d-flex justify-content-between">
+                                    <button type="button" @click="testSMTP()" class="btn btn-outline-info neon-btn" :disabled="saving">
+                                        <i class="fa-solid fa-paper-plane me-2"></i><span x-text="$store.lang.t('settings.smtp_test')">PROBAR ENVÍO</span>
+                                    </button>
+                                    <button type="submit" class="btn btn-info neon-btn text-dark fw-bold" :disabled="saving">
+                                        <i class="fa-solid fa-save me-2"></i>GUARDAR SMTP
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
                         <!-- Maintenance Tab -->
                         <div class="tab-pane fade" id="maintenance" role="tabpanel">
                             <div class="row g-4">
@@ -356,6 +399,82 @@
             </div>
         </div>
 
+        <!-- Widget: Localization Manager (Full Width) -->
+        <div class="grid-stack-item" gs-w="12" gs-h="10" gs-x="0" gs-y="10">
+            <div class="grid-stack-item-content" x-data="localizationManager">
+                <div class="widget-header">
+                    <span class="text-info"><i class="fa-solid fa-language me-2"></i>DICCIONARIO & LOCALIZACIÓN</span>
+                    <i class="fa-solid fa-grip-lines text-dim"></i>
+                </div>
+                <div class="p-3 h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <select class="form-select form-select-sm neon-input" style="width: 150px;" x-model="selectedLang" @change="loadTranslations()">
+                                <template x-for="lang in availableLangs" :key="lang">
+                                    <option :value="lang" x-text="lang.toUpperCase()"></option>
+                                </template>
+                            </select>
+                            <div class="input-group input-group-sm" style="width: 250px;">
+                                <span class="input-group-text bg-transparent border-secondary border-opacity-25 text-dim"><i class="fa-solid fa-search"></i></span>
+                                <input type="text" class="form-control neon-input" placeholder="Filtrar claves..." x-model="searchQuery">
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-info neon-btn text-dark fw-bold" @click="saveTranslations()" :disabled="saving">
+                            <i class="fa-solid fa-save me-1"></i>ACTUALIZAR DICCIONARIO
+                        </button>
+                    </div>
+
+                    <!-- Nueva Clave Form -->
+                    <div class="row g-2 mb-3 align-items-end p-2 border border-info border-opacity-10 rounded bg-black bg-opacity-25" x-show="!loading">
+                        <div class="col-md-4">
+                            <label class="form-label small text-dim mb-1" x-text="$store.lang.t('localization.col_key')"></label>
+                            <input type="text" class="form-control form-control-sm neon-input" x-model="newKey.key" :placeholder="$store.lang.t('localization.add_key_placeholder')">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-dim mb-1" x-text="$store.lang.t('localization.col_value')"></label>
+                            <input type="text" class="form-control form-control-sm neon-input" x-model="newKey.value" :placeholder="$store.lang.t('localization.add_value_placeholder')">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-info w-100" @click="addNewKey()" :disabled="!newKey.key || !newKey.value">
+                                <i class="fa-solid fa-plus-circle me-1"></i>INSERTAR
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive flex-grow-1 custom-scrollbar" style="max-height: 500px; border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;">
+                        <table class="table table-sm table-dark table-hover mb-0" style="font-size: 0.85rem;">
+                            <thead class="sticky-top bg-black">
+                                <tr>
+                                    <th style="width: 30%;" x-text="$store.lang.t('localization.col_key')">CLAVE (PATH)</th>
+                                    <th style="width: 60%;" x-text="$store.lang.t('localization.col_value')">TRADUCCIÓN / VALOR</th>
+                                    <th style="width: 10%; text-align: center;">#</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(value, key) in filteredTranslations" :key="key">
+                                    <tr>
+                                        <td class="text-dim font-monospace small align-middle" x-text="key"></td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm border-0 border-bottom bg-transparent text-white rounded-0 px-1" x-model="flatTranslations[key]">
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <button class="btn btn-link btn-sm text-danger p-0" @click="deleteKey(key)">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div x-show="loading" class="text-center py-5">
+                        <div class="spinner-border text-info" role="status"></div>
+                        <p class="text-dim small mt-2" x-text="$store.lang.t('localization.loading')">Cargando diccionario neural...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}
@@ -452,7 +571,12 @@
                 SISTEMA_moneda: '$',
                 SISTEMA_idioma: 'es',
                 SISTEMA_timeout: 0,
-                DEBUG_mode: false
+                DEBUG_mode: false,
+                SMTP_host: '',
+                SMTP_port: 587,
+                SMTP_user: '',
+                SMTP_password: '',
+                SMTP_from: ''
             },
             userProfile: {
                 nombre: '',
@@ -485,7 +609,7 @@
 
             async loadProfile() {
                 try {
-                    const res = await api.get('/auth/profile');
+                    const res = await api.get('auth/profile');
                     this.userProfile.nombre = res.data.nombre || '';
                     this.userProfile.apellido = res.data.apellido || '';
                     this.userProfile.email = res.data.email || '';
@@ -496,12 +620,17 @@
 
             async loadConfig() {
                 try {
-                    const res = await api.get('/settings/');
+                    const res = await api.get('settings/');
                     res.data.forEach(item => {
                         if (item.clave === 'SISTEMA_nombre') this.config.SISTEMA_nombre = item.valor;
                         if (item.clave === 'SISTEMA_moneda') this.config.SISTEMA_moneda = item.valor;
                         if (item.clave === 'SISTEMA_idioma') this.config.SISTEMA_idioma = item.valor; 
                         if (item.clave === 'SISTEMA_timeout') this.config.SISTEMA_timeout = item.valor || 0;
+                        if (item.clave === 'SMTP_host') this.config.SMTP_host = item.valor;
+                        if (item.clave === 'SMTP_port') this.config.SMTP_port = item.valor;
+                        if (item.clave === 'SMTP_user') this.config.SMTP_user = item.valor;
+                        if (item.clave === 'SMTP_password') this.config.SMTP_password = item.valor;
+                        if (item.clave === 'SMTP_from') this.config.SMTP_from = item.valor;
                     });
                      localStorage.setItem('3f_session_timeout', this.config.SISTEMA_timeout);
                 } catch (e) {
@@ -526,7 +655,7 @@
                 try {
                     const keys = ['SISTEMA_nombre', 'SISTEMA_moneda', 'SISTEMA_idioma', 'SISTEMA_timeout']; 
                     for (const k of keys) {
-                        await api.put(`/settings/${k}`, { valor: this.config[k] });
+                        await api.put(`settings/${k}`, { valor: this.config[k] });
                     }
                     localStorage.setItem('3f_session_timeout', this.config.SISTEMA_timeout);
                     
@@ -539,10 +668,39 @@
                 }
             },
 
+            async guardarSMTP() {
+                this.saving = true;
+                try {
+                    const keys = ['SMTP_host', 'SMTP_port', 'SMTP_user', 'SMTP_password', 'SMTP_from']; 
+                    for (const k of keys) {
+                        await api.put(`settings/${k}`, { valor: this.config[k] });
+                    }
+                    alert('Configuración SMTP guardada correctamente.');
+                } catch (e) {
+                    alert('Error al guardar SMTP: ' + e.message);
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async testSMTP() {
+                this.saving = true;
+                try {
+                    await api.post('health/test-mail', {
+                        email: this.userProfile.email
+                    });
+                    alert('Correo de prueba enviado. Verifique su bandeja de entrada.');
+                } catch (e) {
+                    alert('Error en prueba SMTP: ' + (e.response?.data?.detail || e.message));
+                } finally {
+                    this.saving = false;
+                }
+            },
+
             async saveProfile() {
                 this.saving = true;
                 try {
-                    await api.post('/auth/profile', {
+                    await api.post('auth/profile', {
                         nombre: this.userProfile.nombre,
                         apellido: this.userProfile.apellido,
                         email: this.userProfile.email
@@ -567,7 +725,7 @@
                 }
                 this.saving = true;
                 try {
-                    await api.post('/auth/change-password', {
+                    await api.post('auth/change-password', {
                         current_password: this.passwordForm.current_password,
                         new_password: this.passwordForm.new_password
                     });
@@ -583,7 +741,7 @@
 
             async loadMaintenance() {
                 try {
-                    const res = await api.get('/health');
+                    const res = await api.get('health');
                     this.maintInfo.db_size = res.data.checks.database_size_mb || 0;
                     this.maintInfo.file_count = res.data.checks.attachments_count || 0;
                 } catch (e) {
@@ -600,7 +758,7 @@
                 this.processingMaint = true;
                 this.addMaintLog('Iniciando proceso de respaldo...', 'info');
                 try {
-                    const res = await api.post('/health/backup');
+                    const res = await api.post('health/backup');
                     this.addMaintLog(this.$store.lang.t('settings.backup_success') + ': ' + res.data.message, 'success');
                     notifications.show(this.$store.lang.t('settings.backup_success'), 'success');
                     await this.loadMaintenance();
@@ -615,7 +773,7 @@
                 this.processingMaint = true;
                 this.addMaintLog('Analizando integridad de base de datos...', 'info');
                 try {
-                    const res = await api.post('/health/integrity');
+                    const res = await api.post('health/integrity');
                     this.addMaintLog('Resultado Integridad: ' + res.data.report, res.data.status === 'success' ? 'success' : 'error');
                 } catch (e) {
                     this.addMaintLog('Error en diagnóstico', 'error');
@@ -626,6 +784,116 @@
 
             verificarIntegridad() {
                  this.runIntegrity();
+            }
+        }));
+
+        // Localization Manager Component
+        Alpine.data('localizationManager', () => ({
+            availableLangs: [],
+            selectedLang: localStorage.getItem('3f_lang') || 'es',
+            translations: {},
+            flatTranslations: {},
+            searchQuery: '',
+            loading: false,
+            saving: false,
+            newKey: { key: '', value: '' },
+
+            async init() {
+                await this.loadLangs();
+                await this.loadTranslations();
+            },
+
+            async loadLangs() {
+                try {
+                    const res = await api.get('localization/languages');
+                    this.availableLangs = res.data;
+                } catch (e) {
+                    this.availableLangs = ['es', 'en'];
+                }
+            },
+
+            async loadTranslations() {
+                this.loading = true;
+                try {
+                    const res = await api.get(`localization/${this.selectedLang}`);
+                    this.translations = res.data;
+                    this.flatTranslations = this.flattenObject(this.translations);
+                } catch (e) {
+                    console.error('Error loading translations:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            get filteredTranslations() {
+                const query = this.searchQuery.toLowerCase();
+                const filtered = {};
+                Object.keys(this.flatTranslations).forEach(key => {
+                    if (key.toLowerCase().includes(query) || 
+                        String(this.flatTranslations[key]).toLowerCase().includes(query)) {
+                        filtered[key] = this.flatTranslations[key];
+                    }
+                });
+                return filtered;
+            },
+
+            flattenObject(obj, prefix = '') {
+                return Object.keys(obj).reduce((acc, k) => {
+                    const pre = prefix.length ? prefix + '.' : '';
+                    if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+                        Object.assign(acc, this.flattenObject(obj[k], pre + k));
+                    } else {
+                        acc[pre + k] = obj[k];
+                    }
+                    return acc;
+                }, {});
+            },
+
+            unflattenObject(data) {
+                const result = {};
+                for (const i in data) {
+                    const keys = i.split('.');
+                    keys.reduce((r, e, j) => {
+                        return r[e] || (r[e] = (keys.length - 1 === j ? data[i] : {}));
+                    }, result);
+                }
+                return result;
+            },
+
+            addNewKey() {
+                if (!this.newKey.key || !this.newKey.value) return;
+                
+                // Si la clave ya existe, avisar
+                if (this.flatTranslations[this.newKey.key]) {
+                    if (!confirm('La clave ya existe. ¿Desea sobrescribirla?')) return;
+                }
+                
+                this.flatTranslations[this.newKey.key] = this.newKey.value;
+                this.newKey = { key: '', value: '' };
+                notifications.show('Nueva palabra añadida al diccionario temporal. No olvide actualizar para guardar cambios permanentes.', 'info');
+            },
+
+            deleteKey(key) {
+                if (confirm(`¿Eliminar la clave "${key}" del diccionario?`)) {
+                    delete this.flatTranslations[key];
+                }
+            },
+
+            async saveTranslations() {
+                this.saving = true;
+                try {
+                    const nested = this.unflattenObject(this.flatTranslations);
+                    await api.put(`localization/${this.selectedLang}`, nested);
+                    
+                    // Actualizar el store global de idioma para ver los cambios sin recargar
+                    await Alpine.store('lang').loadLanguage(this.selectedLang);
+                    
+                    alert(`Diccionario (${this.selectedLang}) actualizado correctamente.`);
+                } catch (e) {
+                    alert('Error al guardar: ' + e.message);
+                } finally {
+                    this.saving = false;
+                }
             }
         }));
     });
