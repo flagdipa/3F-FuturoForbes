@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <div id="installing">
+        <h2 class="step-title">Instalando...</h2>
+        <div class="spinner"></div>
+    </div>
+    <div id="done" style="display:none">
+        <h2 class="step-title">✅ ¡Instalación Exitosa!</h2>
+        <div class="alert alert-error" style="border: 2px solid var(--error-color); background: rgba(255,0,0,0.1); padding: 20px; margin: 20px 0;">
+            <h3 style="color: var(--error-color); margin-bottom: 10px;">⚠️ ACCIÓN REQUERIDA (SEGURIDAD)</h3>
+            <p>Por razones de seguridad, **DEBES eliminar o renombrar la carpeta `install/`** en el directorio raíz del proyecto.</p>
+            <p>El sistema 3F **no arrancará** mientras esta carpeta exista para evitar accesos no autorizados.</p>
+        </div>
+        <p>Una vez eliminada la carpeta, reinicia el servidor y podrás acceder.</p>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="location.href='/'">Ir al Sistema</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function run() {
+    const body = {
+        db_config: JSON.parse(localStorage.getItem('dbConfig')),
+        admin_config: JSON.parse(localStorage.getItem('adminConfig')),
+        system_config: JSON.parse(localStorage.getItem('systemConfig') || '{}')
+    };
+    
+    try {
+        const res = await fetch('/install/api/install', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // VERIFICAR SISTEMA Y LIMPIAR
+            document.querySelector('#installing h2').innerText = '⏳ Verificando Integridad...';
+            
+            const verifyRes = await fetch('/install/api/verify-system', {method:'POST'});
+            const verifyData = await verifyRes.json();
+            
+            if(verifyData.success) {
+                document.getElementById('installing').style.display='none';
+                document.getElementById('done').style.display='block';
+                localStorage.clear();
+            } else {
+                alert('La instalación se completó pero la verificación falló: ' + verifyData.message);
+            }
+        } else {
+            alert('Error en instalación: ' + data.message);
+        }
+    } catch (e) {
+        alert('Error fatal: ' + e.message);
+    }
+}
+setTimeout(run, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <h2 class="step-title">Finalizar</h2>
+    <p>Todo está listo para la instalación.</p>
+    <div class="action-buttons">
+        <button class="btn btn-secondary" onclick="location.href='/install/step/4'">Atrás</button>
+        <button class="btn btn-primary" onclick="localStorage.setItem('systemConfig', '{}'); location.href='/install/step/6'">🚀 Instalar</button>
+    </div>
+</div>
+{% endblock %}

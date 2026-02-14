@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <div class="welcome-logo"><div class="logo-circle"><span class="logo-text">3F</span></div></div>
+    <h2 class="welcome-title">Bienvenido a <span class="highlight">FuturoForbes 3F</span></h2>
+    <p>Guía profesional para configurar tu ecosistema financiero.</p>
+    <div class="features-grid">
+        <div class="feature-card"><h3>IA Finanzas</h3><p>Análisis inteligente</p></div>
+        <div class="feature-card"><h3>Control Total</h3><p>Gestión completa</p></div>
+    </div>
+    <div class="action-buttons">
+        <button class="btn btn-primary btn-large" onclick="location.href='/install/step/2'">Comenzar</button>
+    </div>
+</div>
+{% endblock %}

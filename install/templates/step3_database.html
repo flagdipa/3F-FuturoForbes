@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <h2 class="step-title">Base de Datos</h2>
+    <form onsubmit="test(event)">
+        <div class="form-group"><label>Tipo</label><select id="db_type" class="form-control"><option value="mysql">MySQL</option></select></div>
+        <div class="form-group"><label>Host</label><input type="text" id="host" class="form-control" value="localhost"></div>
+        <div class="form-group"><label>User</label><input type="text" id="user" class="form-control" value="root"></div>
+        <div class="form-group"><label>Pass</label><input type="password" id="pass" class="form-control"></div>
+        <div class="form-group"><label>DB Name</label><input type="text" id="db" class="form-control" value="3f_db"></div>
+        <button type="submit" class="btn btn-outline" id="btn-test">🔌 Probar Conexión</button>
+    </form>
+    <div class="action-buttons">
+        <button class="btn btn-secondary" onclick="location.href='/install/step/2'">Atrás</button>
+        <button id="btn-next" class="btn btn-primary" style="display:none" onclick="location.href='/install/step/4'">Continuar</button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function test(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-test');
+    btn.disabled = true;
+    const body = {
+        db_type: document.getElementById('db_type').value,
+        host: document.getElementById('host').value,
+        port: 3306,
+        user: document.getElementById('user').value,
+        password: document.getElementById('pass').value,
+        database: document.getElementById('db').value,
+        create_if_not_exists: true
+    };
+    const res = await fetch('/install/api/test-database', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(data.success) {
+        localStorage.setItem('dbConfig', JSON.stringify(body));
+        document.getElementById('btn-next').style.display='inline-block';
+        alert('Conexión Exitosa');
+    } else {
+        alert('Error: ' + data.message);
+    }
+    btn.disabled = false;
+}
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -8,6 +8,13 @@ from .core.config_inf import config_inf
 from .core.logging_config import setup_logging
 from .core.security_middleware import limiter, SecurityHeadersMiddleware, _rate_limit_exceeded_handler
 from .core.exceptions import APIException
+from .core.install_checker import is_installed, is_install_blocked
+
+# --- Importaciones de Instalación ---
+try:
+    from install.app import app as install_app
+except ImportError:
+    install_app = None
 from slowapi.errors import RateLimitExceeded
 from .api.auth.router import router as auth_router
 from .api.accounts.router_divisa import router as currency_router
@@ -75,13 +82,73 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
+# --- Middleware de Instalación y Seguridad ---
+@app.middleware("http")
+async def installation_middleware(request: Request, call_next):
+    path = request.url.path
+    
+    # 1. Excluir rutas críticas, estáticos y el propio instalador
+    if (path.startswith("/install") or 
+        path.startswith("/static") or 
+        path == "/favicon.ico" or 
+        "monitoring" in path):
+        return await call_next(request)
+    
+    # 2. Bloqueo de Seguridad (Instalado pero carpeta install existe)
+    if is_install_blocked():
+        return HTMLResponse(content="""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Seguridad Crítica - 3F</title>
+                <style>
+                    body { background: #0b0e14; color: #e0e6ed; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                    .warning-box { border: 2px solid #ff4444; padding: 40px; border-radius: 20px; background: rgba(255, 68, 68, 0.05); max-width: 650px; text-align: center; box-shadow: 0 0 30px rgba(255, 68, 68, 0.1); }
+                    h1 { color: #ff4444; margin-top: 0; font-size: 2em; text-transform: uppercase; letter-spacing: 2px; }
+                    code { background: #1a1f29; padding: 4px 8px; border-radius: 4px; color: #00d4ff; font-weight: bold; }
+                    .action { margin-top: 25px; padding: 20px; background: rgba(0, 212, 255, 0.1); border-radius: 12px; border-left: 4px solid #00d4ff; text-align: left; }
+                </style>
+            </head>
+            <body>
+                <div class="warning-box">
+                    <h1>⚠️ Riesgo de Seguridad</h1>
+                    <p style="font-size: 1.2em;">El sistema <b>3F</b> ha detectado que la carpeta de instalación todavía existe.</p>
+                    <p>Por razones de seguridad, el sistema permanecerá bloqueado hasta que elimines o renombres la carpeta <code>/install</code>.</p>
+                    <div class="action">
+                        <strong>Acción Requerida:</strong><br>
+                        1. Ve a la carpeta raíz de tu proyecto.<br>
+                        2. Elimina o mueve la carpeta <code>c:/xampp/htdocs/3F/install</code>.<br>
+                        3. Refresca esta página.
+                    </div>
+                </div>
+            </body>
+            </html>
+        """, status_code=503)
+
+    # 3. Redirección si no está instalado
+    if not is_installed() and install_app:
+        return RedirectResponse(url="/install/")
+        
+    return await call_next(request)
+
+# --- Montar Aplicación de Instalación ---
+if install_app:
+    app.mount("/install", install_app)
+
 # Rate limiter state
 app.state.limiter = limiter
 
 @app.on_event("startup")
 def on_startup():
-    init_db()
-    start_scheduler()
+    # Solo inicializar DB si está instalado
+    if is_installed():
+        try:
+            init_db()
+            start_scheduler()
+        except Exception as e:
+            import logging
+            logging.error(f"Error starting database: {e}")
+    
     import logging
     logging.info("🚀 FuturoForbes (3F) starting up...")
     logging.info(f"📋 Version: {config_inf.get('SISTEMA', 'version', '1.0.0')}")

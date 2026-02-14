@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <h2 class="step-title">Admin</h2>
+    <form onsubmit="valid(event)">
+        <div class="form-group"><label>Email</label><input type="email" id="email" class="form-control" required></div>
+        <div class="form-group"><label>Pass</label><input type="password" id="pass" class="form-control" required></div>
+        <div class="form-group"><label>Confirm</label><input type="password" id="conf" class="form-control" required></div>
+        <button type="submit" class="btn btn-outline">Validar</button>
+    </form>
+    <div class="action-buttons">
+        <button class="btn btn-secondary" onclick="location.href='/install/step/3'">Atrás</button>
+        <button id="btn-next" class="btn btn-primary" style="display:none" onclick="location.href='/install/step/5'">Continuar</button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function valid(e) {
+    e.preventDefault();
+    const body = {
+        username: 'admin',
+        email: document.getElementById('email').value,
+        password: document.getElementById('pass').value,
+        confirm_password: document.getElementById('conf').value
+    };
+    const res = await fetch('/install/api/validate-admin', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(data.success) {
+        localStorage.setItem('adminConfig', JSON.stringify(body));
+        document.getElementById('btn-next').style.display='inline-block';
+    } else { alert(data.message); }
+}
+</script>
+{% endblock %}

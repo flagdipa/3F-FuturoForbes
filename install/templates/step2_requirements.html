@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-container">
+    <h2 class="step-title">Requisitos del Sistema</h2>
+    <div id="loading">Verificando...</div>
+    <div id="results" style="display:none">
+        <table class="requirements-table" id="req-table"></table>
+        <div id="alert" class="alert"></div>
+    </div>
+    <div class="action-buttons">
+        <button class="btn btn-secondary" onclick="location.href='/install/step/1'">Atrás</button>
+        <button id="btn-next" class="btn btn-primary" style="display:none" onclick="location.href='/install/step/3'">Continuar</button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function check() {
+    const res = await fetch('/install/api/check-requirements', {method: 'POST'});
+    const data = await res.json();
+    document.getElementById('loading').style.display='none';
+    const table = document.getElementById('req-table');
+    data.checks.forEach(c => {
+        table.innerHTML += `<tr><td>${c.requirement}</td><td>${c.status=='ok'?'✅':'❌'}</td></tr>`;
+    });
+    if(data.all_passed) {
+        document.getElementById('btn-next').style.display='inline-block';
+        document.getElementById('alert').innerHTML = '✅ Todo listo';
+    } else {
+        document.getElementById('alert').innerHTML = '❌ Faltan requisitos';
+    }
+    document.getElementById('results').style.display='block';
+}
+check();
+</script>
+{% endblock %}
