@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # JWT Configuration
     SECRET_KEY: str = Field(
-        ...,
+        default="temporary-secret-key-for-installation-only-32-chars",
         min_length=32,
         description="JWT secret key - must be at least 32 characters"
     )
