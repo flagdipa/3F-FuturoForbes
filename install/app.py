@@ -115,11 +115,11 @@ async def api_verify_system():
     Verifica que el sistema esté operativo tras la instalación (PrestaShop verify step).
     Si todo está OK, intenta renombrar la carpeta install.
     """
-    from backend.core.database import get_engine
+    from backend.core.database import engine
     from sqlalchemy import text
     
     try:
-        engine = get_engine()
+        # Usar el engine global configurado con el nuevo .env
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         
@@ -132,7 +132,12 @@ async def api_verify_system():
             "cleanup": rename_res
         }
     except Exception as e:
-        return {"success": False, "message": f"System verification failed: {str(e)}"}
+        import traceback
+        return {
+            "success": False, 
+            "message": f"System verification failed: {str(e)}",
+            "traceback": traceback.format_exc()
+        }
 
 @app.post("/api/install")
 async def api_run_install(req: InstallationRequest):

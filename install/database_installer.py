@@ -21,6 +21,7 @@ from backend.models.models import Usuario, Divisa, Categoria
 
 def test_connection(db_type: str, host: str, port: int, user: str, password: str, database: Optional[str] = None) -> Dict[str, any]:
     try:
+        import pymysql
         if db_type.lower() == "mysql":
             connection_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database if database else ''}"
         elif db_type.lower() == "postgresql":
@@ -28,12 +29,20 @@ def test_connection(db_type: str, host: str, port: int, user: str, password: str
         else:
             return {"success": False, "message": f"Unsupported DB: {db_type}"}
         
-        engine = create_engine(connection_url, echo=False)
+        # Timeout corto para pruebas de conexión
+        engine = create_engine(connection_url, echo=False, connect_args={"connect_timeout": 10} if db_type.lower() == "mysql" else {})
+        
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+            
         return {"success": True, "message": "Connection successful", "connection_url": connection_url}
+    except ImportError as ie:
+        return {"success": False, "message": f"Missing database driver: {str(ie)}. Please ensure pymysql or psycopg2 is installed."}
     except Exception as e:
-        return {"success": False, "message": str(e)}
+        import traceback
+        print(f"DEBUG: Connection test failed: {str(e)}")
+        print(traceback.format_exc())
+        return {"success": False, "message": f"Connection failed: {str(e)}", "traceback": traceback.format_exc()}
 
 
 def create_database_if_not_exists(db_type: str, host: str, port: int, user: str, password: str, database: str) -> Dict[str, any]:
