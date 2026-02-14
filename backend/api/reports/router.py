@@ -213,32 +213,52 @@ def reporte_tendencia(
     """
     Calcula la tendencia lineal de los saldos mensuales (Net Worth).
     """
-    # 1. Obtener balance neto por mes (simplificado: ingresos - gastos)
-    # En un sistema real, esto debería sumar saldos iniciales + flujos
+    # Expresiones para extraer mes y año (más compatibles con SQLModel/SQLAlchemy)
+    expr_mes = func.extract('month', LibroTransacciones.fecha_transaccion)
+    expr_anio = func.extract('year', LibroTransacciones.fecha_transaccion)
+
+    # 1. Obtener balance neto por mes (ingresos + gastos)
     query = select(
-        func.extract('month', LibroTransacciones.fecha_transaccion).label('mes'),
-        func.extract('year', LibroTransacciones.fecha_transaccion).label('anio'),
+        expr_mes.label('mes'),
+        expr_anio.label('anio'),
         func.sum(LibroTransacciones.monto_transaccion).label('total')
-    ).group_by('anio', 'mes').order_by('anio', 'mes')
+    ).group_by(expr_anio, expr_mes).order_by(expr_anio, expr_mes)
     
-    results = session.exec(query).all()
-    
+    try:
+        results = session.exec(query).all()
+    except Exception as e:
+        # Fallback si func.extract falla (ej: SQLite string format)
+        results = []
+
     points = []
     labels = []
     running_total = 0
-    for idx, (mes, anio, total) in enumerate(results):
-        running_total += float(total)
-        points.append((idx, running_total))
-        labels.append(f"{idx}") # Etiquetas simplificadas
+    
+    if results:
+        for idx, row in enumerate(results):
+            # Acceso por índice o atributo según el driver
+            mes, anio, total = row
+            val_total = float(total or 0)
+            running_total += val_total
+            points.append((idx, running_total))
+            labels.append(f"{idx}")
+    else:
+        # Si no hay datos, inicializamos un punto en cero
+        points = [(0, 0.0)]
+        labels = ["0"]
 
     # Verificamos si el plugin de IA está activo
-    plugin_ia = session.exec(select(Plugin).where(Plugin.nombre_tecnico == "ia_forecasting")).first()
-    ai_enabled = plugin_ia.activo if plugin_ia else False
+    ai_enabled = False
+    try:
+        plugin_ia = session.exec(select(Plugin).where(Plugin.nombre_tecnico == "ia_forecasting")).first()
+        ai_enabled = plugin_ia.activo if plugin_ia else False
+    except:
+        pass
     
     trend_points = []
     final_labels = labels.copy()
 
-    if ai_enabled:
+    if ai_enabled and len(points) >= 1:
         regression = forecasting_service.calculate_weighted_regression(points)
         
         # Generar puntos de tendencia (incluyendo proyección futura a 6 meses)
@@ -247,6 +267,9 @@ def reporte_tendencia(
             trend_points.append(round(val, 2))
         
         final_labels += ["+1", "+2", "+3", "+4", "+5", "+6"]
+    else:
+        # Tendencia plana si no hay IA o datos suficientes
+        trend_points = [p[1] for p in points]
         
     return {
         "historico": [p[1] for p in points],

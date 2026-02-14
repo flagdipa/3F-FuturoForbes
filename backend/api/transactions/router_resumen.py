@@ -28,22 +28,28 @@ async def obtener_resumen_financiero(
     hoy = datetime.utcnow()
     primer_dia_mes = datetime(hoy.year, hoy.month, 1).isoformat()
     
-    ingresos = session.exec(select(func.sum(LibroTransacciones.monto_transaccion)).where(
-        LibroTransacciones.codigo_transaccion == "Deposit",
-        LibroTransacciones.fecha_transaccion >= primer_dia_mes
-    )).one() or Decimal("0.00")
-    
-    gastos = session.exec(select(func.sum(LibroTransacciones.monto_transaccion)).where(
-        LibroTransacciones.codigo_transaccion == "Withdrawal",
-        LibroTransacciones.fecha_transaccion >= primer_dia_mes
-    )).one() or Decimal("0.00")
+    try:
+        ingresos = session.exec(select(func.coalesce(func.sum(LibroTransacciones.monto_transaccion), 0)).where(
+            LibroTransacciones.codigo_transaccion == "Deposit",
+            LibroTransacciones.fecha_transaccion >= primer_dia_mes
+        )).one()
+        
+        gastos = session.exec(select(func.coalesce(func.sum(LibroTransacciones.monto_transaccion), 0)).where(
+            LibroTransacciones.codigo_transaccion == "Withdrawal",
+            LibroTransacciones.fecha_transaccion >= primer_dia_mes
+        )).one()
+    except Exception as e:
+        ingresos = Decimal("0.0")
+        gastos = Decimal("0.0")
 
     # --- Presupuesto del Mes ---
     current_year = hoy.year
-    budget_query = select(func.sum(Presupuesto.monto)).join(AnioPresupuesto)\
-        .where(AnioPresupuesto.anio == current_year, Presupuesto.activo == 1)
-    
-    presupuesto_mensual = session.exec(budget_query).one() or Decimal("0.00")
+    try:
+        budget_query = select(func.coalesce(func.sum(Presupuesto.monto), 0)).join(AnioPresupuesto)\
+            .where(AnioPresupuesto.anio == current_year, Presupuesto.activo == 1)
+        presupuesto_mensual = session.exec(budget_query).one()
+    except:
+        presupuesto_mensual = Decimal("0.00")
     presupuesto_revalued = fx_service.convert(presupuesto_mensual, "ARS", currency, wealth["rates"])
 
     # Conversión de flujos del mes

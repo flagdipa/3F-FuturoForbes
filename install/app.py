@@ -138,7 +138,19 @@ async def api_verify_system():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         
-        # Si llegamos aquí, el sistema funciona. Intentar renombrar carpeta
+        # 1. Trigger Backend Reload (Force uvicorn --reload to pick up new .env)
+        try:
+            import os
+            import time
+            backend_main = os.path.join(os.path.dirname(__file__), "..", "backend", "main.py")
+            if os.path.exists(backend_main):
+                # Update mtime to trigger reload
+                os.utime(backend_main, None)
+                print(f"Triggered backend reload: {backend_main}")
+        except Exception as ex:
+            print(f"Failed to trigger backend reload: {ex}")
+
+        # 2. Si llegamos aquí, el sistema funciona. Intentar renombrar carpeta
         rename_res = rename_install_folder()
         
         return {

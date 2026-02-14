@@ -55,7 +55,7 @@ def get_wealth_history(
 
 @router.get("/history/chart")
 def get_wealth_chart_data(
-    days: int = 30,
+    days: int = Query(30),
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
@@ -66,14 +66,28 @@ def get_wealth_chart_data(
         WealthSnapshot.id_usuario == current_user.id_usuario
     ).order_by(WealthSnapshot.fecha.asc()).limit(days)
     
-    results = session.exec(query).all()
+    try:
+        results = session.exec(query).all()
+    except:
+        results = []
+    
+    if not results:
+        return {
+            "labels": ["Sin Datos"],
+            "datasets": [
+                {
+                    "label": "Patrimonio Neto",
+                    "data": [0.0]
+                }
+            ]
+        }
     
     return {
-        "labels": [s.fecha.strftime("%d/%m") for s in results],
+        "labels": [s.fecha.strftime("%d/%m") if s.fecha else "N/A" for s in results],
         "datasets": [
             {
                 "label": "Patrimonio Neto",
-                "data": [float(s.patrimonio_neto) for s in results]
+                "data": [float(s.patrimonio_neto or 0) for s in results]
             }
         ]
     }

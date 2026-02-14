@@ -86,7 +86,10 @@ def insert_initial_data(connection_url: str) -> Dict[str, any]:
             
             divisas = [
                 Divisa(nombre_divisa="Peso Argentino", codigo_iso="ARS", simbolo_prefijo="$", decimal_places=2, tipo_divisa="Fiat", tasa_conversion_base=Decimal("1.0")),
-                Divisa(nombre_divisa="Dólar", codigo_iso="USD", simbolo_prefijo="US$", decimal_places=2, tipo_divisa="Fiat", tasa_conversion_base=Decimal("1000.0"))
+                Divisa(nombre_divisa="Dólar Oficial", codigo_iso="USD", simbolo_prefijo="US$", decimal_places=2, tipo_divisa="Fiat", tasa_conversion_base=Decimal("1000.0")),
+                Divisa(nombre_divisa="Euro", codigo_iso="EUR", simbolo_prefijo="€", decimal_places=2, tipo_divisa="Fiat", tasa_conversion_base=Decimal("1100.0")),
+                Divisa(nombre_divisa="Bitcoin", codigo_iso="BTC", simbolo_prefijo="₿", decimal_places=8, tipo_divisa="Crypto", tasa_conversion_base=Decimal("90000000.0")),
+                Divisa(nombre_divisa="Ethereum", codigo_iso="ETH", simbolo_prefijo="Ξ", decimal_places=8, tipo_divisa="Crypto", tasa_conversion_base=Decimal("3000000.0"))
             ]
             for d in divisas: session.add(d)
             
