@@ -153,12 +153,46 @@ def rename_install_folder() -> dict:
         }
     except Exception as e:
         return {"success": False, "message": str(e)}
+def is_installed_in_db() -> bool:
+    """
+    Verifica de forma segura si la instalación está marcada en la base de datos.
+    No lanza excepciones para evitar romper la aplicación en el arranque inicial.
+    """
+    try:
+        from backend.core.database import engine
+        from backend.models.models_config import Configuracion
+        from sqlmodel import Session, select
+        from sqlalchemy import text
+        
+        # Primero verificar que la tabla exista (para evitar errores en la primera corrida)
+        with engine.connect() as conn:
+            # Query ultra-rápida para ver si el flag existe
+            try:
+                res = conn.execute(text("SELECT valor FROM configuraciones WHERE clave='system_installed'"))
+                row = res.fetchone()
+                return row is not None and row[0] == "true"
+            except Exception:
+                return False
+    except Exception:
+        return False
+
+
 def is_install_blocked() -> bool:
     """
     Verifica si el acceso al sistema debe estar bloqueado por seguridad.
     
-    Bloquea si:
-    - El sistema está marcado como instalado
-    - PERO la carpeta /install todavía existe
+    AUTODESBLOQUEO TOTAL:
+    1. Si SKIP_INSTALL_FOLDER_CHECK es true (Entorno).
+    2. SI la base de datos ya tiene el flag 'system_installed' (Persistencia).
+    
+    En estos casos, se permite el acceso aunque la carpeta install/ exista.
     """
+    # Bypass por variable de entorno
+    if os.getenv("SKIP_INSTALL_FOLDER_CHECK", "false").lower() == "true":
+        return False
+        
+    # Bypass por base de datos (Automático una vez terminada la instalación)
+    if is_installed_in_db():
+        return False
+        
     return is_installed() and is_install_folder_present()

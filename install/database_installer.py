@@ -17,6 +17,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from backend.models.models import Usuario, Divisa, Categoria
+from backend.models.models_config import Configuracion
 
 
 def test_connection(db_type: str, host: str, port: int, user: str, password: str, database: Optional[str] = None) -> Dict[str, any]:
@@ -94,6 +95,15 @@ def insert_initial_data(connection_url: str) -> Dict[str, any]:
                 Categoria(nombre_categoria="Alimentación", activo=1, color="#ff4444")
             ]
             for c in cats: session.add(c)
+            
+            # --- META-DATO DE INSTALACIÓN ---
+            session.add(Configuracion(
+                clave="system_installed", 
+                valor="true",
+                descripcion="Marca definitiva de instalación completada",
+                fecha_actualizacion=datetime.utcnow()
+            ))
+            
             session.commit()
         return {"success": True, "inserted": True}
     except Exception as e:

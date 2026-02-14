@@ -153,7 +153,8 @@ async def api_run_install(req: InstallationRequest):
         
         env_result = create_env_file({
             "DATABASE_URL": conn_url,
-            "SECRET_KEY": secret_key
+            "SECRET_KEY": secret_key,
+            "SKIP_INSTALL_FOLDER_CHECK": "true"
         })
         log.append({"step": "create_env", "status": "success" if env_result.get("success") else "failed"})
         
