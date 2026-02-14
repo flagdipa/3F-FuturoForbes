@@ -9,6 +9,7 @@ from .core.logging_config import setup_logging
 from .core.security_middleware import limiter, SecurityHeadersMiddleware, _rate_limit_exceeded_handler
 from .core.exceptions import APIException
 from .core.install_checker import is_installed, is_install_blocked
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # --- Importaciones de Instalación ---
 try:
@@ -176,6 +177,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 # Security middleware
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Configuración de CORS
 app.add_middleware(
