@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from ...core.database import get_session
 from ..auth.deps import get_current_user
 from ...core.audit_service import audit_service
+from ...core.plugin_manager import plugin_manager
 from ...models.models import LibroTransacciones, TransaccionDividida, ListaCuentas, Beneficiario, Categoria, Usuario
 from .schemas import TransaccionCrear, TransaccionLectura, TransaccionComplejaCrear, DivisionCrear
 from backend.models.models_extended import TransaccionEtiqueta
@@ -283,6 +284,13 @@ async def crear_transaccion(
     # UN SOLO COMMIT AL FINAL
     session.commit()
     session.refresh(db_tx)
+    
+    # Disparar hook de plugin
+    await plugin_manager.call_hook(
+        "transaction_created",
+        transaction=db_tx,
+        user=current_user
+    )
     
     # Notify about high value transaction (post-commit)
     if db_tx.monto_transaccion >= 1000:

@@ -178,6 +178,13 @@
             display: inline-block;
         }
         
+        .subsection-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+            color: var(--primary);
+        }
+        
         .table-modern {
             background: white;
             border-radius: 1rem;
@@ -214,6 +221,26 @@
             padding: 1.5rem;
         }
         
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        .endpoint-card {
+            border-left: 4px solid var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .endpoint-card.get { border-left-color: var(--success); }
+        .endpoint-card.post { border-left-color: var(--warning); }
+        .endpoint-card.put { border-left-color: var(--info); }
+        .endpoint-card.delete { border-left-color: var(--danger); }
+        
         footer {
             background: var(--dark);
             color: white;
@@ -240,8 +267,8 @@
                     <h1>Sistema 3F</h1>
                     <p class="subtitle">Futuro Forbes - Sistema Integral de Gestión Financiera</p>
                     <p class="mb-0 opacity-75">
-                        <i class="fas fa-calendar-alt"></i> Fecha: 12 de Febrero de 2026 | 
-                        <i class="fas fa-robot"></i> Generado por: opencode AI
+                        <i class="fas fa-calendar-alt"></i> Fecha: 14 de Febrero de 2026 | 
+                        <i class="fas fa-robot"></i> Generado por: opencode AI (kimi-k2.5-free)
                     </p>
                 </div>
                 <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
@@ -263,13 +290,17 @@
                         <li><a href="#resumen">1. Resumen Ejecutivo</a></li>
                         <li><a href="#arquitectura">2. Arquitectura</a></li>
                         <li><a href="#stack">3. Stack Tecnológico</a></li>
-                        <li><a href="#modulos">4. Módulos</a></li>
-                        <li><a href="#api">5. API</a></li>
-                        <li><a href="#seguridad">6. Seguridad</a></li>
-                        <li><a href="#testing">7. Testing</a></li>
-                        <li><a href="#despliegue">8. Despliegue</a></li>
-                        <li><a href="#estado">9. Estado Actual</a></li>
-                        <li><a href="#recomendaciones">10. Recomendaciones</a></li>
+                        <li><a href="#modelos">4. Modelos de Datos</a></li>
+                        <li><a href="#apis">5. APIs (28 Routers)</a></li>
+                        <li><a href="#servicios">6. Servicios Core</a></li>
+                        <li><a href="#frontend">7. Frontend</a></li>
+                        <li><a href="#seguridad">8. Seguridad</a></li>
+                        <li><a href="#scheduler">9. Scheduler</a></li>
+                        <li><a href="#instalacion">10. Instalación</a></li>
+                        <li><a href="#testing">11. Testing</a></li>
+                        <li><a href="#despliegue">12. Despliegue</a></li>
+                        <li><a href="#estado">13. Estado Actual</a></li>
+                        <li><a href="#recomendaciones">14. Recomendaciones</a></li>
                     </ul>
                 </div>
             </div>
@@ -280,26 +311,26 @@
                 <div class="row mb-5">
                     <div class="col-md-3 col-6">
                         <div class="card stat-card">
-                            <div class="number">131</div>
+                            <div class="number">119</div>
                             <div class="label">Archivos Python</div>
                         </div>
                     </div>
                     <div class="col-md-3 col-6">
                         <div class="card stat-card">
                             <div class="number">28</div>
-                            <div class="label">Endpoints API</div>
+                            <div class="label">Routers API</div>
                         </div>
                     </div>
                     <div class="col-md-3 col-6">
                         <div class="card stat-card">
                             <div class="number">30+</div>
-                            <div class="label">Modelos de Datos</div>
+                            <div class="label">Modelos SQLModel</div>
                         </div>
                     </div>
                     <div class="col-md-3 col-6">
                         <div class="card stat-card">
-                            <div class="number">22</div>
-                            <div class="label">Templates HTML</div>
+                            <div class="number">150+</div>
+                            <div class="label">Endpoints</div>
                         </div>
                     </div>
                 </div>
@@ -326,23 +357,31 @@
                                 <div class="card-body">
                                     <div class="feature-item">
                                         <i class="fas fa-brain"></i> <strong>IA Integrada</strong><br>
-                                        <small class="text-muted">OCR automático de tickets con Google Gemini</small>
+                                        <small class="text-muted">OCR automático de tickets con Google Gemini 1.5 Flash</small>
                                     </div>
                                     <div class="feature-item">
                                         <i class="fas fa-globe"></i> <strong>Multi-moneda</strong><br>
-                                        <small class="text-muted">Soporte para divisas con tipos de cambio en tiempo real</small>
+                                        <small class="text-muted">Soporte para divisas fiat y crypto con tasas en tiempo real</small>
                                     </div>
                                     <div class="feature-item">
                                         <i class="fas fa-puzzle-piece"></i> <strong>Arquitectura de Plugins</strong><br>
-                                        <small class="text-muted">Sistema extensible sin modificar core</small>
+                                        <small class="text-muted">Sistema extensible tipo PrestaShop con hooks</small>
                                     </div>
                                     <div class="feature-item">
                                         <i class="fas fa-th-large"></i> <strong>Dashboard Personalizable</strong><br>
-                                        <small class="text-muted">GridStack para layouts drag-and-drop</small>
+                                        <small class="text-muted">Layouts drag-and-drop con temas dinámicos</small>
                                     </div>
                                     <div class="feature-item">
                                         <i class="fas fa-shield-alt"></i> <strong>Auditoría Completa</strong><br>
-                                        <small class="text-muted">Log de todas las operaciones</small>
+                                        <small class="text-muted">Log de todas las operaciones con IP tracking</small>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-calendar-check"></i> <strong>Transacciones Recurrentes</strong><br>
+                                        <small class="text-muted">Programación automática con múltiples frecuencias</small>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-chart-pie"></i> <strong>Presupuestos Rolling</strong><br>
+                                        <small class="text-muted">Acumulación automática de sobrantes</small>
                                     </div>
                                 </div>
                             </div>
@@ -361,7 +400,7 @@
                                     
                                     <h6 class="mb-3">Progreso General</h6>
                                     <div class="progress progress-custom mb-4">
-                                        <div class="progress-bar bg-success" style="width: 95%">95%</div>
+                                        <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                     </div>
                                     
                                     <div class="row text-start">
@@ -369,10 +408,10 @@
                                             <small><i class="fas fa-check text-success"></i> Core financiero</small>
                                         </div>
                                         <div class="col-6">
-                                            <small><i class="fas fa-check text-success"></i> Autenticación</small>
+                                            <small><i class="fas fa-check text-success"></i> Autenticación JWT</small>
                                         </div>
                                         <div class="col-6">
-                                            <small><i class="fas fa-check text-success"></i> Reportes</small>
+                                            <small><i class="fas fa-check text-success"></i> Reportes (PDF/Excel)</small>
                                         </div>
                                         <div class="col-6">
                                             <small><i class="fas fa-check text-success"></i> IA integrada</small>
@@ -387,7 +426,13 @@
                                             <small><i class="fas fa-check text-success"></i> Docker</small>
                                         </div>
                                         <div class="col-6">
-                                            <small><i class="fas fa-check text-success"></i> Tests</small>
+                                            <small><i class="fas fa-check text-success"></i> Scheduler</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><i class="fas fa-check text-success"></i> Multi-divisa</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><i class="fas fa-check text-success"></i> Importación CSV</small>
                                         </div>
                                     </div>
                                 </div>
@@ -406,30 +451,33 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="arch-diagram">
-┌────────────────────────────────────────────────────────────────┐
-│                    CAPA DE PRESENTACIÓN                         │
-│   Alpine.js  +  Bootstrap 5  +  GridStack.js                    │
-└────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌────────────────────────────────────────────────────────────────┐
-│                         CAPA API                                │
-│                    FastAPI 0.128.0                              │
-│   Auth │ Accounts │ Transactions │ Reports │ IA │ Vault         │
-└────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌────────────────────────────────────────────────────────────────┐
-│                       CAPA SERVICIOS                            │
-│   Audit │ Forecasting │ Recurring │ Vault │ FX │ Wealth        │
-└────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌────────────────────────────────────────────────────────────────┐
-│                        CAPA DATOS                               │
-│              SQLModel (SQLAlchemy + Pydantic)                   │
-│     MySQL/MariaDB  │  PostgreSQL  │  SQLite                      │
-└────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     CAPA DE PRESENTACIÓN                         │
+│   Jinja2 Templates + Alpine.js + Bootstrap 5 + AdminLTE 4         │
+│   25+ Templates HTML | 8 Utilidades JS | Tema Neon Cyberpunk      │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CAPA API (FastAPI 0.128)                      │
+│   Auth │ Accounts │ Transactions │ Reports │ IA │ Vault          │
+│   Categories │ Budgets │ Assets │ Stocks │ Goals │ Wealth        │
+│   Audit │ Plugins │ Themes │ Layouts │ Notifications | 28 Total   │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CAPA SERVICIOS CORE                           │
+│   AuditService │ IAService │ VaultService │ WealthService       │
+│   FXService │ RecurringService │ Scheduler │ AuthUtils          │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CAPA DATOS (SQLModel)                         │
+│   MySQL/MariaDB (Producción) │ PostgreSQL │ SQLite (Dev)         │
+│   Connection Pooling: 20 conexiones + 10 overflow                │
+└─────────────────────────────────────────────────────────────────┘
                             </div>
                         </div>
                     </div>
@@ -442,11 +490,12 @@
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> MVC (Model-View-Controller)</li>
                                         <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Repository Pattern</li>
                                         <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Service Layer</li>
-                                        <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Dependency Injection</li>
+                                        <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Dependency Injection (FastAPI)</li>
                                         <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Plugin Architecture</li>
+                                        <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Middleware Chain</li>
+                                        <li class="mb-2"><i class="fas fa-angle-right text-primary"></i> Event-driven (Auditoría)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -454,27 +503,27 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <i class="fas fa-cubes"></i> Componentes Principales
+                                    <i class="fas fa-cubes"></i> Estructura de Directorios
                                 </div>
                                 <div class="card-body">
-                                    <table class="table table-sm">
-                                        <tr>
-                                            <td><strong>28</strong> Routers API</td>
-                                            <td><code>backend/api/</code></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>9</strong> Servicios</td>
-                                            <td><code>backend/core/</code></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>30+</strong> Modelos</td>
-                                            <td><code>backend/models/</code></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>14</strong> Scripts</td>
-                                            <td><code>backend/scripts/</code></td>
-                                        </tr>
-                                    </table>
+                                    <div class="code-block">
+3F/
+├── backend/
+│   ├── main.py              # Entry point
+│   ├── api/                 # 28 routers
+│   │   ├── auth/
+│   │   ├── transactions/
+│   │   ├── accounts/
+│   │   └── ...
+│   ├── core/                # 12 servicios
+│   ├── models/              # 30+ modelos
+│   └── scripts/             # Utilidades
+├── frontend/
+│   ├── templates/           # 25+ HTML
+│   └── static/              # CSS/JS
+├── install/                 # Wizard
+└── docker-compose.yml
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -483,13 +532,13 @@
 
                 <!-- Sección 3: Stack Tecnológico -->
                 <section id="stack">
-                    <h2 class="section-title">3. Stack Tecnológico</h2>
+                    <h2 class="section-title">3. Stack Tecnológico Completo</h2>
                     
                     <div class="row">
                         <div class="col-md-6 mb-4">
                             <div class="card h-100">
                                 <div class="card-header">
-                                    <i class="fab fa-python"></i> Backend
+                                    <i class="fab fa-python"></i> Backend (Python)
                                 </div>
                                 <div class="card-body">
                                     <h6>Core Framework</h6>
@@ -501,12 +550,20 @@
                                         <span class="tech-badge">Uvicorn 0.40.0</span>
                                     </div>
                                     
+                                    <h6>Base de Datos</h6>
+                                    <div class="mb-3">
+                                        <span class="tech-badge">SQLAlchemy 2.0+</span>
+                                        <span class="tech-badge">PyMySQL 1.1.1</span>
+                                        <span class="tech-badge">psycopg 3.2.3</span>
+                                        <span class="tech-badge">Alembic 1.18.2</span>
+                                    </div>
+                                    
                                     <h6>Seguridad</h6>
                                     <div class="mb-3">
-                                        <span class="tech-badge">PyJWT 2.11.0</span>
-                                        <span class="tech-badge">Passlib 1.7.4</span>
-                                        <span class="tech-badge">SlowAPI 0.1.9</span>
-                                        <span class="tech-badge">Bleach 6.2.0</span>
+                                        <span class="tech-badge">python-jose 3.3.0</span>
+                                        <span class="tech-badge">bcrypt 4.2.0</span>
+                                        <span class="tech-badge">slowapi 0.1.9</span>
+                                        <span class="tech-badge">python-multipart</span>
                                     </div>
                                     
                                     <h6>IA y Datos</h6>
@@ -515,6 +572,12 @@
                                         <span class="tech-badge">Pandas 3.0.0</span>
                                         <span class="tech-badge">NumPy 2.4.2</span>
                                         <span class="tech-badge">PyTesseract 0.3.13</span>
+                                        <span class="tech-badge">Pillow 10.4.0</span>
+                                    </div>
+                                    
+                                    <h6>Scheduling</h6>
+                                    <div class="mb-3">
+                                        <span class="tech-badge">APScheduler 3.11.2</span>
                                     </div>
                                     
                                     <h6>Reportes</h6>
@@ -534,21 +597,40 @@
                                 <div class="card-body">
                                     <h6>Frameworks</h6>
                                     <div class="mb-3">
-                                        <span class="tech-badge">Alpine.js 3.13.3</span>
+                                        <span class="tech-badge">Jinja2</span>
+                                        <span class="tech-badge">Alpine.js 3.x</span>
                                         <span class="tech-badge">Bootstrap 5.3.2</span>
                                         <span class="tech-badge">AdminLTE 4.0.0-beta2</span>
+                                    </div>
+                                    
+                                    <h6>HTTP Client</h6>
+                                    <div class="mb-3">
+                                        <span class="tech-badge">Axios</span>
                                     </div>
                                     
                                     <h6>Visualización</h6>
                                     <div class="mb-3">
                                         <span class="tech-badge">Chart.js 4.4.1</span>
-                                        <span class="tech-badge">GridStack.js 10.1.2</span>
                                         <span class="tech-badge">Font Awesome 6.5.1</span>
                                     </div>
                                     
-                                    <h6>HTTP</h6>
+                                    <h6>Utilidades JS (8 archivos)</h6>
+                                    <div class="mb-3">
+                                        <span class="tech-badge">main.js</span>
+                                        <span class="tech-badge">theme-manager.js</span>
+                                        <span class="tech-badge">sidebar-manager.js</span>
+                                        <span class="tech-badge">layout-manager.js</span>
+                                        <span class="tech-badge">notification-manager.js</span>
+                                        <span class="tech-badge">currency-utils.js</span>
+                                        <span class="tech-badge">i18n.js</span>
+                                        <span class="tech-badge">shader-bg.js</span>
+                                    </div>
+                                    
+                                    <h6>CSS</h6>
                                     <div>
-                                        <span class="tech-badge">Axios</span>
+                                        <span class="tech-badge">neon-3f.css</span>
+                                        <span class="tech-badge">transactions.css</span>
+                                        <span class="tech-badge">toast-notifications.css</span>
                                     </div>
                                 </div>
                             </div>
@@ -560,17 +642,20 @@
                                     <i class="fas fa-database"></i> Base de Datos
                                 </div>
                                 <div class="card-body">
-                                    <div class="mb-2">
-                                        <strong>MySQL/MariaDB</strong> - PyMySQL 1.1.1
+                                    <div class="mb-3">
+                                        <strong>MySQL/MariaDB 8.4+</strong>
                                         <span class="badge bg-success">Recomendado</span>
+                                        <br><small>PyMySQL driver con connection pooling</small>
                                     </div>
-                                    <div class="mb-2">
-                                        <strong>PostgreSQL</strong> - psycopg 3.2.3
+                                    <div class="mb-3">
+                                        <strong>PostgreSQL 15+</strong>
                                         <span class="badge bg-info">Alternativo</span>
+                                        <br><small>psycopg driver</small>
                                     </div>
                                     <div>
-                                        <strong>SQLite</strong> - built-in
+                                        <strong>SQLite</strong>
                                         <span class="badge bg-secondary">Desarrollo</span>
+                                        <br><small>Sin connection pooling</small>
                                     </div>
                                 </div>
                             </div>
@@ -583,13 +668,16 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-2">
-                                        <strong>Backend:</strong> Pytest 9.0.2
+                                        <strong>Backend:</strong> pytest 9.0.2
                                     </div>
                                     <div class="mb-2">
                                         <strong>Frontend:</strong> Playwright 1.40.0
                                     </div>
+                                    <div class="mb-2">
+                                        <strong>Container:</strong> Docker + Docker Compose
+                                    </div>
                                     <div>
-                                        <strong>DevOps:</strong> Docker, Docker Compose
+                                        <strong>CI/CD:</strong> Scripts PowerShell/Bash
                                     </div>
                                 </div>
                             </div>
@@ -597,195 +685,1033 @@
                     </div>
                 </section>
 
-                <!-- Sección 4: Módulos -->
-                <section id="modulos">
-                    <h2 class="section-title">4. Módulos y Funcionalidades</h2>
+                <!-- Sección 4: Modelos de Datos -->
+                <section id="modelos">
+                    <h2 class="section-title">4. Modelos de Datos (30+ SQLModel)</h2>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header bg-success text-white">
-                                    <i class="fas fa-coins"></i> Core Financiero
-                                </div>
-                                <div class="card-body">
-                                    <div class="feature-item">
-                                        <strong>Cuentas</strong><br>
-                                        <small>Multi-tipo: bancarias, efectivo, tarjetas, inversiones, préstamos</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Transacciones</strong><br>
-                                        <small>Ingresos, egresos, transferencias, estados, división</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Categorías</strong><br>
-                                        <small>Jerárquicas, colores, auto-categorización</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Beneficiarios</strong><br>
-                                        <small>Payees con reglas de categorización</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Presupuestos</strong><br>
-                                        <small>Mensual, anual, rolling. Alertas de exceso</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header bg-info text-white">
-                                    <i class="fas fa-chart-pie"></i> Reportes y Análisis
-                                </div>
-                                <div class="card-body">
-                                    <div class="feature-item">
-                                        <strong>Dashboard</strong><br>
-                                        <small>Widgets personalizables, GridStack drag-and-drop</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Reportes Estándar</strong><br>
-                                        <small>Flujo de caja, categorías, tendencias, heatmap</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Reportes Avanzados</strong><br>
-                                        <small>Patrimonio, inversiones, cumplimiento de presupuestos</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Exportación</strong><br>
-                                        <small>PDF, Excel (XLSX), CSV con filtros</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header bg-warning text-dark">
-                                    <i class="fas fa-brain"></i> Inteligencia Artificial
-                                </div>
-                                <div class="card-body">
-                                    <div class="feature-item">
-                                        <strong>OCR de Tickets</strong><br>
-                                        <small>Google Gemini 1.5 Flash. Extrae fecha, monto, items, establecimiento</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Análisis Predictivo</strong><br>
-                                        <small>Pronósticos de gastos, identificación de patrones</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Sugerencias Inteligentes</strong><br>
-                                        <small>Categorización automática, detección de duplicados</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header bg-secondary text-white">
-                                    <i class="fas fa-cog"></i> Sistema y Administración
-                                </div>
-                                <div class="card-body">
-                                    <div class="feature-item">
-                                        <strong>Bóveda Digital</strong><br>
-                                        <small>Almacenamiento seguro de documentos importantes</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Auditoría</strong><br>
-                                        <small>Log completo de operaciones, GDPR compliant</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Notificaciones</strong><br>
-                                        <small>Email, in-app, eventos personalizables</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Plugins</strong><br>
-                                        <small>Arquitectura extensible, instalación dinámica</small>
-                                    </div>
-                                    <div class="feature-item">
-                                        <strong>Temas y Layouts</strong><br>
-                                        <small>Personalización UI, drag-and-drop dashboard</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Sección 5: API -->
-                <section id="api">
-                    <h2 class="section-title">5. API y Endpoints</h2>
-                    
+                    <h3 class="subsection-title">4.1 Modelos Core (models.py)</h3>
                     <div class="card">
-                        <div class="card-header">
-                            <i class="fas fa-plug"></i> Endpoints Principales
-                        </div>
                         <div class="card-body">
-                            <div class="table-responsive table-modern">
-                                <table class="table">
+                            <div class="table-responsive">
+                                <table class="table table-modern">
                                     <thead>
                                         <tr>
-                                            <th>Módulo</th>
-                                            <th>Endpoints</th>
-                                            <th>Descripción</th>
+                                            <th>Modelo</th>
+                                            <th>Tabla</th>
+                                            <th>Campos Clave</th>
+                                            <th>Relaciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td><i class="fas fa-lock text-primary"></i> Auth</td>
-                                            <td><code>POST /auth/*</code></td>
-                                            <td>Login, registro, JWT, recuperación</td>
+                                            <td><code>Usuario</code></td>
+                                            <td><code>usuarios</code></td>
+                                            <td>email, password, nombre, apellido, theme_preference, bloqueado</td>
+                                            <td>→ metas_ahorro</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-university text-primary"></i> Accounts</td>
-                                            <td><code>CRUD /accounts/*</code></td>
-                                            <td>Gestión de cuentas y saldos</td>
+                                            <td><code>Divisa</code></td>
+                                            <td><code>divisas</code></td>
+                                            <td>codigo_iso, simbolo_prefijo/sufijo, tasa_conversion_base, tipo_divisa</td>
+                                            <td>→ cuentas, historial</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-exchange-alt text-primary"></i> Transactions</td>
-                                            <td><code>CRUD /transactions/*</code></td>
-                                            <td>Transacciones, importación, búsqueda</td>
+                                            <td><code>TipoEntidadFinanciera</code></td>
+                                            <td><code>tipos_entidad_financiera</code></td>
+                                            <td>nombre_tipo, icono, color</td>
+                                            <td>→ entidades</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-tags text-primary"></i> Categories</td>
-                                            <td><code>CRUD /categories/*</code></td>
-                                            <td>Categorías jerárquicas</td>
+                                            <td><code>IdentidadFinanciera</code></td>
+                                            <td><code>identidades_financieras</code></td>
+                                            <td>nombre, sucursal, web, cuit, logo_url</td>
+                                            <td>← tipo, → cuentas</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-chart-bar text-primary"></i> Reports</td>
-                                            <td><code>GET /reports/*</code></td>
-                                            <td>Dashboard, flujo de caja, exportación</td>
+                                            <td><code>Categoria</code></td>
+                                            <td><code>categorias</code></td>
+                                            <td>nombre_categoria, id_padre (jerárquica), color</td>
+                                            <td>→ transacciones, presupuestos</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-robot text-primary"></i> IA</td>
-                                            <td><code>POST /ia/*</code></td>
-                                            <td>OCR, análisis, pronósticos</td>
+                                            <td><code>Beneficiario</code></td>
+                                            <td><code>beneficiarios</code></td>
+                                            <td>nombre, cbu, cuit, patron_busqueda, id_categoria</td>
+                                            <td>→ transacciones</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-vault text-primary"></i> Vault</td>
-                                            <td><code>CRUD /vault/*</code></td>
-                                            <td>Bóveda digital de documentos</td>
+                                            <td><code>ListaCuentas</code></td>
+                                            <td><code>lista_cuentas</code></td>
+                                            <td>nombre_cuenta, tipo_cuenta, estado, saldo_inicial, limite_credito, tasa_interes</td>
+                                            <td>← divisa, ← entidad, → transacciones</td>
                                         </tr>
                                         <tr>
-                                            <td><i class="fas fa-clipboard-check text-primary"></i> Audit</td>
-                                            <td><code>GET /audit/*</code></td>
-                                            <td>Logs de auditoría</td>
+                                            <td><code>LibroTransacciones</code></td>
+                                            <td><code>libro_transacciones</code></td>
+                                            <td>monto_transaccion, codigo_transaccion, es_dividida, estado</td>
+                                            <td>← cuenta, ← beneficiario, ← categoria</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>TransaccionDividida</code></td>
+                                            <td><code>transacciones_divididas</code></td>
+                                            <td>monto_division, id_categoria, id_transaccion</td>
+                                            <td>← transaccion</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Presupuesto</code></td>
+                                            <td><code>tabla_presupuestos</code></td>
+                                            <td>periodo, monto, es_rolling, monto_acumulado</td>
+                                            <td>← categoria</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>MetaAhorro</code></td>
+                                            <td><code>metas_ahorro</code></td>
+                                            <td>nombre_meta, monto_objetivo, monto_actual, fecha_limite, estado</td>
+                                            <td>← usuario, ← cuenta</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            
-                            <div class="alert alert-info mt-3">
-                                <strong>Total:</strong> 28 routers con más de 150 endpoints RESTful<br>
-                                <strong>Documentación interactiva:</strong> Disponible en <code>/api/docs</code> (Swagger UI) y <code>/api/redoc</code>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">4.2 Modelos Extendidos (models_extended.py)</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-tags text-primary"></i> Sistema de Tags</h6>
+                                    <ul>
+                                        <li><strong>Etiqueta:</strong> nombre_etiqueta, color</li>
+                                        <li><strong>TransaccionEtiqueta:</strong> Relación M:N</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-paperclip text-primary"></i> Adjuntos</h6>
+                                    <ul>
+                                        <li><strong>Adjunto:</strong> Polimórfico (tipo_referencia, id_referencia)</li>
+                                        <li>Almacena: nombre_archivo, ruta, tipo_mime, tamaño</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-history text-primary"></i> Historial de Divisas</h6>
+                                    <ul>
+                                        <li><strong>HistorialDivisa:</strong> fecha_tasa, tasa_valor, tipo_actualizacion</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-file-import text-primary"></i> Reglas de Importación</h6>
+                                    <ul>
+                                        <li><strong>ReglaImportacion:</strong> patron, id_categoria, id_beneficiario, prioridad</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">4.3 Modelos Avanzados (models_advanced.py)</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-calendar-alt text-success"></i> Recurrentes</h6>
+                                    <ul class="small">
+                                        <li><strong>TransaccionRecurrente</strong></li>
+                                        <li>frecuencia, intervalo</li>
+                                        <li>proxima_fecha, fecha_fin</li>
+                                        <li>auto_execute, limite_ejecuciones</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-home text-success"></i> Activos</h6>
+                                    <ul class="small">
+                                        <li><strong>Activo</strong></li>
+                                        <li>tipo_activo (Property, Auto, Art)</li>
+                                        <li>valor_inicial/actual</li>
+                                        <li>tasa_variacion, metodo_variacion</li>
+                                        <li><strong>HistorialActivo</strong></li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-chart-line text-success"></i> Inversiones</h6>
+                                    <ul class="small">
+                                        <li><strong>Inversion</strong></li>
+                                        <li>simbolo (ticker), tipo_inversion</li>
+                                        <li>cantidad, precio_compra/actual</li>
+                                        <li><strong>HistorialInversion</strong></li>
+                                        <li><strong>TransaccionInversion</strong> (Buy/Sell/Dividend)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">4.4 Modelos de Sistema</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-puzzle-piece text-warning"></i> Plugins</h6>
+                                    <p class="small"><strong>Plugin:</strong> nombre_tecnico, instalado, activo, configuracion (JSON), hooks_suscritos</p>
+                                    
+                                    <h6><i class="fas fa-clipboard-list text-warning"></i> Auditoría</h6>
+                                    <p class="small"><strong>AuditLog:</strong> fecha, accion, entidad, detalles (JSON), ip_address</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-bell text-warning"></i> Notificaciones</h6>
+                                    <p class="small"><strong>UserNotification:</strong> type, title, message, read, action_url</p>
+                                    
+                                    <h6><i class="fas fa-wallet text-warning"></i> Patrimonio</h6>
+                                    <p class="small"><strong>WealthSnapshot:</strong> fecha, total_liquido, total_activos, total_inversiones, patrimonio_neto</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Sección 6: Seguridad -->
+                <!-- Sección 5: APIs -->
+                <section id="apis">
+                    <h2 class="section-title">5. APIs - 28 Routers (150+ Endpoints)</h2>
+                    
+                    <div class="alert alert-info">
+                        <strong>Base URL:</strong> <code>/api</code><br>
+                        <strong>Documentación interactiva:</strong> 
+                        <a href="/api/docs" target="_blank">Swagger UI</a> | 
+                        <a href="/api/redoc" target="_blank">ReDoc</a>
+                    </div>
+
+                    <h3 class="subsection-title">5.1 Core Financiero</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Router</th>
+                                            <th>Prefijo</th>
+                                            <th>Endpoints Principales</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Auth</strong></td>
+                                            <td><code>/auth</code></td>
+                                            <td>POST /registro, /login, /profile, /change-password, /recuperar-password</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Accounts</strong></td>
+                                            <td><code>/accounts</code></td>
+                                            <td>CRUD /cuentas, GET /saldo, PATCH /estado</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Transactions</strong></td>
+                                            <td><code>/transacciones</code></td>
+                                            <td>GET / (paginado, filtros), POST /, PUT /{id}, DELETE /{id}, GET /{id}/divisiones, POST /compleja</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Categories</strong></td>
+                                            <td><code>/categorias</code></td>
+                                            <td>CRUD jerárquico, GET /arbol, GET /{id}/subcategorias</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Beneficiaries</strong></td>
+                                            <td><code>/beneficiarios</code></td>
+                                            <td>CRUD, GET /{id}/transacciones, GET /autocomplete</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Budgets</strong></td>
+                                            <td><code>/presupuestos</code></td>
+                                            <td>CRUD, GET /{id}/uso, POST /setup/, GET /setup/anios</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">5.2 Features Avanzadas</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-tags text-info"></i> Tags</h6>
+                                    <p class="small">CRUD /etiquetas, GET /{id}/transacciones, POST /asignar</p>
+                                    
+                                    <h6><i class="fas fa-paperclip text-info"></i> Attachments</h6>
+                                    <p class="small">POST /upload, GET /download/{id}, GET /entity/{tipo}/{id}</p>
+                                    
+                                    <h6><i class="fas fa-history text-info"></i> Currency History</h6>
+                                    <p class="small">CRUD /historial-divisas, GET /{id_divisa}/rango, POST /actualizar</p>
+                                    
+                                    <h6><i class="fas fa-calendar-check text-info"></i> Recurring</h6>
+                                    <p class="small">CRUD /recurrentes, POST /{id}/ejecutar, GET /proximas</p>
+                                    
+                                    <h6><i class="fas fa-home text-info"></i> Assets</h6>
+                                    <p class="small">CRUD /activos, PUT /{id}/valor, GET /{id}/historial, GET /depreciacion</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-chart-line text-info"></i> Stocks</h6>
+                                    <p class="small">CRUD /inversiones, PUT /{id}/precio, POST /comprar, /vender, /dividendo</p>
+                                    
+                                    <h6><i class="fas fa-bullseye text-info"></i> Goals</h6>
+                                    <p class="small">CRUD /metas, POST /{id}/contribuir, PATCH /{id}/estado</p>
+                                    
+                                    <h6><i class="fas fa-file-import text-info"></i> Import</h6>
+                                    <p class="small">POST /importar/csv, CRUD /importar/reglas, POST /preview</p>
+                                    
+                                    <h6><i class="fas fa-balance-scale text-info"></i> Reconciliation</h6>
+                                    <p class="small">GET /conciliacion/, POST /{id}/conciliar, POST /extracto</p>
+                                    
+                                    <h6><i class="fas fa-building-columns text-info"></i> Financial Entities</h6>
+                                    <p class="small">CRUD /tipos, CRUD /entidades, GET /{id}/cuentas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">5.3 Sistema e IA</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-robot text-warning"></i> Inteligencia Artificial</h6>
+                                    <p class="small"><strong>POST /ia/escanear-ticket</strong><br>
+                                    Sube imagen, usa Gemini para extraer: monto, beneficiario, fecha, categoria_sugerida, notas</p>
+                                    
+                                    <h6><i class="fas fa-vault text-warning"></i> Bóveda Digital</h6>
+                                    <p class="small">GET /vault/files, POST /vault/upload, GET /vault/download/{filename}, DELETE /vault/{filename}, POST /vault/ocr/{filename}</p>
+                                    
+                                    <h6><i class="fas fa-wallet text-warning"></i> Wealth (Patrimonio)</h6>
+                                    <p class="small">GET /wealth/ (calcula total), GET /wealth/historial, POST /wealth/snapshot</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-puzzle-piece text-warning"></i> Plugins</h6>
+                                    <p class="small">GET /plugins, POST /plugins/{id}/instalar, PUT /plugins/{id}/activar, PUT /plugins/{id}/config</p>
+                                    
+                                    <h6><i class="fas fa-paint-brush text-warning"></i> Themes</h6>
+                                    <p class="small">GET /themes/presets, GET /themes/presets/{id}, GET/PUT /themes/current</p>
+                                    
+                                    <h6><i class="fas fa-th-large text-warning"></i> Layouts</h6>
+                                    <p class="small">CRUD /layouts, GET /layouts/default, POST /layouts/aplicar/{id}</p>
+                                    
+                                    <h6><i class="fas fa-bell text-warning"></i> Notifications</h6>
+                                    <p class="small">GET /notificaciones, POST /, PUT /{id}/read, GET /unread-count, DELETE /clear-all</p>
+                                    
+                                    <h6><i class="fas fa-clipboard-check text-warning"></i> Audit</h6>
+                                    <p class="small">GET /auditoria/logs, GET /logs/{id}, GET /export</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">5.4 Reportes y Configuración</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-chart-bar text-success"></i> Reports</h6>
+                                    <p class="small">GET /reports/dashboard, GET /reports/flujo-caja, GET /reports/heatmap<br>
+                                    GET /reports/export/excel, GET /reports/export/pdf</p>
+                                    
+                                    <h6><i class="fas fa-exchange-alt text-success"></i> Forex</h6>
+                                    <p class="small">GET /fx/rates, POST /fx/convertir, GET /fx/historial/{par}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-cog text-success"></i> Config</h6>
+                                    <p class="small">GET/PUT /config, POST /config/backup, POST /config/restore, GET /config/health</p>
+                                    
+                                    <h6><i class="fas fa-globe text-success"></i> Localization</h6>
+                                    <p class="small">GET /localization/languages, GET /localization/{lang}, PUT /localization/current</p>
+                                    
+                                    <h6><i class="fas fa-heartbeat text-success"></i> Health</h6>
+                                    <p class="small">GET /health, GET /health/db, GET /health/disk</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 6: Servicios Core -->
+                <section id="servicios">
+                    <h2 class="section-title">6. Servicios Core (12 servicios)</h2>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-shield-alt"></i> Config & Auth
+                                </div>
+                                <div class="card-body">
+                                    <h6>Config (config.py)</h6>
+                                    <ul class="small">
+                                        <li>Validación estricta de DATABASE_URL</li>
+                                        <li>SECRET_KEY mínimo 32 caracteres</li>
+                                        <li>CORS origins configurables</li>
+                                        <li>Rate limiting: 100 req/min</li>
+                                    </ul>
+                                    
+                                    <h6>Auth Utils (auth_utils.py)</h6>
+                                    <ul class="small">
+                                        <li>verify_password(): bcrypt.checkpw</li>
+                                        <li>get_password_hash(): bcrypt.hashpw</li>
+                                        <li>create_access_token(): JWT encode</li>
+                                        <li>decode_token(): JWT decode</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-database"></i> Database
+                                </div>
+                                <div class="card-body">
+                                    <h6>Database (database.py)</h6>
+                                    <ul class="small">
+                                        <li>Connection pooling (QueuePool)</li>
+                                        <li>Pool size: 20 conexiones</li>
+                                        <li>Max overflow: 10</li>
+                                        <li>Pool timeout: 30s</li>
+                                        <li>Pool recycle: 1 hora</li>
+                                        <li>Pool pre-ping: True</li>
+                                        <li>SQLite: Sin pooling</li>
+                                    </ul>
+                                    
+                                    <h6>get_session()</h6>
+                                    <p class="small">FastAPI dependency para sesiones por request con auto-close</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-clipboard-check"></i> Audit Service
+                                </div>
+                                <div class="card-body">
+                                    <h6>AuditService (audit_service.py)</h6>
+                                    <p class="small">Log de todas las operaciones:</p>
+                                    <ul class="small">
+                                        <li>user_id, accion, entidad</li>
+                                        <li>id_entidad, detalles (JSON)</li>
+                                        <li>ip_address</li>
+                                        <li>DecimalEncoder para valores monetarios</li>
+                                        <li>No bloquea operaciones si falla</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-brain"></i> IA Service
+                                </div>
+                                <div class="card-body">
+                                    <h6>IAService (ia_service.py)</h6>
+                                    <ul class="small">
+                                        <li>Google Gemini 1.5 Flash</li>
+                                        <li>Configura con GEMINI_API_KEY</li>
+                                        <li>procesar_ticket():</li>
+                                        <ul>
+                                            <li>Extrae monto, beneficiario</li>
+                                            <li>Fecha (ISO 8601)</li>
+                                            <li>Categoría sugerida</li>
+                                            <li>Notas adicionales</li>
+                                        </ul>
+                                        <li>Retorna JSON estructurado</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-vault"></i> Vault Service
+                                </div>
+                                <div class="card-body">
+                                    <h6>VaultService (vault_service.py)</h6>
+                                    <ul class="small">
+                                        <li>Directorio: uploads/attachments/</li>
+                                        <li>save_file(): Timestamp en nombre</li>
+                                        <li>get_all_files(): Metadata completa</li>
+                                        <li>delete_file(): Eliminación segura</li>
+                                        <li>extract_text(): OCR con pytesseract</li>
+                                        <li>Requiere plugin ia_ocr activo</li>
+                                        <li>Soporta: JPG, PNG, PDF</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-wallet"></i> Wealth Service
+                                </div>
+                                <div class="card-body">
+                                    <h6>WealthService (wealth_service.py)</h6>
+                                    <ul class="small">
+                                        <li>calculate_total_wealth():</li>
+                                        <ul>
+                                            <li>Total líquido: suma cuentas</li>
+                                            <li>Total activos: físicos</li>
+                                            <li>Total inversiones: stocks</li>
+                                            <li>Conversión de divisas</li>
+                                        </ul>
+                                        <li>capture_snapshot():</li>
+                                        <ul>
+                                            <li>Persiste en wealth_snapshots</li>
+                                            <li>Base ARS para historial</li>
+                                        </ul>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.1 Otros Servicios</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-exchange-alt text-primary"></i> FX Service</h6>
+                                    <p class="small">Tasas: USD_BLUE, USD_CCL, BTC, ETH, EUR<br>Conversión en tiempo real</p>
+                                    
+                                    <h6><i class="fas fa-calendar-alt text-primary"></i> Recurring Service</h6>
+                                    <p class="small">Ejecución de transacciones programadas<br>Frecuencias: Daily, Weekly, Monthly, Yearly</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-file-csv text-primary"></i> CSV Parser</h6>
+                                    <p class="small">Importación con reglas<br>Mapeo de columnas<br>Previsualización</p>
+                                    
+                                    <h6><i class="fas fa-envelope text-primary"></i> Mail Utils</h6>
+                                    <p class="small">Envío de emails SMTP<br>Recuperación de contraseña<br>Notificaciones</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-file-export text-primary"></i> Reports Service</h6>
+                                    <p class="small">Generación PDF (ReportLab)<br>Excel (OpenPyXL)<br>Heatmaps, Cashflow</p>
+                                    
+                                    <h6><i class="fas fa-cog text-primary"></i> Install Checker</h6>
+                                    <p class="small">Verifica instalación<br>Redirección a wizard si es necesario</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 6.5: Sistema de Plugins -->
+                <section id="plugins">
+                    <h2 class="section-title">6.5 Sistema de Plugins</h2>
+                    
+                    <div class="alert alert-info-custom mb-4">
+                        <h5><i class="fas fa-puzzle-piece"></i> Arquitectura de Plugins</h5>
+                        <p class="mb-0">
+                            Sistema modular inspirado en PrestaShop que permite extender funcionalidades sin modificar el core.
+                            Los plugins se activan/desactivan dinámicamente y usan un sistema de hooks para integrarse con el sistema.
+                        </p>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.1 Modelo de Datos</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-database text-primary"></i> Tabla: plugins</h6>
+                                    <table class="table table-sm table-modern">
+                                        <tr><td><strong>id_plugin</strong></td><td>PK int</td></tr>
+                                        <tr><td><strong>nombre_tecnico</strong></td><td>unique (ej: ia_ocr)</td></tr>
+                                        <tr><td><strong>nombre_display</strong></td><td>Nombre visible</td></tr>
+                                        <tr><td><strong>descripcion</strong></td><td>Texto descriptivo</td></tr>
+                                        <tr><td><strong>version</strong></td><td>SemVer (1.0.0)</td></tr>
+                                        <tr><td><strong>autor</strong></td><td>Creador del plugin</td></tr>
+                                        <tr><td><strong>instalado</strong></td><td>bool</td></tr>
+                                        <tr><td><strong>activo</strong></td><td>bool</td></tr>
+                                        <tr><td><strong>configuracion</strong></td><td>JSON flexible</td></tr>
+                                        <tr><td><strong>hooks_suscritos</strong></td><td>Comma-separated list</td></tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-cog text-primary"></i> Configuración JSON</h6>
+                                    <div class="code-block">
+{
+  "bot_token": "123456:ABC...",
+  "chat_id": "-1001234567890",
+  "notifications": {
+    "transaction_created": true,
+    "budget_alert": true
+  },
+  "threshold": 0.85,
+  "provider": "pytesseract"
+}
+                                    </div>
+                                    <h6 class="mt-3"><i class="fas fa-link text-primary"></i> Hooks Suscritos</h6>
+                                    <p class="small">Lista separada por comas:<br>
+                                    <code>transaction_created,budget_alert,goal_reached</code></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.2 Hooks Disponibles</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-modern table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Hook</th>
+                                            <th>Descripción</th>
+                                            <th>Parámetros</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td><code>transaction_created</code></td><td>Nueva transacción</td><td>transaction, user</td></tr>
+                                        <tr><td><code>transaction_updated</code></td><td>Transacción actualizada</td><td>transaction, changes</td></tr>
+                                        <tr><td><code>budget_alert</code></td><td>Presupuesto excedido</td><td>budget, percentage</td></tr>
+                                        <tr><td><code>goal_reached</code></td><td>Meta alcanzada</td><td>goal, amount</td></tr>
+                                        <tr><td><code>account_sync</code></td><td>Sincronización cuenta</td><td>account, transactions</td></tr>
+                                        <tr><td><code>vault_file_upload</code></td><td>Archivo subido</td><td>file, metadata</td></tr>
+                                        <tr><td><code>report_generate</code></td><td>Generar reporte</td><td>report_type, filters</td></tr>
+                                        <tr><td><code>data_export</code></td><td>Exportar datos</td><td>format, data</td></tr>
+                                        <tr><td><code>data_import</code></td><td>Importar datos</td><td>source, data</td></tr>
+                                        <tr><td><code>login_attempt</code></td><td>Intento de login</td><td>user, ip, success</td></tr>
+                                        <tr><td><code>daily_summary</code></td><td>Resumen diario</td><td>user, summary</td></tr>
+                                        <tr><td><code>audit_event</code></td><td>Evento de auditoría</td><td>action, entity, details</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.3 Plugins de Integración Bancaria</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-university text-success"></i> Bancos Argentinos</h6>
+                                    <ul class="small">
+                                        <li><strong>bbva_connector</strong> - API BBVA Argentina</li>
+                                        <li><strong>santander_rio</strong> - Open Banking Santander</li>
+                                        <li><strong>mercado_pago</strong> - Mercado Pago</li>
+                                        <li><strong>uala_connector</strong> - Ualá Connect</li>
+                                        <li><strong>brubank_api</strong> - Brubank API</li>
+                                        <li><strong>galicia_open</strong> - Banco Galicia</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-exchange-alt text-success"></i> Forex & Crypto</h6>
+                                    <ul class="small">
+                                        <li><strong>dolar_hoy</strong> - Cotización dólar AR (blue, MEP, CCL)</li>
+                                        <li><strong>crypto_tracker</strong> - Tracking BTC, ETH, SOL</li>
+                                        <li><strong>exchange_rates</strong> - Tasas en tiempo real</li>
+                                        <li><strong>crypto_wallet</strong> - Wallets BTC/ETH</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-plug text-success"></i> Internacional</h6>
+                                    <ul class="small">
+                                        <li><strong>plaid_connector</strong> - Plaid (US/EU)</li>
+                                        <li><strong>truelayer</strong> - TrueLayer (EU/UK)</li>
+                                        <li><strong>stripe_balance</strong> - Stripe Balance</li>
+                                        <li><strong>paypal_sync</strong> - PayPal Transactions</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.4 Plugins de Notificación</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-bell text-info"></i> Mensajería</h6>
+                                    <ul class="small">
+                                        <li><strong>telegram_bot</strong> - Bot Telegram (ya implementado)</li>
+                                        <li><strong>whatsapp_business</strong> - WhatsApp Business API</li>
+                                        <li><strong>slack_webhook</strong> - Notificaciones Slack</li>
+                                        <li><strong>discord_webhook</strong> - Discord notifications</li>
+                                        <li><strong>pushover</strong> - Push notifications</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-envelope text-info"></i> Email</h6>
+                                    <ul class="small">
+                                        <li><strong>email_smtp</strong> - SMTP personalizado</li>
+                                        <li><strong>sendgrid</strong> - SendGrid API</li>
+                                        <li><strong>mailgun</strong> - Mailgun integration</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-mobile-alt text-info"></i> Móvil</h6>
+                                    <ul class="small">
+                                        <li><strong>firebase_push</strong> - Firebase Cloud Messaging</li>
+                                        <li><strong>onesignal</strong> - OneSignal push</li>
+                                        <li><strong>pusher_beams</strong> - Pusher Beams</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-bullhorn text-info"></i> Smart Alerts</h6>
+                                    <ul class="small">
+                                        <li><strong>smart_alerts</strong> - Alertas inteligentes con IA</li>
+                                        <li><strong>daily_digest</strong> - Resumen diario programado</li>
+                                        <li><strong>weekly_report</strong> - Reporte semanal automático</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.5 Plugins de IA y Automatización</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-brain text-warning"></i> Inteligencia Artificial</h6>
+                                    <ul class="small">
+                                        <li><strong>ia_ocr</strong> ✅ OCR de tickets (ya implementado)</li>
+                                        <li><strong>auto_categorizer</strong> - Categorización automática con IA</li>
+                                        <li><strong>anomaly_detector</strong> - Detección de gastos anómalos</li>
+                                        <li><strong>forecasting_ml</strong> - Pronósticos con ML (scikit)</li>
+                                        <li><strong>receipt_classifier</strong> - Clasificación de comprobantes</li>
+                                        <li><strong>voice_commands</strong> - Comandos de voz</li>
+                                        <li><strong>smart_search</strong> - Búsqueda semántica</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-robot text-warning"></i> Automatización</h6>
+                                    <ul class="small">
+                                        <li><strong>auto_rules</strong> - Reglas automáticas avanzadas</li>
+                                        <li><strong>auto_reconcile</strong> - Conciliación automática</li>
+                                        <li><strong>smart_budget</strong> - Ajuste inteligente de presupuestos</li>
+                                        <li><strong>duplicate_detector</strong> - Detección de duplicados</li>
+                                        <li><strong>receipt_matcher</strong> - Matching tickets-transacciones</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.6 Plugins de Reportes</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-chart-line text-primary"></i> Visualización</h6>
+                                    <ul class="small">
+                                        <li><strong>advanced_charts</strong> - D3.js, Sankey, Sunburst</li>
+                                        <li><strong>3d_visualization</strong> - Gráficos 3D</li>
+                                        <li><strong>heatmap_advanced</strong> - Heatmaps avanzados</li>
+                                        <li><strong>geo_reports</strong> - Mapas geográficos</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-file-export text-primary"></i> Exportación</h6>
+                                    <ul class="small">
+                                        <li><strong>pdf_reporter</strong> - PDFs personalizados</li>
+                                        <li><strong>excel_power</strong> - Excel con macros/pivot</li>
+                                        <li><strong>powerbi_connector</strong> - Microsoft Power BI</li>
+                                        <li><strong>tableau_export</strong> - Tableau integration</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-calendar-check text-primary"></i> Reportes Especiales</h6>
+                                    <ul class="small">
+                                        <li><strong>tax_report</strong> - Reportes fiscales</li>
+                                        <li><strong>investment_report</strong> - Análisis de inversiones</li>
+                                        <li><strong>cashflow_forecast</strong> - Proyección de flujo</li>
+                                        <li><strong>spending_insights</strong> - Insights de gastos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.7 Plugins de Importación/Exportación</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-file-import text-secondary"></i> Importación</h6>
+                                    <ul class="small">
+                                        <li><strong>mmex_import</strong> - MoneyManagerEX</li>
+                                        <li><strong>firefly_importer</strong> - Firefly III</li>
+                                        <li><strong>ynab_sync</strong> - YNAB sync</li>
+                                        <li><strong>mint_import</strong> - Mint.com</li>
+                                        <li><strong>personal_capital</strong> - Personal Capital</li>
+                                        <li><strong>gnucash_bridge</strong> - GnuCash</li>
+                                        <li><strong>quickbooks_import</strong> - QuickBooks</li>
+                                        <li><strong>ofx_qif_parser</strong> - OFX/QIF files</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-file-export text-secondary"></i> Exportación</h6>
+                                    <ul class="small">
+                                        <li><strong>quickbooks_export</strong> - QuickBooks Online</li>
+                                        <li><strong>xero_export</strong> - Xero</li>
+                                        <li><strong>freshbooks</strong> - FreshBooks</li>
+                                        <li><strong>wave_export</strong> - Wave Accounting</li>
+                                        <li><strong>csv_advanced</strong> - CSV con transformaciones</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.8 Plugins de Seguridad</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-shield-alt text-danger"></i> Autenticación</h6>
+                                    <ul class="small">
+                                        <li><strong>two_factor_auth</strong> - 2FA con TOTP</li>
+                                        <li><strong>sso_google</strong> - Google SSO</li>
+                                        <li><strong>sso_microsoft</strong> - Microsoft SSO</li>
+                                        <li><strong>webauthn</strong> - FIDO2/WebAuthn</li>
+                                        <li><strong>biometric</strong> - Auth biométrico</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-user-lock text-danger"></i> Protección</h6>
+                                    <ul class="small">
+                                        <li><strong>ip_whitelist</strong> - Lista blanca IPs</li>
+                                        <li><strong>login_alerts</strong> - Alertas de login</li>
+                                        <li><strong>data_encryption</strong> - Encriptación AES-256</li>
+                                        <li><strong>audit_enhancer</strong> - Auditoría avanzada</li>
+                                        <li><strong>session_manager</strong> - Gestión avanzada sesiones</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.9 Plugins de Integración Cloud</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-cloud text-info"></i> Google</h6>
+                                    <ul class="small">
+                                        <li><strong>google_sheets</strong> - Sync Sheets</li>
+                                        <li><strong>gdrive_sync</strong> - Google Drive</li>
+                                        <li><strong>gmail_connector</strong> - Leer emails</li>
+                                        <li><strong>calendar_sync</strong> - Google Calendar</li>
+                                        <li><strong>photos_backup</strong> - Backup recibos</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fab fa-microsoft text-info"></i> Microsoft</h6>
+                                    <ul class="small">
+                                        <li><strong>excel_online</strong> - Excel Online</li>
+                                        <li><strong>onedrive_sync</strong> - OneDrive</li>
+                                        <li><strong>outlook_calendar</strong> - Outlook Calendar</li>
+                                        <li><strong>teams_webhook</strong> - MS Teams</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-hdd text-info"></i> Storage</h6>
+                                    <ul class="small">
+                                        <li><strong>dropbox_backup</strong> - Dropbox</li>
+                                        <li><strong>s3_backup</strong> - AWS S3</li>
+                                        <li><strong>azure_blob</strong> - Azure Storage</li>
+                                        <li><strong>wasabi_storage</strong> - Wasabi</li>
+                                        <li><strong>backblaze_b2</strong> - Backblaze B2</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">6.5.10 Implementación Técnica</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-code text-dark"></i> PluginManager</h6>
+                                    <div class="code-block small">
+class PluginManager:
+    def __init__(self):
+        self.hooks = {}
+    
+    def register_hook(self, hook_name, 
+                      plugin_id, callback):
+        if hook_name not in self.hooks:
+            self.hooks[hook_name] = []
+        self.hooks[hook_name].append({
+            "plugin_id": plugin_id,
+            "callback": callback
+        })
+    
+    async def call_hook(self, hook_name, 
+                        **kwargs):
+        for hook in self.hooks.get(hook_name, []):
+            plugin = await self.get_plugin(
+                hook["plugin_id"]
+            )
+            if plugin and plugin.activo:
+                await hook["callback"](
+                    config=plugin.configuracion,
+                    **kwargs
+                )
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-cogs text-dark"></i> Ejemplo de Uso</h6>
+                                    <div class="code-block small">
+# En transaction_service.py
+await plugin_manager.call_hook(
+    "transaction_created",
+    transaction=transaction,
+    user=user
+)
+
+# El plugin telegram_bot recibe:
+{
+  "transaction": {...},
+  "user": {...},
+  "config": {
+    "bot_token": "...",
+    "chat_id": "..."
+  }
+}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-success mt-3">
+                                <strong>✅ Beneficios:</strong> Modularidad • Activación dinámica • Configuración flexible • 
+                                Extensibilidad • Aislamiento de fallos • Actualización individual
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 7: Frontend -->
+                <section id="frontend">
+                    <h2 class="section-title">7. Frontend</h2>
+                    
+                    <h3 class="subsection-title">7.1 Templates HTML (25+)</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-home text-primary"></i> Core</h6>
+                                    <ul class="small">
+                                        <li>base.html (layout base)</li>
+                                        <li>index.html (dashboard)</li>
+                                        <li>login.html / register.html</li>
+                                        <li>forgot-password.html</li>
+                                        <li>settings.html</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-money-bill text-primary"></i> Financiero</h6>
+                                    <ul class="small">
+                                        <li>accounts.html (cuentas)</li>
+                                        <li>transactions.html</li>
+                                        <li>categories.html</li>
+                                        <li>beneficiaries.html</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-chart-pie text-primary"></i> Reportes</h6>
+                                    <ul class="small">
+                                        <li>budgets.html (presupuestos)</li>
+                                        <li>reports.html</li>
+                                        <li>reports/cashflow.html</li>
+                                        <li>reports/heatmap.html</li>
+                                    </ul>
+                                    
+                                    <h6><i class="fas fa-tags text-primary"></i> Features</h6>
+                                    <ul class="small">
+                                        <li>tags.html (etiquetas)</li>
+                                        <li>recurring.html (programadas)</li>
+                                        <li>assets.html (activos)</li>
+                                        <li>stocks.html (inversiones)</li>
+                                        <li>goals.html (metas)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-cog text-primary"></i> Sistema</h6>
+                                    <ul class="small">
+                                        <li>vault.html (bóveda)</li>
+                                        <li>audit.html (auditoría)</li>
+                                        <li>plugins.html</li>
+                                        <li>financial_entities.html</li>
+                                        <li>import_csv.html</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">7.2 JavaScript (8 archivos)</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="endpoint-card get p-3 mb-2">
+                                        <strong>main.js</strong><br>
+                                        <small class="text-muted">Axios config, Auth (JWT), Session timeout, Logout</small>
+                                    </div>
+                                    <div class="endpoint-card post p-3 mb-2">
+                                        <strong>theme-manager.js</strong><br>
+                                        <small class="text-muted">ThemeManager class, CSS variables, switchTheme(), loadUserTheme()</small>
+                                    </div>
+                                    <div class="endpoint-card get p-3 mb-2">
+                                        <strong>sidebar-manager.js</strong><br>
+                                        <small class="text-muted">Control de sidebar (toggle, estado)</small>
+                                    </div>
+                                    <div class="endpoint-card post p-3 mb-2">
+                                        <strong>layout-manager.js</strong><br>
+                                        <small class="text-muted">Layouts personalizables, drag-and-drop</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="endpoint-card get p-3 mb-2">
+                                        <strong>notification-manager.js</strong><br>
+                                        <small class="text-muted">Toast notifications, sistema de notificaciones</small>
+                                    </div>
+                                    <div class="endpoint-card post p-3 mb-2">
+                                        <strong>currency-utils.js</strong><br>
+                                        <small class="text-muted">Formateo de monedas, conversiones</small>
+                                    </div>
+                                    <div class="endpoint-card get p-3 mb-2">
+                                        <strong>i18n.js</strong><br>
+                                        <small class="text-muted">Internacionalización (ES/EN), Alpine.js store</small>
+                                    </div>
+                                    <div class="endpoint-card post p-3 mb-2">
+                                        <strong>shader-bg.js</strong><br>
+                                        <small class="text-muted">Efectos visuales de fondo</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="subsection-title">7.3 CSS</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-paint-brush text-warning"></i> neon-3f.css</h6>
+                                    <p class="small">Tema principal neon/cyberpunk<br>Variables CSS personalizadas<br>Transiciones suaves</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-list text-warning"></i> transactions.css</h6>
+                                    <p class="small">Estilos específicos de transacciones<br>Tablas, formularios, modales</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6><i class="fas fa-bell text-warning"></i> toast-notifications.css</h6>
+                                    <p class="small">Estilos de notificaciones toast<br>Animaciones, posicionamiento</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 8: Seguridad -->
                 <section id="seguridad">
-                    <h2 class="section-title">6. Seguridad</h2>
+                    <h2 class="section-title">8. Seguridad</h2>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -793,7 +1719,7 @@
                                 <div class="card-body text-center">
                                     <i class="fas fa-key fa-3x text-success mb-3"></i>
                                     <h6>Autenticación</h6>
-                                    <small>JWT con expiración configurable<br>bcrypt con salt rounds 12</small>
+                                    <small>JWT con expiración configurable (30 min default)<br>bcrypt con salt rounds<br>Bypass de emergencia para dev</small>
                                 </div>
                             </div>
                         </div>
@@ -802,7 +1728,7 @@
                                 <div class="card-body text-center">
                                     <i class="fas fa-user-shield fa-3x text-info mb-3"></i>
                                     <h6>Autorización</h6>
-                                    <small>RBAC con roles granular<br>Ownership de datos</small>
+                                    <small>RBAC con roles<br>Ownership de datos<br>Validación Pydantic estricta</small>
                                 </div>
                             </div>
                         </div>
@@ -811,7 +1737,7 @@
                                 <div class="card-body text-center">
                                     <i class="fas fa-shield-alt fa-3x text-warning mb-3"></i>
                                     <h6>Protección</h6>
-                                    <small>Rate limiting 100 req/min<br>CORS, security headers</small>
+                                    <small>Rate limiting: 100 req/min por IP<br>CORS configurado<br>Security headers</small>
                                 </div>
                             </div>
                         </div>
@@ -819,39 +1745,39 @@
 
                     <div class="card">
                         <div class="card-header">
-                            <i class="fas fa-list-check"></i> Características de Seguridad
+                            <i class="fas fa-list-check"></i> Middleware de Seguridad
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> TLS 1.3 en tránsito
+                                            <i class="fas fa-check text-success"></i> SecurityHeadersMiddleware
                                         </li>
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> Cifrado de archivos en Vault
+                                            <i class="fas fa-check text-success"></i> ProxyHeadersMiddleware
                                         </li>
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> Sanitización HTML (Bleach)
+                                            <i class="fas fa-check text-success"></i> CORSMiddleware
                                         </li>
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> Validación Pydantic
+                                            <i class="fas fa-check text-success"></i> InstallationMiddleware
                                         </li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> Logs append-only
+                                            <i class="fas fa-check text-success"></i> Rate Limiting (SlowAPI)
                                         </li>
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> GDPR compliant
+                                            <i class="fas fa-check text-success"></i> Exception handlers
                                         </li>
                                         <li class="list-group-item">
                                             <i class="fas fa-check text-success"></i> Auditoría completa
                                         </li>
                                         <li class="list-group-item">
-                                            <i class="fas fa-check text-success"></i> Detección de actividad sospechosa
+                                            <i class="fas fa-check text-success"></i> Session timeout
                                         </li>
                                     </ul>
                                 </div>
@@ -860,15 +1786,99 @@
                     </div>
                 </section>
 
-                <!-- Sección 7: Testing -->
+                <!-- Sección 9: Scheduler -->
+                <section id="scheduler">
+                    <h2 class="section-title">9. Scheduler (APScheduler)</h2>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-clock"></i> Jobs Programados
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-modern">
+                                    <thead>
+                                        <tr>
+                                            <th>Job</th>
+                                            <th>Horario</th>
+                                            <th>Función</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Recurring Transactions</strong></td>
+                                            <td>Diario 00:01</td>
+                                            <td>Ejecuta transacciones programadas vencidas (auto_execute=True)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Wealth Snapshots</strong></td>
+                                            <td>Diario 00:05</td>
+                                            <td>Captura patrimonio de todos los usuarios en ARS</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Database Backup</strong></td>
+                                            <td>Diario 03:00</td>
+                                            <td>Backup automático con compresión + limpieza de antiguos</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3">
+                                <strong>Configuración:</strong><br>
+                                BackgroundScheduler con ejecutores en threading<br>
+                                Jobs persistentes en la base de datos
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 10: Instalación -->
+                <section id="instalacion">
+                    <h2 class="section-title">10. Sistema de Instalación</h2>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-magic"></i> Wizard de Instalación (/install/)
+                        </div>
+                        <div class="card-body">
+                            <h6>Pasos del Wizard:</h6>
+                            <ol>
+                                <li><strong>Verificación de requisitos:</strong> Python 3.11+, dependencias</li>
+                                <li><strong>Configuración de base de datos:</strong> MySQL/MariaDB host, user, password</li>
+                                <li><strong>Creación de usuario admin:</strong> Primer usuario del sistema</li>
+                                <li><strong>Generación de .env:</strong> Configuración persistente</li>
+                                <li><strong>Migraciones automáticas:</strong> Creación de todas las tablas</li>
+                                <li><strong>Datos iniciales:</strong> Divisas, categorías por defecto</li>
+                            </ol>
+                            
+                            <h6 class="mt-4">Archivos del Wizard:</h6>
+                            <div class="code-block">
+install/
+├── app.py                    # FastAPI del wizard
+├── requirements_checker.py   # Verifica dependencias
+├── database_installer.py     # Crea DB y tablas
+├── config_generator.py       # Genera .env
+├── templates/               # UI del wizard
+└── static/                  # CSS/JS del wizard
+                            </div>
+                            
+                            <div class="alert alert-warning mt-3">
+                                <strong>Redirección:</strong> Si no está instalado (.env o .installed), redirige automáticamente a /install/
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 11: Testing -->
                 <section id="testing">
-                    <h2 class="section-title">7. Testing</h2>
+                    <h2 class="section-title">11. Testing</h2>
                     
                     <div class="row">
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <i class="fab fa-python"></i> Backend (Pytest)
+                                    <i class="fab fa-python"></i> Backend (pytest)
                                 </div>
                                 <div class="card-body">
                                     <h6>Cobertura por Módulo</h6>
@@ -945,11 +1955,13 @@
                                     
                                     <div class="mt-4">
                                         <h6>Ejecutar Tests</h6>
-                                        <pre class="bg-light p-2 rounded"><small># Backend
+                                        <div class="code-block">
+# Backend
 pytest backend/tests/
 
 # Frontend
-cd frontend && npm test</small></pre>
+cd frontend && npm test
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -957,9 +1969,9 @@ cd frontend && npm test</small></pre>
                     </div>
                 </section>
 
-                <!-- Sección 8: Despliegue -->
+                <!-- Sección 12: Despliegue -->
                 <section id="despliegue">
-                    <h2 class="section-title">8. Despliegue</h2>
+                    <h2 class="section-title">12. Despliegue</h2>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -968,16 +1980,24 @@ cd frontend && npm test</small></pre>
                                     <i class="fab fa-docker"></i> Docker (Recomendado)
                                 </div>
                                 <div class="card-body">
-                                    <pre class="bg-light p-3 rounded"><code># Desarrollo
-docker-compose -f docker-compose.yml \
-  -f docker-compose.dev.yml up -d
+                                    <div class="code-block">
+# Desarrollo
+docker-compose up -d
 
-# Producción
-docker-compose -f docker-compose.yml \
-  -f docker-compose.prod.yml up -d
+# Ver logs
+docker-compose logs -f
 
-# Escalar
-docker-compose up -d --scale backend=3</code></pre>
+# Escalar backend
+docker-compose up -d --scale backend=3
+                                    </div>
+                                    
+                                    <h6 class="mt-3">docker-compose.yml:</h6>
+                                    <ul class="small">
+                                        <li>Puerto: 8000</li>
+                                        <li>Volumen: ./data:/app/data</li>
+                                        <li>Restart: always</li>
+                                        <li>Environment: .env</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -988,15 +2008,24 @@ docker-compose up -d --scale backend=3</code></pre>
                                     <i class="fab fa-windows"></i> Windows (Manual)
                                 </div>
                                 <div class="card-body">
-                                    <pre class="bg-light p-3 rounded"><code>:: Instalar dependencias
+                                    <div class="code-block">
+:: Instalar dependencias
 pip install -r requirements.txt
 
-:: Inicializar DB
-python scripts/add_indexes.py
-python scripts/crear_admin.py
+:: Variables de entorno
+set DATABASE_URL=mysql+pymysql://...
+set SECRET_KEY=your-secret-key
 
 :: Iniciar
-iniciar_sistema.bat</code></pre>
+iniciar_sistema.bat
+                                    </div>
+                                    
+                                    <h6 class="mt-3">Scripts disponibles:</h6>
+                                    <ul class="small">
+                                        <li>iniciar_sistema.bat - Producción</li>
+                                        <li>iniciar_wizard.bat - Instalación</li>
+                                        <li>iniciar_wizard.sh - Linux/Mac</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -1015,6 +2044,7 @@ iniciar_sistema.bat</code></pre>
                                         <li>RAM: 2 GB</li>
                                         <li>Disco: 10 GB</li>
                                         <li>OS: Linux/Windows/macOS</li>
+                                        <li>Python: 3.11+</li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">
@@ -1024,6 +2054,7 @@ iniciar_sistema.bat</code></pre>
                                         <li>RAM: 4 GB</li>
                                         <li>Disco: 50 GB SSD</li>
                                         <li>OS: Ubuntu 22.04 LTS</li>
+                                        <li>MySQL/MariaDB 8.4+</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1031,13 +2062,13 @@ iniciar_sistema.bat</code></pre>
                     </div>
                 </section>
 
-                <!-- Sección 9: Estado Actual -->
+                <!-- Sección 13: Estado Actual -->
                 <section id="estado">
-                    <h2 class="section-title">9. Estado de Desarrollo</h2>
+                    <h2 class="section-title">13. Estado de Desarrollo</h2>
                     
                     <div class="alert alert-success mb-4">
                         <h5><i class="fas fa-flag-checkered"></i> Versión 1.0.0 - Release Estable</h5>
-                        <p class="mb-0"><strong>Fecha:</strong> Febrero 2026 | <strong>Estado:</strong> Listo para producción</p>
+                        <p class="mb-0"><strong>Fecha:</strong> 14 de Febrero 2026 | <strong>Estado:</strong> Listo para producción</p>
                     </div>
 
                     <div class="card">
@@ -1049,7 +2080,7 @@ iniciar_sistema.bat</code></pre>
                                 <div class="col-md-6">
                                     <table class="table table-sm">
                                         <tr>
-                                            <td>Autenticación</td>
+                                            <td>Autenticación JWT</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
                                                     <div class="progress-bar bg-success" style="width: 100%">100%</div>
@@ -1057,7 +2088,7 @@ iniciar_sistema.bat</code></pre>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>Cuentas</td>
+                                            <td>Cuentas & Divisas</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
                                                     <div class="progress-bar bg-success" style="width: 100%">100%</div>
@@ -1073,7 +2104,7 @@ iniciar_sistema.bat</code></pre>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>Categorías</td>
+                                            <td>Categorías Jerárquicas</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
                                                     <div class="progress-bar bg-success" style="width: 100%">100%</div>
@@ -1081,7 +2112,15 @@ iniciar_sistema.bat</code></pre>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>Presupuestos</td>
+                                            <td>Presupuestos Rolling</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Tags & Attachments</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
                                                     <div class="progress-bar bg-success" style="width: 100%">100%</div>
@@ -1093,26 +2132,26 @@ iniciar_sistema.bat</code></pre>
                                 <div class="col-md-6">
                                     <table class="table table-sm">
                                         <tr>
-                                            <td>Reportes</td>
+                                            <td>Reportes (PDF/Excel)</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: 95%">95%</div>
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>IA/OCR</td>
+                                            <td>IA/OCR (Gemini)</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: 90%">90%</div>
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>Plugins</td>
+                                            <td>Sistema de Plugins</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: 85%">85%</div>
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1120,15 +2159,23 @@ iniciar_sistema.bat</code></pre>
                                             <td>Notificaciones</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: 90%">90%</div>
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>Inversiones</td>
+                                            <td>Auditoría</td>
                                             <td>
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: 90%">90%</div>
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Scheduler Automático</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-success" style="width: 100%">100%</div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1137,11 +2184,21 @@ iniciar_sistema.bat</code></pre>
                             </div>
                         </div>
                     </div>
+
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="fas fa-code-branch"></i> Fases Completadas</h6>
+                        <ul class="mb-0">
+                            <li><strong>Phase 1:</strong> Tags, Attachments, Currency History</li>
+                            <li><strong>Phase 2:</strong> Recurring, Assets, Stocks</li>
+                            <li><strong>Phase 9:</strong> Code Cleanup & Optimization</li>
+                            <li><strong>Phase 14:</strong> Rolling Budgets</li>
+                        </ul>
+                    </div>
                 </section>
 
-                <!-- Sección 10: Recomendaciones -->
+                <!-- Sección 14: Recomendaciones -->
                 <section id="recomendaciones">
-                    <h2 class="section-title">10. Recomendaciones</h2>
+                    <h2 class="section-title">14. Recomendaciones</h2>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -1151,12 +2208,12 @@ iniciar_sistema.bat</code></pre>
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Cambiar SECRET_KEY</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Desactivar DEBUG</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Configurar HTTPS</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Cambiar SECRET_KEY (32+ chars)</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Desactivar DEBUG_MODE</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Configurar HTTPS/TLS</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Configurar SMTP</li>
                                         <li class="mb-2"><i class="fas fa-check text-success"></i> Backups automáticos</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> SMTP notificaciones</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Tests completos</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> GEMINI_API_KEY para IA</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1169,12 +2226,12 @@ iniciar_sistema.bat</code></pre>
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Contraseñas fuertes</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Contraseñas fuertes (bcrypt)</li>
                                         <li class="mb-2"><i class="fas fa-check text-success"></i> Firewall activado</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Actualizar deps</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Revisar logs</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Implementar 2FA</li>
-                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Alertas de seguridad</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Rate limiting configurado</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Logs de auditoría</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Session timeout</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Eliminar bypass de emergencia</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1188,8 +2245,8 @@ iniciar_sistema.bat</code></pre>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
                                         <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> App móvil (React Native)</li>
-                                        <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Integración bancaria</li>
-                                        <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Colaboración multi-usuario</li>
+                                        <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Integración bancaria (APIs)</li>
+                                        <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Multi-usuario colaborativo</li>
                                         <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Importación QIF/OFX</li>
                                         <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Notificaciones push</li>
                                         <li class="mb-2"><i class="fas fa-arrow-right text-warning"></i> Gamificación</li>
@@ -1246,7 +2303,7 @@ iniciar_sistema.bat</code></pre>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="mb-0">
-                        <i class="fas fa-calendar"></i> 12 de Febrero de 2026<br>
+                        <i class="fas fa-calendar"></i> 14 de Febrero de 2026<br>
                         <i class="fas fa-robot"></i> Generado por: opencode AI (kimi-k2.5-free)
                     </p>
                 </div>

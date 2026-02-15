@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, select
 from ...core.database import get_session
 from ...core.auth_utils import verify_password, create_access_token, get_password_hash
+from ...core.plugin_manager import plugin_manager
 from ...models.models import Usuario
 from .schemas import (
     Token, UsuarioLogin, UsuarioCrear, UsuarioLectura,
@@ -34,16 +35,46 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
     return new_user
 
 @router.post("/login", response_model=Token)
-def login_usuario(usuario_in: UsuarioLogin, session: Session = Depends(get_session)):
+async def login_usuario(
+    usuario_in: UsuarioLogin, 
+    session: Session = Depends(get_session),
+    request: Request = None
+):
     import logging
+    from fastapi import Request
+    
     try:
+        # Obtener IP del cliente
+        client_ip = "0.0.0.0"
+        if request:
+            client_ip = request.client.host if request.client else "0.0.0.0"
+        
         # MODO EMERGENCIA: Bypass para cuentas específicas si hay problemas de migración
         if usuario_in.email in ["admin@3f.com", "test@forbes.com", "fer@3f.com"] and usuario_in.password == "Fer2026!":
             access_token = create_access_token(data={"sub": usuario_in.email, "id": 1})
+            
+            # Disparar hook login exitoso
+            user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
+            if user:
+                await plugin_manager.call_hook(
+                    "login_attempt",
+                    user=user,
+                    ip=client_ip,
+                    success=True
+                )
+            
             return {"access_token": access_token, "token_type": "bearer"}
 
         user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
         if not user or not verify_password(usuario_in.password, user.password):
+            # Disparar hook login fallido
+            await plugin_manager.call_hook(
+                "login_attempt",
+                user=user or usuario_in,
+                ip=client_ip,
+                success=False
+            )
+            
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciales incorrectas",
@@ -57,6 +88,15 @@ def login_usuario(usuario_in: UsuarioLogin, session: Session = Depends(get_sessi
             )
         
         access_token = create_access_token(data={"sub": user.email, "id": user.id_usuario})
+        
+        # Disparar hook login exitoso
+        await plugin_manager.call_hook(
+            "login_attempt",
+            user=user,
+            ip=client_ip,
+            success=True
+        )
+        
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
         raise

@@ -1,0 +1,2 @@
+# No requiere dependencias adicionales
+# Usa smtplib de la librería estándar de Python

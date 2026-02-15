@@ -55,6 +55,7 @@ from .api.financial_entities.router import router as financial_entities_router
 from .api.localization.router import router as localization_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
+from .core.plugin_manager import plugin_manager
 from datetime import datetime
 import os
 
@@ -116,12 +117,16 @@ elif install_app:
 app.state.limiter = limiter
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     # Solo inicializar DB si está instalado
     if is_installed():
         try:
             init_db()
             start_scheduler()
+            
+            # Cargar plugins activos
+            await plugin_manager.load_plugins()
+            
         except Exception as e:
             import logging
             logging.error(f"Error starting database: {e}")

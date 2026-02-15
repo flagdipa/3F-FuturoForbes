@@ -23,6 +23,27 @@
         </div>
     </div>
 
+    <!-- Info de Hooks Disponibles -->
+    <div class="row mb-4" x-show="view === 'installed'">
+        <div class="col-12">
+            <div class="card neon-card bg-black bg-opacity-40 border-secondary border-opacity-25">
+                <div class="card-body d-flex justify-content-between align-items-center py-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-plug text-info"></i>
+                        <div>
+                            <span class="text-white small fw-bold">Sistema de Plugins Activo</span>
+                            <span class="text-dim extra-small ms-2" x-text="plugins.length + ' módulos instalados'"></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-info" @click="mostrarHooksDisponibles()">
+                        <i class="fa-solid fa-list me-1"></i>
+                        Ver Hooks Disponibles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Grid de Plugins Instalados -->
     <div class="row g-4" x-show="view === 'installed'" x-transition>
         <template x-for="p in plugins" :key="p.id_plugin">
@@ -50,18 +71,40 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 d-flex justify-content-between p-3">
-                        <button class="btn btn-sm" 
-                                :class="p.activo ? 'btn-outline-danger' : 'btn-outline-success border-success'"
-                                @click="toggleEstado(p)"
-                                :disabled="loading">
-                            <i class="fa-solid me-1" :class="p.activo ? 'fa-power-off' : 'fa-play'"></i>
-                            <span class="fw-bold" x-text="p.activo ? $store.lang.t('common.deactivate') : $store.lang.t('common.activate')"></span>
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary neon-border" @click="configurarPlugin(p)" :disabled="!p.activo">
-                            <i class="fa-solid fa-gear me-1"></i>
-                            <span class="fw-bold" x-text="$store.lang.t('plugins.configure')"></span>
-                        </button>
+                    <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <button class="btn btn-sm flex-grow-1 me-2" 
+                                    :class="p.activo ? 'btn-outline-danger' : 'btn-outline-success border-success'"
+                                    @click="toggleEstado(p)"
+                                    :disabled="loading">
+                                <i class="fa-solid me-1" :class="p.activo ? 'fa-power-off' : 'fa-play'"></i>
+                                <span class="fw-bold" x-text="p.activo ? 'DESACTIVAR' : 'ACTIVAR'"></span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary neon-border" @click="configurarPlugin(p)">
+                                <i class="fa-solid fa-gear"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2">
+                            <button class="btn btn-sm btn-outline-info flex-grow-1" 
+                                    @click="probarPlugin(p)" 
+                                    :disabled="!p.activo || loading"
+                                    title="Probar hooks">
+                                <i class="fa-solid fa-vial me-1"></i>
+                                <span class="small">Probar</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary flex-grow-1" 
+                                    @click="verEstado(p)"
+                                    title="Ver estado">
+                                <i class="fa-solid fa-info-circle me-1"></i>
+                                <span class="small">Estado</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    @click="eliminarPlugin(p)"
+                                    :disabled="loading"
+                                    title="Eliminar">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -126,33 +169,66 @@
                          <small class="text-dim smaller" x-text="editPlugin.nombre_tecnico"></small>
                     </div>
                     
-                    <!-- Dynamic Visual Editor (Phase 6.1) -->
-                    <div class="mb-4">
-                        <label class="text-primary extra-small fw-bold text-uppercase mb-3"><i class="fa-solid fa-microchip me-1"></i>Editor de Parámetros</label>
-                        <div class="d-flex flex-column gap-3">
-                            <template x-for="(value, key) in configObject" :key="key">
-                                <div class="bg-dark bg-opacity-40 p-2 rounded border border-secondary border-opacity-10">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="extra-small text-dim fw-bold text-uppercase" x-text="key.replace('_', ' ')"></span>
-                                        <span class="badge bg-secondary bg-opacity-10 text-dim smaller" x-text="typeof value"></span>
-                                    </div>
-                                    <template x-if="typeof value === 'boolean'">
-                                        <div class="form-check form-switch m-0">
-                                            <input class="form-check-input" type="checkbox" x-model="configObject[key]" @change="syncToRaw()">
-                                        </div>
-                                    </template>
-                                    <template x-if="typeof value === 'number'">
-                                        <input type="number" class="form-control form-control-sm bg-black border-secondary text-primary" 
-                                               x-model.number="configObject[key]" @input="syncToRaw()">
-                                    </template>
-                                    <template x-if="typeof value === 'string'">
-                                        <input type="text" class="form-control form-control-sm bg-black border-secondary text-white" 
-                                               x-model="configObject[key]" @input="syncToRaw()">
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                     <!-- Hooks suscritos -->
+                     <div class="mb-3" x-show="editPlugin.hooks_suscritos">
+                         <label class="text-dim extra-small fw-bold text-uppercase mb-2">
+                             <i class="fa-solid fa-link me-1"></i>Hooks Suscritos
+                         </label>
+                         <div class="bg-dark bg-opacity-40 p-2 rounded border border-secondary border-opacity-10">
+                             <div class="d-flex flex-wrap gap-1">
+                                 <template x-for="hook in (editPlugin.hooks_suscritos || '').split(',')" :key="hook">
+                                     <span class="badge bg-info bg-opacity-25 text-info extra-small" x-text="hook.trim()"></span>
+                                 </template>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- Dynamic Visual Editor (Phase 6.1) -->
+                     <div class="mb-4">
+                         <label class="text-primary extra-small fw-bold text-uppercase mb-3"><i class="fa-solid fa-microchip me-1"></i>Editor de Parámetros</label>
+                         <div class="d-flex flex-column gap-3">
+                             <template x-for="(value, key) in configObject" :key="key">
+                                 <div class="bg-dark bg-opacity-40 p-2 rounded border border-secondary border-opacity-10">
+                                     <div class="d-flex justify-content-between align-items-center mb-1">
+                                         <span class="extra-small text-dim fw-bold text-uppercase" x-text="key.replace('_', ' ')"></span>
+                                         <span class="badge bg-secondary bg-opacity-10 text-dim smaller" x-text="typeof value"></span>
+                                     </div>
+                                     <template x-if="typeof value === 'boolean'">
+                                         <div class="form-check form-switch m-0">
+                                             <input class="form-check-input" type="checkbox" x-model="configObject[key]" @change="syncToRaw()">
+                                         </div>
+                                     </template>
+                                     <template x-if="typeof value === 'number'">
+                                         <input type="number" class="form-control form-control-sm bg-black border-secondary text-primary" 
+                                                x-model.number="configObject[key]" @input="syncToRaw()">
+                                     </template>
+                                     <template x-if="typeof value === 'string'">
+                                         <input type="text" class="form-control form-control-sm bg-black border-secondary text-white" 
+                                                x-model="configObject[key]" @input="syncToRaw()">
+                                     </template>
+                                     <template x-if="typeof value === 'object' && !Array.isArray(value)">
+                                         <div class="ms-3 mt-2 border-start border-secondary border-opacity-25 ps-2">
+                                             <template x-for="(subValue, subKey) in value" :key="subKey">
+                                                 <div class="mb-2">
+                                                     <span class="extra-small text-dim" x-text="subKey"></span>
+                                                     <template x-if="typeof subValue === 'boolean'">
+                                                         <div class="form-check form-switch m-0">
+                                                             <input class="form-check-input" type="checkbox" 
+                                                                    x-model="configObject[key][subKey]" @change="syncToRaw()">
+                                                         </div>
+                                                     </template>
+                                                     <template x-if="typeof subValue !== 'boolean'">
+                                                         <input type="text" class="form-control form-control-sm bg-black border-secondary text-white" 
+                                                                x-model="configObject[key][subKey]" @input="syncToRaw()">
+                                                     </template>
+                                                 </div>
+                                             </template>
+                                         </div>
+                                     </template>
+                                 </div>
+                             </template>
+                         </div>
+                     </div>
                     
                     <!-- JSON Editor (Collapsible) -->
                     <div class="mb-3">
@@ -261,16 +337,90 @@
             async toggleEstado(p) {
                 this.loading = true;
                 try {
-                    const res = await api.patch(`/plugins/${p.id_plugin}`, { activo: !p.activo });
-                    const idx = this.plugins.findIndex(pl => pl.id_plugin === p.id_plugin);
-                    if (idx !== -1) {
-                        this.plugins[idx] = res.data;
+                    if (p.activo) {
+                        await api.post(`/plugins/${p.id_plugin}/desactivar`);
+                        p.activo = false;
+                        notifications.show('Módulo Desactivado', 'warning');
+                    } else {
+                        await api.post(`/plugins/${p.id_plugin}/activar`);
+                        p.activo = true;
+                        notifications.show('Módulo Activado - Cargando en memoria...', 'success');
                     }
-                    notifications.show(res.data.activo ? 'Módulo Activado' : 'Módulo Desactivado', 'success');
                 } catch (e) {
-                    notifications.show('Error al cambiar estado', 'error');
+                    const msg = e.response?.data?.detail || 'Error al cambiar estado';
+                    notifications.show(msg, 'error');
                 } finally {
                     this.loading = false;
+                }
+            },
+
+            async probarPlugin(p) {
+                if (!p.activo) {
+                    notifications.show('El módulo debe estar activo para probarlo', 'warning');
+                    return;
+                }
+                this.loading = true;
+                try {
+                    const res = await api.post(`/plugins/${p.id_plugin}/test`);
+                    notifications.show(`Tests completados: ${res.data.tests.length} hooks probados`, 'success');
+                } catch (e) {
+                    const msg = e.response?.data?.detail || 'Error al probar módulo';
+                    notifications.show(msg, 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async eliminarPlugin(p) {
+                if (!confirm(`¿Estás seguro de eliminar el módulo "${p.nombre_display}"?\n\nEsta acción no se puede deshacer.`)) {
+                    return;
+                }
+                this.loading = true;
+                try {
+                    await api.delete(`/plugins/${p.id_plugin}`);
+                    this.plugins = this.plugins.filter(pl => pl.id_plugin !== p.id_plugin);
+                    notifications.show('Módulo eliminado correctamente', 'success');
+                } catch (e) {
+                    const msg = e.response?.data?.detail || 'Error al eliminar módulo';
+                    notifications.show(msg, 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async verEstado(p) {
+                try {
+                    const res = await api.get(`/plugins/${p.id_plugin}/estado`);
+                    const estado = res.data;
+                    let mensaje = `<strong>${estado.nombre_tecnico}</strong><br><br>`;
+                    mensaje += `<strong>Base de datos:</strong><br>`;
+                    mensaje += `• Instalado: ${estado.en_base_de_datos.instalado ? '✅' : '❌'}<br>`;
+                    mensaje += `• Activo: ${estado.en_base_de_datos.activo ? '✅' : '❌'}<br><br>`;
+                    mensaje += `<strong>En memoria:</strong><br>`;
+                    mensaje += `• Cargado: ${estado.en_memoria.cargado ? '✅' : '❌'}<br>`;
+                    mensaje += `• Hooks registrados: ${estado.en_memoria.hooks_registrados}`;
+                    
+                    notifications.show(mensaje, 'info');
+                } catch (e) {
+                    notifications.show('Error al obtener estado', 'error');
+                }
+            },
+
+            async mostrarHooksDisponibles() {
+                try {
+                    const res = await api.get('/plugins/hooks/disponibles');
+                    const hooks = res.data.hooks;
+                    
+                    let mensaje = '<strong>Hooks Disponibles en el Sistema:</strong><br><br>';
+                    mensaje += '<div class="text-start">';
+                    hooks.forEach(h => {
+                        mensaje += `<div class="mb-1">• <code>${h.nombre}</code>: ${h.descripcion}</div>`;
+                    });
+                    mensaje += '</div>';
+                    
+                    notifications.show(mensaje, 'info');
+                } catch (e) {
+                    notifications.show('Error al cargar hooks', 'error');
                 }
             },
 
@@ -297,17 +447,19 @@
             async guardarConfig() {
                 this.loading = true;
                 try {
-                    const res = await api.patch(`/plugins/${this.editPlugin.id_plugin}`, { 
-                        configuracion: this.configObject 
-                    });
+                    // Usar el endpoint específico para configuración que recarga el plugin
+                    const res = await api.put(`/plugins/${this.editPlugin.id_plugin}/config`, this.configObject);
                     const idx = this.plugins.findIndex(pl => pl.id_plugin === this.editPlugin.id_plugin);
                     if (idx !== -1) {
-                        this.plugins[idx] = res.data;
+                        this.plugins[idx].configuracion = res.data.configuracion;
                     }
-                    notifications.show('Configuración guardada', 'success');
+                    
+                    const recargado = this.editPlugin.activo ? ' y recargado' : '';
+                    notifications.show(`Configuración guardada${recargado}`, 'success');
                     if (this.bsModal) this.bsModal.hide();
                 } catch (e) {
-                    notifications.show('Error al guardar configuración', 'error');
+                    const msg = e.response?.data?.detail || 'Error al guardar configuración';
+                    notifications.show(msg, 'error');
                 } finally {
                     this.loading = false;
                 }
