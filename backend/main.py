@@ -121,11 +121,23 @@ async def on_startup():
     # Solo inicializar DB si está instalado
     if is_installed():
         try:
+            # 1. Forzar recarga de configuración por si el .env se acaba de crear
+            import importlib
+            from .core import config, database
+            importlib.reload(config)
+            importlib.reload(database)
+            
+            # 2. Re-vincular la sesión
+            app.dependency_overrides[database.get_session] = database.get_session
+            
+            # 3. Inicializar DB
             init_db()
             start_scheduler()
             
             # Cargar plugins activos
             await plugin_manager.load_plugins()
+            
+            logging.info(f"✅ Database connected: {config.settings.DATABASE_URL.split('@')[1] if '@' in config.settings.DATABASE_URL else 'Local'}")
             
         except Exception as e:
             import logging

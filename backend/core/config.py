@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(
-        default="sqlite:///futuroforbes.db",
-        description="Database connection string"
+        ...,
+        description="Database connection string (Required)"
     )
     
     # JWT Configuration

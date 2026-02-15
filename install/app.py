@@ -40,8 +40,8 @@ from backend.core.install_checker import is_installed
 # --- Fail-safe: Si ya está instalado, el wizard no debe correr ---
 @app.middleware("http")
 async def check_installed_middleware(request: Request, call_next):
-    # Permitir estáticos siempre para que las páginas de error se vean bien
-    if request.url.path.startswith("/static"):
+    # Permitir estáticos y API siempre (ser muy permisivo para evitar bloqueos)
+    if request.url.path.startswith("/static") or "/api" in request.url.path:
         return await call_next(request)
         
     # Si ya hay evidencia de instalación (.env y .installed), fuera de aquí redirección
