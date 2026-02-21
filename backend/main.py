@@ -261,6 +261,14 @@ async def criptoya_page(request: Request):
 async def crypto_live_page(request: Request):
     return templates.TemplateResponse("market/crypto_live.html", {"request": request})
 
+@app.get("/argentina")
+async def argentina_datos_page(request: Request):
+    return templates.TemplateResponse("market/argentina_datos.html", {"request": request})
+
+@app.get("/comparativa")
+async def accounts_comparison_page(request: Request):
+    return templates.TemplateResponse("market/cuentas_wallet.html", {"request": request})
+
 @app.get("/cuentas")
 async def accounts_page(request: Request):
     return templates.TemplateResponse("accounts.html", {"request": request})

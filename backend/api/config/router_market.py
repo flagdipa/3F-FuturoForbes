@@ -52,3 +52,24 @@ async def get_crypto_live():
         return await plugin.get_live_prices()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/argentina/cotizaciones")
+async def get_arg_cotizaciones():
+    plugin = plugin_manager.get_plugin_instance("argentina_datos")
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin Argentina Datos no está activo")
+    return await plugin.get_cotizaciones()
+
+@router.get("/argentina/inflacion")
+async def get_arg_inflacion():
+    plugin = plugin_manager.get_plugin_instance("argentina_datos")
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin Argentina Datos no está activo")
+    return await plugin.get_inflacion()
+
+@router.get("/billeteras/comparativa")
+async def get_billeteras_comparativa():
+    plugin = plugin_manager.get_plugin_instance("cuentas_wallet")
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin Cuentas / Billetera no está activo")
+    return await plugin.get_comparison_data()

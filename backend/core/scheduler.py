@@ -65,6 +65,15 @@ def perform_database_backup():
     except Exception as e:
         logger.error(f"✗ Database backup failed: {e}")
 
+def periodic_plugin_sync():
+    """
+    Triggers the plugin sync hook for all active plugins.
+    Plugins should manage their own internal throttling based on their config.
+    """
+    logger.debug("Triggering periodic plugin sync hook...")
+    from backend.core.plugin_manager import plugin_manager
+    asyncio.run(plugin_manager.call_hook("system_periodic_sync"))
+
 def start_scheduler():
     # Run recurring tx check daily at 00:01
     scheduler.add_job(check_recurring_transactions, 'cron', hour=0, minute=1, id='recurring_transactions')
@@ -72,5 +81,9 @@ def start_scheduler():
     scheduler.add_job(perform_wealth_snapshots, 'cron', hour=0, minute=5, id='wealth_snapshots')
     # Run database backup daily at 03:00
     scheduler.add_job(perform_database_backup, 'cron', hour=3, minute=0, id='database_backup')
+    
+    # Run plugin sync every minute
+    scheduler.add_job(periodic_plugin_sync, 'interval', minutes=1, id='plugin_periodic_sync')
+    
     scheduler.start()
     logger.info("📅 Scheduler started with automatic jobs")

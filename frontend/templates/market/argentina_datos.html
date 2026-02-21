@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Argentina Datos Financieros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .arg-card {
+        background: rgba(10, 25, 41, 0.5);
+        border: 1px solid rgba(0, 242, 255, 0.2);
+        backdrop-filter: blur(12px);
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .arg-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 242, 255, 0.1);
+    }
+    .value-highlight {
+        font-family: 'Orbitron', sans-serif;
+        color: #00f2ff;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    }
+    .chart-container {
+        height: 200px;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="argentinaPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="hud-title mb-0 neon-glow"><i class="fa-solid fa-landmark me-2"></i>ARG_DATOS_CENTRAL</h1>
+                <p class="text-dim extra-small mb-0">INDICADORES FINANCIEROS OFICIALES Y DE MERCADO</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary neon-border" @click="init(true)" :disabled="loading">
+                    <i class="fa-solid fa-sync me-1" :class="loading ? 'fa-spin' : ''"></i> ACTUALIZAR AHORA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerta de Sincronización (Error) -->
+    <div x-show="syncError" x-transition class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-danger bg-danger bg-opacity-10 border-danger text-danger mb-0 d-flex align-items-center">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                <div>
+                    <strong>ERROR_SYNC:</strong> No se pudo conectar con el servidor de datos. Mostrando información local.
+                    <small class="d-block text-white-50" x-text="syncErrorMessage"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Rápidos -->
+    <div class="row g-3 mb-4">
+        <!-- Riesgo País -->
+        <div class="col-md-4" x-show="riesgo_pais">
+            <div class="arg-card p-3 h-100 position-relative">
+                <template x-if="isStale('/v1/finanzas/indices/riesgo-pais/ultimo')">
+                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
+                </template>
+                <small class="text-dim text-uppercase opacity-75">Riesgo País (EMBI+)</small>
+                <div class="d-flex align-items-end gap-2 mt-1">
+                    <h3 class="value-highlight mb-0" x-text="riesgo_pais?.valor || '---'"></h3>
+                    <small class="text-white-50 mb-1" x-text="riesgo_pais?.fecha"></small>
+                </div>
+            </div>
+        </div>
+        <!-- UVA -->
+        <div class="col-md-4" x-show="uva_actual">
+            <div class="arg-card p-3 h-100 position-relative">
+                <template x-if="isStale('/v1/finanzas/indices/uva')">
+                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
+                </template>
+                <small class="text-dim text-uppercase opacity-75">Valor UVA Diario</small>
+                <div class="d-flex align-items-end gap-2 mt-1">
+                    <h3 class="value-highlight mb-0" x-text="formatCurrency(uva_actual?.valor) || '---'"></h3>
+                    <small class="text-white-50 mb-1" x-text="uva_actual?.fecha"></small>
+                </div>
+            </div>
+        </div>
+        <!-- Inflación -->
+        <div class="col-md-4" x-show="inflacion_actual">
+            <div class="arg-card p-3 h-100 position-relative">
+                <template x-if="isStale('/v1/finanzas/inflacion')">
+                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
+                </template>
+                <small class="text-dim text-uppercase opacity-75">Última Inflación Mensual</small>
+                <div class="d-flex align-items-end gap-2 mt-1">
+                    <h3 class="value-highlight mb-0" x-text="(inflacion_actual?.valor || 0) + '%'"></h3>
+                    <small class="text-white-50 mb-1" x-text="inflacion_actual?.fecha"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Gráfico de UVA -->
+        <div class="col-lg-6">
+            <div class="arg-card p-4 h-100">
+                <h6 class="font-orbitron text-uppercase mb-4">Evolución Índice UVA (3 meses)</h6>
+                <div class="chart-container" style="height: 180px;">
+                    <canvas id="uvaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <!-- Tipos de Cambio -->
+        <div class="col-lg-4">
+            <div class="arg-card p-4 h-100 position-relative">
+                <template x-if="isStale('/v1/cotizaciones')">
+                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
+                </template>
+                <h6 class="font-orbitron text-uppercase mb-3">Cotizaciones ARS/USD</h6>
+                <div class="hud-line mb-3"></div>
+                <div class="list-group list-group-flush bg-transparent">
+                    <template x-for="dolar in dolares" :key="dolar.casa">
+                        <div class="list-group-item bg-transparent border-secondary border-opacity-10 px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-white text-capitalize fw-bold" x-text="dolar.casa"></span><br>
+                                <small class="text-dim extra-small" x-text="dolar.fecha"></small>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-primary fw-bold" x-text="formatCurrency(dolar.venta)"></div>
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <small class="text-accent extra-small" x-show="dolar.compra && dolar.venta" x-text="'Spread: ' + calculateSpread(dolar.compra, dolar.venta) + '%'"></small>
+                                    <small class="text-dim extra-small">Compra: <span x-text="formatCurrency(dolar.compra)"></span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('argentinaPage', () => ({
+            loading: false,
+            syncError: false,
+            syncErrorMessage: '',
+            allData: {},
+
+            async init(forced = false) {
+                this.loading = true;
+                this.syncError = false;
+                try {
+                    if (forced) {
+                        await api.post('/config/plugins/argentina_datos/actualizar');
+                    }
+
+                    // Fetch data from the new unified endpoint
+                    const res = await api.get('/config/plugins/argentina_datos/datos');
+                    this.allData = res.data;
+
+                    // 1. Cotizaciones
+                    const cotizaciones = this.allData['/v1/cotizaciones']?.datos || [];
+                    this.dolares = cotizaciones.filter(d => ['oficial', 'blue', 'mep', 'ccl'].includes(d.casa));
+
+                    // 2. Inflación
+                    const inflacion = this.allData['/v1/finanzas/inflacion']?.datos || [];
+                    if (inflacion.length > 0) {
+                        this.inflacion_actual = inflacion[inflacion.length - 1];
+                        this.renderChart('inflationChart', inflacion.slice(-12), 'Inflación %', '#00f2ff');
+                    }
+
+                    // 3. UVA
+                    const uvaData = this.allData['/v1/finanzas/indices/uva']?.datos || [];
+                    if (uvaData.length > 0) {
+                        this.uva_actual = uvaData[uvaData.length - 1];
+                        this.renderChart('uvaChart', uvaData.slice(-90), 'Valor UVA', '#ffaa00');
+                    }
+
+                    // 4. Riesgo País
+                    this.riesgo_pais = this.allData['/v1/finanzas/indices/riesgo-pais/ultimo']?.datos || null;
+
+                } catch (e) {
+                    console.error('Error loading Argentina Datos:', e);
+                    this.syncError = true;
+                    this.syncErrorMessage = e.message || 'Error desconocido';
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            isStale(endpoint) {
+                const updated = this.allData[endpoint]?.actualizado_el;
+                if (!updated) return false;
+                const diffHs = (new Date() - new Date(updated)) / (1000 * 60 * 60);
+                return diffHs > 24;
+            },
+
+            calculateSpread(compra, venta) {
+                if (!compra || !venta) return 0;
+                return (((venta - compra) / compra) * 100).toFixed(2);
+            },
+
+            charts: {},
+
+            renderChart(canvasId, data, label, color) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (this.charts[canvasId]) this.charts[canvasId].destroy();
+
+                this.charts[canvasId] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(i => i.fecha),
+                        datasets: [{
+                            label: label,
+                            data: data.map(i => i.valor),
+                            borderColor: color,
+                            backgroundColor: color + '1a',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#666', font: { size: 10 } } },
+                            x: { grid: { display: false }, ticks: { display: false } }
+                        }
+                    }
+                });
+            },
+
+            formatCurrency(val) {
+                if (!val) return '';
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+            }
+        }));
+    });
+</script>
+{% endblock %}

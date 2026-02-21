@@ -359,10 +359,72 @@ def _get_plugin_config_schema(nombre_tecnico: str) -> Dict[str, Any]:
             },
             "update_frequency": {"type": "string", "enum": ["hourly", "daily"], "default": "hourly"},
             "create_divisas_if_missing": {"type": "boolean", "label": "Crear divisas automáticamente", "default": True}
+        },
+        "argentina_datos": {
+            "intervalo_actualizacion_minutos": {"type": "integer", "label": "Intervalo Sincronización (min)", "default": 60},
+            "apis_disponibles": {
+                "type": "object",
+                "label": "Fuentes de Datos",
+                "properties": {
+                    "cotizaciones_actuales": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Cotizaciones actuales", "default": True}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones"}, "label": {"type": "string", "hidden": True, "default": "Cotizaciones actuales"}}},
+                    "dolar_blue": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Blue", "default": True}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/blue"}, "label": {"type": "string", "hidden": True, "default": "Dólar Blue"}}},
+                    "dolar_oficial": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Oficial", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/oficial"}, "label": {"type": "string", "hidden": True, "default": "Dólar Oficial"}}},
+                    "dolar_bolsa": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Bolsa / MEP", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/bolsa"}, "label": {"type": "string", "hidden": True, "default": "Dólar Bolsa / MEP"}}},
+                    "dolar_ccl": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar CCL", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/contadoconliqui"}, "label": {"type": "string", "hidden": True, "default": "Dólar CCL"}}},
+                    "dolar_cripto": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Cripto", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/cripto"}, "label": {"type": "string", "hidden": True, "default": "Dólar Cripto"}}},
+                    "dolar_mayorista": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Mayorista", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/mayorista"}, "label": {"type": "string", "hidden": True, "default": "Dólar Mayorista"}}},
+                    "dolar_tarjeta": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Dólar Tarjeta", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/dolares/tarjeta"}, "label": {"type": "string", "hidden": True, "default": "Dólar Tarjeta"}}},
+                    "euro": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Euro", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/eur"}, "label": {"type": "string", "hidden": True, "default": "Euro"}}},
+                    "real": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Real Brasileño", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/cotizaciones/brl"}, "label": {"type": "string", "hidden": True, "default": "Real Brasileño"}}},
+                    "inflacion": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Inflación mensual", "default": True}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/inflacion"}, "label": {"type": "string", "hidden": True, "default": "Inflación mensual"}}},
+                    "plazo_fijo": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Tasas de Plazo Fijo", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/tasas/plazoFijo"}, "label": {"type": "string", "hidden": True, "default": "Tasas de Plazo Fijo"}}},
+                    "plazos_fijos_entidades": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Tasas por entidad", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/tasas/plazosFijos"}, "label": {"type": "string", "hidden": True, "default": "Tasas por entidad"}}},
+                    "depositos_30_dias": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Depósitos a 30 días", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/tasas/depositos30Dias"}, "label": {"type": "string", "hidden": True, "default": "Depósitos a 30 días"}}},
+                    "indice_uva": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Índice UVA", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/indices/uva"}, "label": {"type": "string", "hidden": True, "default": "Índice UVA"}}},
+                    "fci": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Fondos Comunes", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/fci"}, "label": {"type": "string", "hidden": True, "default": "Fondos Comunes"}}},
+                    "riesgo_pais": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Riesgo País", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/indices/riesgo-pais/ultimo"}, "label": {"type": "string", "hidden": True, "default": "Riesgo País"}}},
+                    "criptopesos": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Criptopesos", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/criptopesos"}, "label": {"type": "string", "hidden": True, "default": "Criptopesos"}}},
+                    "cuentas_remuneradas_usd": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Cuentas Remun. USD", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/cuentas-remuneradas-usd"}, "label": {"type": "string", "hidden": True, "default": "Cuentas Remun. USD"}}},
+                    "hipotecarios_uva": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Hipotecarios UVA", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/hipotecarios-uva"}, "label": {"type": "string", "hidden": True, "default": "Hipotecarios UVA"}}},
+                    "creditos_hipotecarios": {"type": "object", "properties": {"activa": {"type": "boolean", "label": "Créditos Hipotecarios", "default": False}, "endpoint": {"type": "string", "hidden": True, "default": "/v1/finanzas/creditos"}, "label": {"type": "string", "hidden": True, "default": "Créditos Hipotecarios"}}}
+                }
+            }
+        },
+        "cuentas_wallet": {
+            "update_interval": {"type": "integer", "label": "Intervalo (min)", "default": 1440},
+            "compare_options": {
+                "type": "object",
+                "label": "Opciones Comparación",
+                "properties": {
+                    "fixed_terms": {"type": "boolean", "label": "Plazos Fijos", "default": True},
+                    "wallets": {"type": "boolean", "label": "Billeteras", "default": True}
+                }
+            }
         }
     }
     
     return schemas.get(nombre_tecnico, {})
+
+# --- Endpoints específicos para Argentina Datos ---
+
+@router.post("/argentina_datos/actualizar")
+async def actualizar_argentina_datos():
+    """Fuerza actualización manual de todas las APIs activas del plugin"""
+    plugin = plugin_manager.get_plugin_instance("argentina_datos")
+    if not plugin:
+        raise HTTPException(404, "Plugin 'argentina_datos' no está activo")
+    
+    count = await plugin.sync_enabled_apis()
+    return {"status": "ok", "mensaje": f"Sincronizadas {count} APIs"}
+
+@router.get("/argentina_datos/datos")
+async def obtener_datos_argentina():
+    """Retorna los datos cacheados de todas las APIs activas"""
+    plugin = plugin_manager.get_plugin_instance("argentina_datos")
+    if not plugin:
+        raise HTTPException(404, "Plugin 'argentina_datos' no está activo")
+    
+    return await plugin.get_active_data()
 
 
 # Importar logger

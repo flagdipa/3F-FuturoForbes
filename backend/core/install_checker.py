@@ -159,22 +159,29 @@ def is_installed_in_db() -> bool:
     Verifica de forma segura si la instalación está marcada en la base de datos.
     No lanza excepciones para evitar romper la aplicación en el arranque inicial.
     """
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         from backend.core.database import engine
-        from backend.models.models_config import Configuracion
-        from sqlmodel import Session, select
         from sqlalchemy import text
         
         # Primero verificar que la tabla exista (para evitar errores en la primera corrida)
+        # Usamos un bloque try/except muy granular
+        logger.debug("Verificando instalación en DB...")
         with engine.connect() as conn:
             # Query ultra-rápida para ver si el flag existe
             try:
                 res = conn.execute(text("SELECT valor FROM configuraciones WHERE clave='system_installed'"))
                 row = res.fetchone()
-                return row is not None and row[0] == "true"
-            except Exception:
+                is_installed = row is not None and row[0] == "true"
+                logger.debug(f"Resultado verificación DB: {is_installed}")
+                return is_installed
+            except Exception as e:
+                # Si la tabla no existe o hay error de query, asumimos no instalado
+                logger.debug(f"Error en consulta de instalación (posible tabla inexistente): {e}")
                 return False
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error conectando a DB para verificar instalación: {e}")
         return False
 
 

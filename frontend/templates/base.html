@@ -342,6 +342,22 @@
                                 <p>Crypto Live</p>
                             </a>
                         </li>
+                        <li class="nav-item" x-show="isPluginActive('argentina_datos')" x-cloak>
+                            <a href="/argentina" class="nav-link d-flex align-items-center">
+                                <i class="nav-icon fa-solid fa-landmark text-primary"></i>
+                                <p class="mb-0 flex-grow-1">Argentina Datos</p>
+                                <div class="ms-auto d-none d-lg-flex gap-1">
+                                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25" x-show="argDatos.blue" x-text="'$'+argDatos.blue" style="font-size: 0.65rem;"></span>
+                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25" x-show="argDatos.riesgo" x-text="argDatos.riesgo" style="font-size: 0.65rem;"></span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item" x-show="isPluginActive('cuentas_wallet')" x-cloak>
+                            <a href="/comparativa" class="nav-link">
+                                <i class="nav-icon fa-solid fa-scale-balanced text-success"></i>
+                                <p>Comparativa Tasas</p>
+                            </a>
+                        </li>
 
                         <li class="nav-header text-uppercase mt-3 small opacity-50">INTELIGENCIA</li>
                         <li class="nav-item">

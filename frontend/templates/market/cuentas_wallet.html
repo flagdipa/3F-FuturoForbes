@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Comparativa de Tasas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-table {
+        background: rgba(10, 25, 41, 0.4);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .best-rate {
+        color: #00ff88;
+        font-weight: bold;
+        text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+    }
+    .badge-pf { background: rgba(0, 123, 255, 0.2); color: #00d0ff; border: 1px solid rgba(0, 208, 255, 0.3); }
+    .badge-cr { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="comparisonPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="hud-title mb-0 neon-glow-green"><i class="fa-solid fa-scale-balanced me-2"></i>RATE_COMPARISON_HUB</h1>
+                <p class="text-dim extra-small mb-0">¿DÓNDE RINDE MÁS TU DINERO HOY? (ARS)</p>
+            </div>
+            <button class="btn btn-sm btn-outline-success neon-border" @click="fetchData()" :disabled="loading">
+                <i class="fa-solid fa-sync me-1" :class="loading ? 'fa-spin' : ''"></i> ACTUALIZAR
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- TOP RATES OVERVIEW -->
+        <div class="col-md-6 col-lg-4" x-show="bestPF">
+            <div class="hud-card p-3 border-primary">
+                <small class="text-dim text-uppercase opacity-75">Mejor Plazo Fijo</small>
+                <h4 class="text-white mt-1 mb-0" x-text="bestPF?.entidad"></h4>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="h2 value-highlight mb-0" x-text="(bestPF?.tnaClientes || 0) + '%'"></span>
+                    <span class="badge badge-pf">TNA CLIENTES</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4" x-show="bestWallet">
+            <div class="hud-card p-3 border-success">
+                <small class="text-dim text-uppercase opacity-75">Mejor Cuenta / Billetera</small>
+                <h4 class="text-white mt-1 mb-0" x-text="bestWallet?.fondo"></h4>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="h2 text-success mb-0 fw-bold" x-text="(bestWallet?.tna || 0) + '%'"></span>
+                    <span class="badge badge-cr">TNA ACTUAL</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN COMPARISON TABLE -->
+        <div class="col-12">
+            <div class="comparison-table">
+                <div class="p-3 border-bottom border-secondary border-opacity-25 bg-black bg-opacity-20 d-flex justify-content-between align-items-center">
+                    <span class="font-orbitron text-uppercase small">Ranking de Rendimientos</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" :class="filter === 'all' ? 'active' : ''" @click="filter = 'all'">TODOS</button>
+                        <button class="btn btn-outline-secondary" :class="filter === 'pf' ? 'active' : ''" @click="filter = 'pf'">PLAZO FIJO</button>
+                        <button class="btn btn-outline-secondary" :class="filter === 'wallet' ? 'active' : ''" @click="filter = 'wallet'">BILLETERAS</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead class="opacity-50 extra-small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Entidad / Fondo</th>
+                                <th>Tipo</th>
+                                <th>TNA</th>
+                                <th>TEA (Est.)</th>
+                                <th class="text-end pe-4">Últ. Cambio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in sortedItems" :key="item.id">
+                                <tr class="align-middle">
+                                    <td class="ps-4">
+                                        <span class="text-white fw-bold" x-text="item.name"></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" :class="item.type === 'PF' ? 'badge-pf' : 'badge-cr'" x-text="item.type"></span>
+                                    </td>
+                                    <td class="best-rate" x-text="item.tna + '%'"></td>
+                                    <td class="text-dim" x-text="calculateTEA(item.tna) + '%'"></td>
+                                    <td class="text-end pe-4 text-dim extra-small" x-text="item.fecha"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('comparisonPage', () => ({
+            loading: false,
+            filter: 'all',
+            plazos_fijos: [],
+            cuentas: [],
+            
+            get bestPF() { return this.plazos_fijos[0]; },
+            get bestWallet() { return this.cuentas[0]; },
+
+            get sortedItems() {
+                let items = [];
+                if (this.filter === 'all' || this.filter === 'pf') {
+                    this.plazos_fijos.forEach(p => items.push({
+                        id: 'pf-' + p.entidad,
+                        name: p.entidad,
+                        type: 'PF',
+                        tna: p.tnaClientes || p.tnaNoClientes,
+                        fecha: p.fecha
+                    }));
+                }
+                if (this.filter === 'all' || this.filter === 'wallet') {
+                    this.cuentas.forEach(c => items.push({
+                        id: 'w-' + c.fondo,
+                        name: c.fondo,
+                        type: 'Wallet',
+                        tna: c.tna,
+                        fecha: c.fecha
+                    }));
+                }
+                return items.sort((a,b) => b.tna - a.tna);
+            },
+
+            async init() {
+                await this.fetchData();
+            },
+
+            async fetchData() {
+                this.loading = true;
+                try {
+                    const res = await api.get('/market/billeteras/comparativa');
+                    this.plazos_fijos = res.data.plazos_fijos.sort((a,b) => (b.tnaClientes || 0) - (a.tnaClientes || 0));
+                    this.cuentas = res.data.cuentas_remuneradas.sort((a,b) => b.tna - a.tna);
+                } catch (e) {
+                    console.error('Error fetching comparison data:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            calculateTEA(tna) {
+                if (!tna) return '--';
+                // TEA = (1 + i/n)^n - 1
+                const monthly = (tna / 100) / 12;
+                const tea = (Math.pow(1 + monthly, 12) - 1) * 100;
+                return tea.toFixed(2);
+            }
+        }));
+    });
+</script>
+{% endblock %}

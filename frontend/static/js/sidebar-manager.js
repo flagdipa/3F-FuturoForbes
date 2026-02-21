@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
         investments: [],
         assets: [],
         activePlugins: [],
+        argDatos: { blue: null, riesgo: null },
         loading: false,
 
         async init() {
@@ -27,11 +28,31 @@ document.addEventListener('alpine:init', () => {
                 this.assets = rAssets.data.data || rAssets.data || [];
                 this.activePlugins = rPlugins.data.plugins_cargados || [];
 
+                // Fetch Argentina Datos mini if plugin is active
+                if (this.isPluginActive('argentina_datos')) {
+                    this.fetchArgDatosMini();
+                }
+
             } catch (e) {
                 console.error('SidebarManager Init Error:', e);
             } finally {
                 this.loading = false;
                 this.highlightMenu();
+            }
+        },
+
+        async fetchArgDatosMini() {
+            try {
+                const res = await api.get('/config/plugins/argentina_datos/datos');
+                const data = res.data;
+                const blue = data['/v1/cotizaciones/dolares/blue']?.datos ||
+                    data['/v1/cotizaciones']?.datos?.find(d => d.casa === 'blue');
+                const riesgo = data['/v1/finanzas/indices/riesgo-pais/ultimo']?.datos;
+
+                if (blue) this.argDatos.blue = blue.venta;
+                if (riesgo) this.argDatos.riesgo = riesgo.valor;
+            } catch (e) {
+                console.warn('Error fetching Argentina Datos Mini:', e);
             }
         },
 
