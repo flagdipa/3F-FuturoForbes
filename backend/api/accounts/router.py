@@ -13,14 +13,40 @@ router = APIRouter(prefix="/cuentas", tags=["Cuentas"])
 # Initialize generic service
 account_service = BaseCRUDService[ListaCuentas, CuentaCrear, CuentaCrear](ListaCuentas)
 
+from sqlalchemy.orm import joinedload
+from ..schemas.common import PaginationMetadata
+
 @router.get("/", response_model=PaginatedResponse[CuentaLectura])
 def listar_cuentas(
     offset: int = 0,
     limit: int = 100,
     session: Session = Depends(get_session)
 ):
-    """List all accounts with pagination"""
-    return account_service.list(session, offset, limit)
+    """List all accounts with pagination, including divisa for currency filtering"""
+    from sqlalchemy import func as sa_func
+
+    total = session.exec(select(sa_func.count()).select_from(ListaCuentas)).one()
+
+    query = (
+        select(ListaCuentas)
+        .options(
+            joinedload(ListaCuentas.divisa),
+            joinedload(ListaCuentas.identidad_financiera)
+        )
+        .offset(offset)
+        .limit(limit)
+    )
+    items = session.exec(query).unique().all()
+
+    return PaginatedResponse(
+        data=items,
+        pagination=PaginationMetadata(
+            total=total,
+            offset=offset,
+            limit=limit,
+            has_more=(offset + limit) < total
+        )
+    )
 
 @router.post("/", response_model=CuentaLectura)
 def crear_cuenta(

@@ -1,0 +1,247 @@
+<!-- Beneficiary Manager Components Container -->
+<div x-data="beneficiaryManager">
+    <!-- Beneficiary Manager Modal (MMEX Style) -->
+    <div class="modal fade resizable-modal" id="beneficiaryManagerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+        <div class="modal-content neon-modal bg-body-secondary border-primary shadow-lg" style="border: 1px solid var(--3f-primary);">
+            <div class="modal-header py-2" style="background: rgba(37, 150, 190, 0.15); border-bottom: 1px solid var(--3f-border);">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-users me-2"></i> Administrador de beneficiarios
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body p-0 d-flex flex-column" style="min-height: 400px; max-height: 70vh;">
+                <!-- Table Area -->
+                <div class="flex-grow-1 overflow-auto custom-scrollbar">
+                    <table class="table table-dark table-hover mb-0 table-sm align-middle" style="font-size: 0.8rem;">
+                        <thead class="sticky-top bg-black">
+                            <tr class="text-dim text-uppercase opacity-75">
+                                <th class="ps-3 py-2 border-secondary border-opacity-10">Nombre</th>
+                                <th class="py-2 border-secondary border-opacity-10 d-none d-lg-table-cell">CUIT</th>
+                                <th class="py-2 border-secondary border-opacity-10 d-none d-xl-table-cell">CBU/Cuenta</th>
+                                <th class="py-2 border-secondary border-opacity-10 d-none d-xl-table-cell">Banco</th>
+                                <th class="py-2 border-secondary border-opacity-10 d-none d-md-table-cell">Web</th>
+                                <th class="py-2 border-secondary border-opacity-10 text-center text-white fw-bold" style="letter-spacing: 1px;">EN USO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in filtered" :key="item.id_beneficiario">
+                                <tr class="cursor-pointer transition" 
+                                    :class="$store.benefManager.selectedId === item.id_beneficiario ? 'bg-primary bg-opacity-25' : 'hover-bg-white-10'"
+                                    @click="$store.benefManager.selectedId = item.id_beneficiario; $store.benefManager.selectedNode = item"
+                                    @dblclick="editItem">
+                                    <td class="ps-3 py-2 text-white">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-building me-2 opacity-25 small" x-show="item.cuit"></i>
+                                            <i class="fa-solid fa-user me-2 opacity-25 small" x-show="!item.cuit"></i>
+                                            <span x-text="item.nombre_beneficiario"></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2 text-dim d-none d-lg-table-cell" x-text="item.cuit || '-'"></td>
+                                    <td class="py-2 text-dim d-none d-xl-table-cell font-monospace small" x-text="item.cbu || '-'"></td>
+                                    <td class="py-2 text-dim d-none d-xl-table-cell" x-text="item.banco || '-'"></td>
+                                    <td class="py-2 text-info small d-none d-md-table-cell">
+                                        <a :href="item.sitio_web" target="_blank" class="text-info text-decoration-none" x-show="item.sitio_web">
+                                            <i class="fa-solid fa-external-link small"></i>
+                                        </a>
+                                        <span x-show="!item.sitio_web">-</span>
+                                    </td>
+                                    <td class="py-2 text-center">
+                                        <span class="badge bg-primary text-black border-0 cursor-pointer hover-shadow-neon" 
+                                              style="font-size: 0.75rem; font-weight: 800; min-width: 25px; box-shadow: 0 0 10px var(--3f-primary-glow);"
+                                              @click.stop="$store.benefManager.viewTransactions(item)"
+                                              x-text="item.transacciones_count || 0"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <div x-show="$store.benefManager.loading" class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+
+                <!-- Footer Tools (MMEX Style) -->
+                <div class="p-3 border-top border-secondary border-opacity-10 bg-black bg-opacity-20">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 250px;">
+                            <span class="extra-small text-dim text-uppercase fw-bold d-none d-sm-inline">Buscar</span>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-black bg-opacity-50 border-secondary border-opacity-25 text-dim"><i class="fa-solid fa-search"></i></span>
+                                <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                                       placeholder="Filtrar por nombre, CUIT o CBU..." x-model="$store.benefManager.searchQuery">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-dark btn-sm extra-small border-secondary border-opacity-25" @click="$store.benefManager.showHidden = !$store.benefManager.showHidden" 
+                                    :class="$store.benefManager.showHidden ? 'bg-primary text-black' : ''">Mostrar Ocultos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="modal-footer justify-content-center border-0 py-3 bg-black bg-opacity-40 gap-2 flex-wrap">
+                <button class="btn btn-primary btn-sm border-0 shadow-neon px-4 extra-small fw-bold" @click="createItem">
+                    <i class="fa-solid fa-plus me-1"></i> NUEVO
+                </button>
+                <button class="btn btn-dark btn-sm border-secondary border-opacity-40 px-3 extra-small" @click="editItem" :disabled="!$store.benefManager.selectedId">
+                    <i class="fa-solid fa-edit me-1"></i> EDITAR
+                </button>
+                <button class="btn btn-dark btn-sm border-danger border-opacity-20 text-danger px-3 extra-small" @click="deleteItem" :disabled="!$store.benefManager.selectedId">
+                    <i class="fa-solid fa-trash me-1"></i> BORRAR
+                </button>
+                <button class="btn btn-outline-secondary btn-sm px-3 extra-small" data-bs-dismiss="modal">CERRAR</button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Resizable Modal Support - Only for Desktop */
+    @media (min-width: 768px) {
+        .resizable-modal .modal-content {
+            resize: both;
+            overflow: hidden;
+            min-width: 600px;
+            min-height: 400px;
+        }
+    }
+    
+    .resizable-modal .modal-body {
+        overflow-y: auto;
+    }
+</style>
+
+<!-- Beneficiary Form Modal (Sub-window) -->
+<div class="modal fade" id="beneficiaryFormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content neon-modal bg-body-tertiary border-primary shadow-lg">
+            <div class="modal-header py-2" style="background: rgba(37, 150, 190, 0.1);">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-user-edit me-2"></i> <span x-text="$store.benefForm?.isEdit ? 'Editar Beneficiario' : 'Nuevo Beneficiario'"></span>
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" x-data="{}">
+                <div class="row g-3">
+                    <!-- Basic Info -->
+                    <div class="col-md-7">
+                        <label class="form-label extra-small text-dim text-uppercase">Nombre / Razón Social</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                               x-model="$store.benefForm.nombre_beneficiario" placeholder="Ej: Supermercado Coto">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label extra-small text-dim text-uppercase">CUIT / CUIL</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                               x-model="$store.benefForm.cuit" placeholder="20-XXXXXXXX-X">
+                    </div>
+
+                    <!-- Financial info -->
+                    <div class="col-md-12">
+                        <label class="form-label extra-small text-dim text-uppercase">CBU / CVU / Nro. Cuenta</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white font-monospace" 
+                               x-model="$store.benefForm.cbu" placeholder="0000000000000000000000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label extra-small text-dim text-uppercase">Banco / Entidad</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                               x-model="$store.benefForm.banco" placeholder="Ej: Banco Galicia">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label extra-small text-dim text-uppercase">Teléfono</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                               x-model="$store.benefForm.telefono" placeholder="+54 9 ...">
+                    </div>
+
+                    <!-- Address and Web -->
+                    <div class="col-md-12">
+                        <label class="form-label extra-small text-dim text-uppercase">Dirección</label>
+                        <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                               x-model="$store.benefForm.direccion" placeholder="Calle, Nro, Localidad...">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label extra-small text-dim text-uppercase">Página Web / Redes</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-black bg-opacity-50 border-secondary border-opacity-25 text-dim"><i class="fa-solid fa-globe"></i></span>
+                            <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                                   x-model="$store.benefForm.sitio_web" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-md-12">
+                        <label class="form-label extra-small text-dim text-uppercase">Notas Adicionales</label>
+                        <textarea class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                                   x-model="$store.benefForm.notas" rows="2" placeholder="Notas sobre el beneficiario..."></textarea>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="benefActivo" 
+                                   :checked="$store.benefForm.activo === 1"
+                                   @change="$store.benefForm.activo = $event.target.checked ? 1 : 0">
+                            <label class="form-check-label extra-small text-dim text-uppercase" for="benefActivo">Beneficiario Activo</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-black bg-opacity-20">
+                <button class="btn btn-outline-secondary btn-sm px-4 extra-small" data-bs-dismiss="modal">CANCELAR</button>
+                <button class="btn btn-primary btn-sm px-4 extra-small fw-bold" @click="$dispatch('save-beneficiary')">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Beneficiary Transactions List Modal (Sub-window) -->
+<div class="modal fade" id="beneficiaryTransactionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content neon-modal bg-black border-primary shadow-lg">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-list-ul me-2"></i> Movimientos: <span x-text="$store.benefManager.selectedNode?.nombre_beneficiario"></span>
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column" style="max-height: 70vh; overflow-y: auto;">
+                <div x-show="$store.benefManager.loadingTx" class="text-center py-5 flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+                <div class="table-responsive flex-grow-1" x-show="!$store.benefManager.loadingTx">
+                    <table class="table table-dark table-hover mb-0 table-sm extra-small">
+                        <thead class="sticky-top bg-black">
+                            <tr class="text-dim text-uppercase opacity-50">
+                                <th class="ps-3">Fecha</th>
+                                <th>Cuenta</th>
+                                <th>Categoría</th>
+                                <th class="text-end pe-3">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="tx in $store.benefManager.beneficiaryTx" :key="tx.id_transaccion">
+                                <tr class="border-secondary border-opacity-10">
+                                    <td class="ps-3 py-2" x-text="new Date(tx.fecha_transaccion).toLocaleDateString()"></td>
+                                    <td class="py-2" x-text="tx.nombre_cuenta"></td>
+                                    <td class="py-2" x-text="tx.nombre_categoria || '-'"></td>
+                                    <td class="py-2 text-end pe-3 fw-bold" :class="tx.monto_transaccion >= 0 ? 'text-success' : 'text-danger'" 
+                                        x-text="CurrencyUtils.formatCurrency(tx.monto_transaccion)"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="$store.benefManager.beneficiaryTx.length === 0">
+                                <td colspan="4" class="text-center py-4 text-dim italic">Sin movimientos registrados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-black bg-opacity-20 d-flex justify-content-between">
+                <span class="extra-small text-dim">Mostrando últimos 50 movimientos</span>
+                <button class="btn btn-outline-secondary btn-sm px-4 extra-small" data-bs-dismiss="modal">CERRAR</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

@@ -53,10 +53,10 @@ async def check_installed_middleware(request: Request, call_next):
 # --- Modelos Pydantic ---
 class DatabaseConfig(BaseModel):
     db_type: str
-    host: str
-    port: int
-    user: str
-    password: str = ""
+    host: Optional[str] = "localhost"
+    port: Optional[int] = 3306
+    user: Optional[str] = "root"
+    password: Optional[str] = ""
     database: str
     create_if_not_exists: bool = False
 
@@ -175,7 +175,13 @@ async def api_run_install(req: InstallationRequest):
         if backup_path: log.append({"step": "backup_env", "status": "success", "msg": f"Backup: {backup_path}"})
         
         # Generar config
-        conn_url = f"{req.db_config.db_type}+pymysql://{req.db_config.user}:{req.db_config.password}@{req.db_config.host}:{req.db_config.port}/{req.db_config.database}"
+        if req.db_config.db_type.lower() == "sqlite":
+            db_name = req.db_config.database if req.db_config.database else "futuroforbes.db"
+            if not db_name.endswith(".db"): db_name += ".db"
+            conn_url = f"sqlite:///{db_name}"
+        else:
+            conn_url = f"{req.db_config.db_type}+pymysql://{req.db_config.user}:{req.db_config.password}@{req.db_config.host}:{req.db_config.port}/{req.db_config.database}"
+        
         secret_key = generate_secret_key()
         
         env_result = create_env_file({

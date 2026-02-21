@@ -11,12 +11,12 @@
             <div class="neon-card p-3">
                 <label class="text-dim extra-small fw-bold mb-2" x-text="$store.lang.t('reports.cashflow.time_terminal')">TERMINAL_DE_TIEMPO</label>
                 <div class="input-group">
-                    <select x-model="selectedYear" @change="fetchData()" class="form-select bg-transparent border-secondary text-white fw-bold">
+                    <select x-model="selectedYear" @change="fetchData()" class="form-select bg-transparent border-secondary text-white fw-bold" aria-label="Seleccionar año">
                         <template x-for="y in availableYears" :key="y">
                             <option :value="y" x-text="y"></option>
                         </template>
                     </select>
-                    <button class="btn btn-outline-primary neon-border" @click="fetchData()">
+                    <button class="btn btn-outline-primary neon-border" @click="fetchData()" aria-label="Actualizar datos">
                         <i class="fa-solid fa-rotate"></i>
                     </button>
                 </div>
@@ -130,7 +130,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function cashflowReport() {
     return {
@@ -143,7 +142,20 @@ function cashflowReport() {
         chart: null,
 
         async init() {
+            if (typeof Chart === 'undefined') {
+                await this.loadChartJs();
+            }
             await this.fetchData();
+        },
+
+        loadChartJs() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
         },
 
         async fetchData() {

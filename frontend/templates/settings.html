@@ -12,7 +12,14 @@
         border: 1px solid var(--3f-border);
         backdrop-filter: blur(10px);
         border-radius: 8px;
-        overflow: hidden;
+        overflow: auto;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    .grid-stack-item-content > .p-3 {
+        flex: 1;
+        overflow: auto;
     }
     .grid-stack-item-content:hover {
         border-color: var(--3f-primary);
@@ -492,13 +499,14 @@
         setTimeout(() => {
             settingsGrid = GridStack.init({
                 column: 12,
-                cellHeight: 80,
+                cellHeight: 50,
                 margin: 10,
                 animate: true,
                 draggable: { handle: '.widget-header' },
                 float: true,
                 disableOneColumnMode: false,
-                staticGrid: false
+                staticGrid: false,
+                minRow: 3
             });
             
             // Initialize LayoutManager and load saved layout

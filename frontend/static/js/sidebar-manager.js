@@ -7,22 +7,25 @@ document.addEventListener('alpine:init', () => {
         cuentas: [],
         investments: [],
         assets: [],
+        activePlugins: [],
         loading: false,
 
         async init() {
             this.loading = true;
             try {
+                const t = Date.now();
                 // Fetch all data in parallel
-                const [rCuentas, rInvestments, rAssets] = await Promise.all([
-                    api.get('cuentas/'),
-                    api.get('stocks/'),
-                    api.get('assets/')
+                const [rCuentas, rInvestments, rAssets, rPlugins] = await Promise.all([
+                    api.get(`cuentas/?t=${t}`),
+                    api.get(`stocks/?t=${t}`),
+                    api.get(`assets/?t=${t}`),
+                    api.get('plugins/activos')
                 ]);
 
                 this.cuentas = rCuentas.data.data || [];
-                // Handle different response formats if necessary
                 this.investments = rInvestments.data.data || rInvestments.data || [];
                 this.assets = rAssets.data.data || rAssets.data || [];
+                this.activePlugins = rPlugins.data.plugins_cargados || [];
 
             } catch (e) {
                 console.error('SidebarManager Init Error:', e);
@@ -32,13 +35,28 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        isPluginActive(name) {
+            return this.activePlugins.includes(name);
+        },
+
         get filtered() {
+            const activas = this.cuentas.filter(c => c.estado === 'Open');
             return {
-                favoritas: this.cuentas.filter(c => c.cuenta_favorita === 1),
-                bancarias: this.cuentas.filter(c => ['Checking', 'Banco', 'Savings', 'Caja de Ahorro'].includes(c.tipo_cuenta)),
-                tarjetas: this.cuentas.filter(c => ['Credit Card', 'Tarjeta'].includes(c.tipo_cuenta)),
-                efectivo: this.cuentas.filter(c => ['Cash', 'Efectivo'].includes(c.tipo_cuenta)),
-                plazo: this.cuentas.filter(c => ['Term', 'Plazo', 'Inversion'].includes(c.tipo_cuenta))
+                favoritas: activas.filter(c => c.cuenta_favorita === 1),
+                bancarias: activas.filter(c => c.tipo_cuenta === 'Checking' || c.tipo_cuenta === 'Savings'),
+                tarjetas: activas.filter(c => c.tipo_cuenta === 'Credit Card'),
+                efectivo: activas.filter(c => c.tipo_cuenta === 'Cash'),
+                plazo_fijo: activas.filter(c => c.tipo_cuenta === 'Term' || c.tipo_cuenta === 'Savings' && c.nombre_cuenta.toLowerCase().includes('ahorro')),
+                otras: activas.filter(c => !['Checking', 'Savings', 'Credit Card', 'Cash', 'Term'].includes(c.tipo_cuenta)),
+                // Currency-based views
+                cuentas_ars: activas.filter(c => {
+                    const iso = (c.divisa?.codigo_iso || '').toUpperCase().trim();
+                    return iso === 'ARS' || iso === 'ARS$' || iso === '$';
+                }),
+                cuentas_usd: activas.filter(c => {
+                    const iso = (c.divisa?.codigo_iso || '').toUpperCase().trim();
+                    return iso === 'USD' || iso === 'U$S' || iso === 'USDT' || iso === 'U$D';
+                }),
             };
         },
 
@@ -60,14 +78,15 @@ document.addEventListener('alpine:init', () => {
                         // Open parent menus
                         let parent = link.closest('.nav-treeview');
                         while (parent) {
-                            parent.style.display = 'block'; // Force display for AdminLTE
+                            parent.style.display = 'block';
                             const parentLi = parent.closest('.nav-item');
                             if (parentLi) {
                                 parentLi.classList.add('menu-open');
-                                const toggler = parentLi.querySelector('a.nav-link');
+                                parentLi.classList.add('menu-is-open'); // Extra check for some LTE versions
+                                const toggler = parentLi.querySelector(':scope > a.nav-link');
                                 if (toggler) toggler.classList.add('active');
                             }
-                            parent = parentLi ? parentLi.closest('.nav-treeview') : null;
+                            parent = parentLi ? parentLi.parentElement.closest('.nav-treeview') : null;
                         }
                     }
                 });

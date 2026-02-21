@@ -41,18 +41,91 @@
     --3f-gradient-card: linear-gradient(145deg, rgba(7, 30, 38, 0.9) 0%, rgba(4, 15, 19, 0.95) 100%);
 }
 
+html,
 body {
     background-color: var(--3f-bg);
     color: var(--3f-text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 14px;
-    /* Reduced from default */
-    margin: 0;
-    overflow-x: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+    /* KILL BODY SCROLL */
     background-image:
         radial-gradient(circle at 50% 0%, rgba(37, 150, 190, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 10% 90%, rgba(108, 37, 190, 0.08) 0%, transparent 40%);
     background-attachment: fixed;
+}
+
+.app-wrapper {
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+    overflow: hidden !important;
+    display: block;
+    /* Pure layout */
+}
+
+/* Navbar: Unified Top Menu (Full Width) */
+.app-header {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    height: 50px;
+    z-index: 1050;
+    /* Above sidebar */
+    background: var(--3f-bg) !important;
+    border-bottom: 1px solid var(--3f-border) !important;
+    backdrop-filter: blur(10px);
+}
+
+/* Sidebar: Below Navbar */
+.app-sidebar {
+    position: fixed !important;
+    top: 50px !important;
+    left: 0;
+    bottom: 0;
+    width: 280px !important;
+    z-index: 1040;
+    background: var(--3f-bg-darker) !important;
+    border-right: 1px solid var(--3f-border) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow-y: auto;
+}
+
+/* Sidebar Collapse (Desktop & Mobile) */
+.sidebar-collapse .app-sidebar {
+    transform: translateX(-100%);
+    width: 0 !important;
+}
+
+/* Main Area: The ONLY scrolling zone */
+.app-main {
+    margin-top: 50px;
+    margin-left: 280px;
+    width: calc(100vw - 280px);
+    height: calc(100vh - 50px);
+    overflow-y: auto !important;
+    /* THE ONLY ONE */
+    overflow-x: hidden;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--3f-primary) transparent;
+}
+
+.sidebar-collapse .app-main {
+    margin-left: 0 !important;
+    width: 100vw !important;
+}
+
+/* Kill generic AdminLTE scrollbars if any */
+.layout-fixed .app-main {
+    overflow-y: auto !important;
 }
 
 /* Tipografía HUD - Tech */
@@ -208,13 +281,71 @@ h4,
 .app-sidebar {
     background: var(--3f-bg-darker) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-    width: 250px;
-    transition: width 0.3s ease;
+    width: 280px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 1040;
+}
+
+/* Responsive Sidebar Behavior (Mobile Drawer) */
+@media (max-width: 991.98px) {
+    .app-sidebar {
+        position: fixed !important;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        width: 280px !important;
+        visibility: hidden;
+    }
+
+    .sidebar-open .app-sidebar {
+        transform: translateX(0);
+        visibility: visible;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .app-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Backdrop for mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 1035;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-open .sidebar-overlay {
+        display: block;
+        opacity: 1;
+    }
+}
+
+.sidebar-collapse .app-sidebar {
+    width: 0;
+    transform: translateX(-100%);
 }
 
 .sidebar-collapse .app-sidebar {
     width: 0;
     overflow: hidden;
+}
+
+/* Sidebar nav link text truncation */
+.sidebar-menu .nav-link p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 @media (min-width: 992px) {
@@ -407,4 +538,122 @@ th {
     width: 7px;
     right: -3px;
     /* Center over border */
+}
+
+/* --- Hierarchical Category Tree (MMEX Style) --- */
+.category-tree-container ul {
+    list-style: none;
+    padding-left: 24px;
+    position: relative;
+}
+
+.category-tree-container>ul {
+    padding-left: 0;
+}
+
+.category-tree-container .category-item {
+    position: relative;
+}
+
+/* Connecting lines */
+.category-tree-container .nested-tree>.category-item::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: -16px;
+    width: 1px;
+    height: calc(100% + 10px);
+    border-left: 1px dotted rgba(37, 150, 190, 0.4);
+}
+
+.category-tree-container .nested-tree>.category-item:last-child::before {
+    height: 24px;
+    /* Cap line at the last node */
+}
+
+.category-tree-container .nested-tree>.category-item::after {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: -16px;
+    width: 14px;
+    height: 1px;
+    border-top: 1px dotted rgba(37, 150, 190, 0.4);
+}
+
+.tree-expander {
+    width: 18px;
+    display: inline-flex;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.tree-expander i {
+    transition: transform 0.2s ease;
+}
+
+.fa-rotate-270 {
+    transform: rotate(-90deg);
+}
+
+.btn-xs {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+}
+
+/* --- Responsive Modals (MMEX Style) --- */
+@media (max-width: 992px) {
+
+    .modal-dialog.modal-xl,
+    .modal-dialog.modal-lg {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-body {
+        height: auto !important;
+        min-height: 300px !important;
+        max-height: 65vh !important;
+        padding: 1rem !important;
+    }
+
+    .modal-dialog-centered {
+        margin: 0.5rem;
+    }
+
+    .category-node span {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-footer {
+        padding: 1rem !important;
+        gap: 0.5rem !important;
+        flex-wrap: wrap;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 80px;
+    }
+}
+
+/* Fix for nested tree visibility on mobile */
+@media (max-width: 576px) {
+    .nested-tree {
+        padding-left: 1rem !important;
+    }
+}
+
+.neon-modal {
+    backdrop-filter: blur(15px);
+    background: rgba(10, 25, 40, 0.95) !important;
+    border: 1px solid var(--3f-primary) !important;
+    box-shadow: 0 0 20px rgba(37, 150, 190, 0.2);
+}
+
+#categoryFormModal,
+#beneficiaryFormModal {
+    z-index: 1065;
 }

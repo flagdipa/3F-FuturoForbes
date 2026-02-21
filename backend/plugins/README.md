@@ -9,7 +9,7 @@ Sistema modular extensible para 3F que permite agregar funcionalidades sin modif
 - ✅ Activación/desactivación en runtime
 - ✅ Configuración JSON flexible
 - ✅ Aislamiento de errores
-- ✅ 3 plugins incluidos (Telegram, Email, Dólar)
+- ✅ 5 plugins incluidos (Telegram, Email, Dólar, Backup, CriptoYa)
 
 ## 📁 Estructura
 
@@ -17,6 +17,7 @@ Sistema modular extensible para 3F que permite agregar funcionalidades sin modif
 backend/plugins/
 ├── __init__.py              # Package init
 ├── base.py                  # Clase BasePlugin
+├── README.md                # Esta documentación
 ├── telegram_bot/            # Plugin Telegram
 │   ├── __init__.py
 │   ├── plugin.py
@@ -25,10 +26,20 @@ backend/plugins/
 │   ├── __init__.py
 │   ├── plugin.py
 │   └── requirements.txt
-└── dolar_hoy/               # Plugin Dólar
+├── dolar_hoy/               # Plugin Dólar Argentina
+│   ├── __init__.py
+│   ├── plugin.py
+│   └── requirements.txt
+├── backup_automatico/       # Plugin Backup (NUEVO)
+│   ├── __init__.py
+│   ├── plugin.py
+│   ├── requirements.txt
+│   └── README.md
+└── criptoya_multi/          # Plugin CriptoYa Multi-País (NUEVO)
     ├── __init__.py
     ├── plugin.py
-    └── requirements.txt
+    ├── requirements.txt
+    └── README.md
 ```
 
 ## 🚀 Plugins Incluidos
@@ -114,6 +125,87 @@ backend/plugins/
   "sources": ["blue", "mep", "ccl"],
   "update_frequency": "hourly",
   "create_divisas_if_missing": true
+}
+```
+
+---
+
+### 4. Backup Automático (`backup_automatico`) 🆕
+
+**Descripción:** Crea copias de seguridad automáticas de la base de datos MySQL con soporte para AWS S3
+
+**Hooks:**
+- `daily_summary` - Ejecutar backup programado
+- `audit_event` - Loguear operaciones de backup
+
+**Características:**
+- ✅ Backup completo con `mysqldump`
+- ✅ Compresión gzip opcional
+- ✅ Almacenamiento local y AWS S3
+- ✅ Retención configurabl (eliminación automática)
+- ✅ Programación flexible (diario/semanal/mensual)
+- ✅ Notificaciones vía plugin email_smtp
+
+**Configuración:**
+```json
+{
+  "enabled": true,
+  "frequency": "daily",
+  "backup_time": "02:00",
+  "retention_days": 30,
+  "compression": true,
+  "local_path": "backups/",
+  "s3": {
+    "enabled": true,
+    "bucket": "mi-bucket",
+    "access_key": "AKIA...",
+    "secret_key": "...",
+    "region": "us-east-1"
+  },
+  "notifications": {
+    "on_success": false,
+    "on_failure": true
+  }
+}
+```
+
+---
+
+### 5. CriptoYa Multi-País (`criptoya_multi`) 🆕
+
+**Descripción:** Obtiene cotizaciones de criptomonedas de múltiples exchanges en Latinoamérica
+
+**Hooks:**
+- `daily_summary` - Actualizar cotizaciones automáticamente
+- `account_sync` - Integración con cuentas de cripto
+
+**Países Soportados (11):**
+🇦🇷 Argentina, 🇧🇴 Bolivia, 🇧🇷 Brazil, 🇨🇱 Chile, 🇨🇴 Colombia, 🇩🇴 República Dominicana, 🇲🇽 México, 🇵🇪 Perú, 🇵🇾 Paraguay, 🇺🇾 Uruguay, 🇻🇪 Venezuela
+
+**Criptomonedas:**
+BTC, ETH, USDT, USDC, DAI, SOL, BNB, XRP, ADA, AVAX, DOGE, y más de 30 adicionales
+
+**Tablas Creadas:**
+- `criptoya_config` - Configuración por usuario
+- `criptoya_paises` - Catálogo de países
+- `criptoya_exchanges` - Exchanges por país
+- `criptoya_coins` - Criptomonedas
+- `criptoya_rates` - Cotizaciones históricas
+- `criptoya_fees` - Comisiones de retiro
+- `criptoya_alertas` - Alertas de precio
+- `criptoya_favoritos` - Pares favoritos
+
+**Configuración:**
+```json
+{
+  "enabled": true,
+  "paises": ["AR", "BR", "CL", "CO", "MX"],
+  "coins": ["BTC", "ETH", "USDT", "USDC"],
+  "volumen_default": 0.1,
+  "update_interval_minutes": 5,
+  "auto_update": true,
+  "notificar_cambio_significativo": false,
+  "umbral_cambio_porcentaje": 5.0
 }
 ```
 

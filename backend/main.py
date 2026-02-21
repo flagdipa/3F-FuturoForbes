@@ -53,6 +53,7 @@ from .api.goals.router import router as goals_router
 from .api.import_rules.router import router as import_rules_router
 from .api.financial_entities.router import router as financial_entities_router
 from .api.localization.router import router as localization_router
+from .api.config.router_market import router as market_router
 from .models import * # Asegura registro de tablas de SQLModel
 from .core.scheduler import start_scheduler
 from .core.plugin_manager import plugin_manager
@@ -118,6 +119,7 @@ app.state.limiter = limiter
 
 @app.on_event("startup")
 async def on_startup():
+    import logging
     # Solo inicializar DB si está instalado
     if is_installed():
         try:
@@ -140,10 +142,8 @@ async def on_startup():
             logging.info(f"✅ Database connected: {config.settings.DATABASE_URL.split('@')[1] if '@' in config.settings.DATABASE_URL else 'Local'}")
             
         except Exception as e:
-            import logging
             logging.error(f"Error starting database: {e}")
     
-    import logging
     logging.info("🚀 FuturoForbes (3F) starting up...")
     logging.info(f"📋 Version: {config_inf.get('SISTEMA', 'version', '1.0.0')}")
 
@@ -223,6 +223,7 @@ app.include_router(reconciliation_router, prefix="/api")
 app.include_router(goals_router, prefix="/api")
 app.include_router(import_rules_router, prefix="/api")
 app.include_router(financial_entities_router, prefix="/api")
+app.include_router(market_router, prefix="/api")
 
 @app.get("/")
 async def root(request: Request):
@@ -243,6 +244,22 @@ async def forgot_password_page(request: Request):
 @app.get("/plugins")
 async def plugins_page(request: Request):
     return templates.TemplateResponse("plugins.html", {"request": request})
+
+@app.get("/forecasting")
+async def forecasting_page(request: Request):
+    return templates.TemplateResponse("forecasting.html", {"request": request})
+
+@app.get("/dolar-hoy")
+async def dolar_hoy_page(request: Request):
+    return templates.TemplateResponse("market/dolar_hoy.html", {"request": request})
+
+@app.get("/criptoya")
+async def criptoya_page(request: Request):
+    return templates.TemplateResponse("market/criptoya.html", {"request": request})
+
+@app.get("/crypto-live")
+async def crypto_live_page(request: Request):
+    return templates.TemplateResponse("market/crypto_live.html", {"request": request})
 
 @app.get("/cuentas")
 async def accounts_page(request: Request):

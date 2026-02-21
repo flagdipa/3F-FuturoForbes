@@ -92,8 +92,8 @@ class Categoria(SQLModel, table=True):
     __tablename__ = "categorias"
     id_categoria: Optional[int] = Field(default=None, primary_key=True)
     nombre_categoria: str
-    activo: int = Field(default=1)
-    id_padre: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria")
+    activo: int = Field(default=1, index=True)
+    id_padre: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria", index=True)
     color: Optional[str] = None
     notas: Optional[str] = None
     
@@ -107,18 +107,18 @@ class Beneficiario(SQLModel, table=True):
     """
     __tablename__ = "beneficiarios"
     id_beneficiario: Optional[int] = Field(default=None, primary_key=True)
-    nombre_beneficiario: str = Field(unique=True)
+    nombre_beneficiario: str = Field(unique=True, index=True)
     id_categoria: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria")
     cbu: Optional[str] = None
     numero: Optional[str] = None
     sitio_web: Optional[str] = None
     notas: Optional[str] = None
-    activo: int = Field(default=1)
+    activo: int = Field(default=1, index=True)
     patron_busqueda: Optional[str] = None
     cuit: Optional[str] = None
     direccion: Optional[str] = None
     telefono: Optional[str] = None
-    oculto: int = Field(default=0)
+    oculto: int = Field(default=0, index=True)
     banco: Optional[str] = None
     
     # Relationships
@@ -136,7 +136,7 @@ class ListaCuentas(SQLModel, table=True):
     nombre_cuenta: str = Field(unique=True)
     tipo_cuenta: str
     numero_cuenta: Optional[str] = None
-    estado: str = Field(default="Open") # Open, Closed
+    estado: str = Field(default="Open", index=True) # Open, Closed
     notas: Optional[str] = None
     id_identidad_financiera: Optional[int] = Field(default=None, foreign_key="identidades_financieras.id_identidad")
     sitio_web: Optional[str] = None
@@ -171,16 +171,16 @@ class LibroTransacciones(SQLModel, table=True):
     """
     __tablename__ = "libro_transacciones"
     id_transaccion: Optional[int] = Field(default=None, primary_key=True)
-    id_cuenta: int = Field(foreign_key="lista_cuentas.id_cuenta")
-    id_cuenta_destino: Optional[int] = Field(default=None, foreign_key="lista_cuentas.id_cuenta")
-    id_beneficiario: int = Field(foreign_key="beneficiarios.id_beneficiario")
-    codigo_transaccion: str # Withdrawal, Deposit, Transfer
+    id_cuenta: int = Field(foreign_key="lista_cuentas.id_cuenta", index=True)
+    id_cuenta_destino: Optional[int] = Field(default=None, foreign_key="lista_cuentas.id_cuenta", index=True)
+    id_beneficiario: int = Field(foreign_key="beneficiarios.id_beneficiario", index=True)
+    codigo_transaccion: str = Field(index=True) # Withdrawal, Deposit, Transfer
     monto_transaccion: Decimal = Field(max_digits=20, decimal_places=8)
-    estado: Optional[str] = None
+    estado: Optional[str] = Field(default=None, index=True)
     numero_transaccion: Optional[str] = None
     notas: Optional[str] = None
-    id_categoria: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria")
-    fecha_transaccion: Optional[str] = None
+    id_categoria: Optional[int] = Field(default=None, foreign_key="categorias.id_categoria", index=True)
+    fecha_transaccion: Optional[str] = Field(default=None, index=True)
     fecha_actualizacion: Optional[str] = None
     fecha_eliminacion: Optional[str] = None
     id_seguimiento: Optional[int] = None

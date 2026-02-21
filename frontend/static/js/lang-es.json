@@ -50,6 +50,8 @@
         "assets": "Activos",
         "stocks": "Inversiones",
         "reports": "Reportes",
+        "goals": "Metas",
+        "vault": "Comprobantes",
         "plugins": "Módulos",
         "settings": "Configuración"
     },
@@ -167,6 +169,7 @@
         "date_to": "HASTA",
         "audit_active": "AUDITORÍA ACTIVA",
         "columns": {
+            "tipo": "Tipo",
             "fecha": "Fecha",
             "hora": "Hora",
             "cuenta": "Cuenta",
@@ -403,7 +406,9 @@
             "peak_day": "DÍA PICO",
             "ai_tip": "CONSEJO IA PROACTIVO",
             "pattern_metrics": "MÉTRICAS DE PATRÓN",
-            "all_months": "TODOS LOS MESES"
+            "all_months": "TODOS LOS MESES",
+            "tooltip_no_activity": "Sin actividad",
+            "transactions": "transacciones"
         }
     }
 }

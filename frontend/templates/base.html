@@ -33,17 +33,23 @@
     <div class="app-wrapper">
         
         <!-- Navbar -->
-        <nav class="app-header navbar navbar-expand bg-body">
+        <nav class="app-header navbar navbar-expand bg-body" data-bs-theme="dark" x-data="{}">
             <div class="container-fluid">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-center">
+                    <!-- Brand / Logo Unified -->
                     <li class="nav-item">
-                        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                        <a href="/" class="brand-link px-3" style="border: none !important;">
+                            <span class="brand-text fw-bold font-orbitron text-primary">3F | <span class="text-white">Finanzas</span></span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button" id="sidebar-toggle" aria-label="Alternar barra lateral">
                             <i class="fa-solid fa-bars"></i>
                         </a>
                     </li>
                     <!-- Menú Herramientas -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú Herramientas">
                             <i class="fa-solid fa-screwdriver-wrench me-1"></i> Herramientas
                         </a>
                         <ul class="dropdown-menu border-secondary shadow-lg">
@@ -51,24 +57,24 @@
                             <li><a class="dropdown-item" href="/entidades#tipos"><i class="fa-solid fa-layer-group small me-2 text-warning"></i> Tipos de Financiera</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/cuentas"><i class="fa-solid fa-wallet small me-2 text-success"></i> Gestión de Cuentas</a></li>
-                            <li><a class="dropdown-item" href="/beneficiarios"><i class="fa-solid fa-users small me-2 text-primary"></i> Gestión de Beneficiarios</a></li>
-                            <li><a class="dropdown-item" href="/categorias"><i class="fa-solid fa-folder-tree small me-2 text-info"></i> Gestión de Categorías</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.dispatchEvent(new CustomEvent('open-beneficiary-manager'))"><i class="fa-solid fa-users small me-2 text-primary"></i> Gestión de Beneficiarios</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.dispatchEvent(new CustomEvent('open-category-manager'))"><i class="fa-solid fa-folder-tree small me-2 text-info"></i> Gestión de Categorías</a></li>
                         </ul>
                     </li>
-                    <!-- Quick Access Icons -->
+                    <!-- Quick Access Icons (MMEX Styled) -->
                     <li class="nav-item">
-                        <a class="nav-link" href="/beneficiarios" title="Beneficiarios">
-                            <i class="fa-solid fa-users"></i>
+                        <a class="nav-link" href="javascript:void(0)" @click="window.dispatchEvent(new CustomEvent('open-category-manager'))" title="Administrador de Categorías" aria-label="Gestionar Categorías">
+                            <i class="fa-solid fa-folder-tree text-warning"></i>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/categorias" title="Categorías">
-                            <i class="fa-solid fa-folder-tree"></i>
+                        <a class="nav-link" href="javascript:void(0)" @click="window.dispatchEvent(new CustomEvent('open-beneficiary-manager'))" title="Administrador de Beneficiarios">
+                            <i class="fa-solid fa-users text-info"></i>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/etiquetas" title="Etiquetas">
-                            <i class="fa-solid fa-tags"></i>
+                        <a class="nav-link" href="/programadas" title="Acciones Programadas">
+                            <i class="fa-solid fa-calendar-check"></i>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -90,7 +96,7 @@
                 <ul class="navbar-nav ms-auto">
                     <!-- Language Selector -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-label="Seleccionar idioma">
                             <i class="fa-solid fa-language me-1"></i>
                             <span x-text="$store.lang.current.toUpperCase()"></span>
                         </a>
@@ -101,7 +107,7 @@
                     </li>
                     <!-- Notifications Dropdown -->
                     <li class="nav-item dropdown" id="notifications-nav-item">
-                        <a class="nav-link" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                        <a class="nav-link" data-bs-toggle="dropdown" href="#" aria-expanded="false" aria-label="Notificaciones">
                             <i class="fa-solid fa-bell"></i>
                             <span class="navbar-badge badge rounded-pill bg-danger" id="notification-badge" style="display: none;">0</span>
                         </a>
@@ -131,7 +137,7 @@
 
                     <!-- User Menu -->
                      <li class="nav-item dropdown user-menu">
-                        <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+                        <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" aria-label="Menú de usuario">
                             <img src="https://ui-avatars.com/api/?name=Fer&background=00f2ff&color=000" class="user-image rounded-circle shadow me-2" alt="User Image" style="width: 32px; height: 32px;">
                             <span class="d-none d-lg-inline" id="user-email">Cargando...</span>
                         </a>
@@ -156,182 +162,197 @@
         
         <!-- Sidebar -->
         <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
-             <div class="sidebar-brand">
-                <a href="/" class="brand-link">
-                    <span class="brand-text fw-light">3F | Finanzas</span>
-                </a>
-            </div>
-            <div class="sidebar-wrapper">
+            <div class="sidebar-wrapper" x-data="sidebarManager">
                 <nav class="mt-2">
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
-                        <!-- Dashboard -->
+                        <!-- 1. Dashboard -->
                         <li class="nav-item">
                             <a href="/" class="nav-link">
                                 <i class="nav-icon fa-solid fa-gauge-high"></i>
                                 <p x-text="$store.lang.t('nav.dashboard')">Dashboard</p>
                             </a>
                         </li>
-                        <!-- Todas las Transacciones -->
+                        
+                        <!-- 2. Transacciones $ (Pesos) -->
                         <li class="nav-item">
-                            <a href="/transacciones" class="nav-link">
+                            <a href="/transacciones?moneda=ARS" class="nav-link">
                                 <i class="nav-icon fa-solid fa-money-bill-transfer"></i>
-                                <p x-text="$store.lang.t('nav.transactions')">Transacciones</p>
-                            </a>
-                        </li>
-                        <li class="nav-item menu-open" x-data="sidebarManager">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon fa-solid fa-wallet"></i>
-                                <p>
-                                    <span x-text="$store.lang.t('nav.accounts')">Cuentas</span>
-                                    <i class="nav-arrow fa-solid fa-chevron-right"></i>
-                                </p>
+                                <p> Transacciones $ <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
-                                <!-- Favoritas -->
-                                <li class="nav-item" x-show="filtered.favoritas.length > 0">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-star text-warning"></i>
-                                        <p>Favoritas <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="acc in filtered.favoritas" :key="acc.id_cuenta">
-                                            <li class="nav-item">
-                                                <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
-                                                    <p x-text="acc.nombre_cuenta"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Cuentas bancarias -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-building-columns text-info"></i>
-                                        <p>Bancarias <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="acc in filtered.bancarias" :key="'bank-'+acc.id_cuenta">
-                                            <li class="nav-item">
-                                                <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-circle-nodes small"></i>
-                                                    <p x-text="acc.nombre_cuenta"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Tarjetas de crédito -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-credit-card text-danger"></i>
-                                        <p>Tarjetas <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="acc in filtered.tarjetas" :key="'card-'+acc.id_cuenta">
-                                            <li class="nav-item">
-                                                <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-credit-card small"></i>
-                                                    <p x-text="acc.nombre_cuenta"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Efectivo -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-money-bill-1 text-success"></i>
-                                        <p>Efectivo <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="acc in filtered.efectivo" :key="'cash-'+acc.id_cuenta">
-                                            <li class="nav-item">
-                                                <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-wallet small"></i>
-                                                    <p x-text="acc.nombre_cuenta"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Cuentas a plazo -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-clock text-primary"></i>
-                                        <p>A Plazo <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="acc in filtered.plazo" :key="'term-'+acc.id_cuenta">
-                                            <li class="nav-item">
-                                                <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-vault small"></i>
-                                                    <p x-text="acc.nombre_cuenta"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Cartera de acciones (Stocks) -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-chart-line text-accent"></i>
-                                        <p>Acciones <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="stk in investments" :key="'stk-'+stk.id_inversion">
-                                            <li class="nav-item">
-                                                <a :href="'/inversiones?id=' + stk.id_inversion" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-arrow-trend-up small text-dim"></i>
-                                                    <p x-text="stk.simbolo"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </li>
-                                <!-- Activos -->
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-box text-secondary"></i>
-                                        <p>Activos <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
-                                    </a>
-                                    <ul class="nav nav-treeview ms-3">
-                                        <template x-for="ast in assets" :key="'ast-'+ast.id_activo">
-                                            <li class="nav-item">
-                                                <a :href="'/activos?id=' + ast.id_activo" class="nav-link">
-                                                    <i class="nav-icon fa-solid fa-cube small text-dim"></i>
-                                                    <p x-text="ast.nombre_activo"></p>
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
+                                <template x-for="acc in filtered.cuentas_ars" :key="'ars-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                                <li class="nav-item" x-show="filtered.cuentas_ars.length === 0">
+                                    <span class="nav-link text-dim small italic">Sin cuentas $...</span>
                                 </li>
                             </ul>
                         </li>
+
+                        <!-- 3. Transacciones u$s (Dólares) -->
                         <li class="nav-item">
-                            <a href="/beneficiarios" class="nav-link">
-                                <i class="nav-icon fa-solid fa-users"></i>
-                                <p x-text="$store.lang.t('nav.beneficiaries')">Beneficiarios</p>
+                            <a href="/transacciones?moneda=USD" class="nav-link">
+                                <i class="nav-icon fa-solid fa-dollar-sign text-success"></i>
+                                <p> Transacciones u$s <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.cuentas_usd" :key="'usd-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#2ecc71') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                                <li class="nav-item" x-show="filtered.cuentas_usd.length === 0">
+                                    <span class="nav-link text-dim small italic">Sin cuentas u$s...</span>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- 3. Cuentas Favoritas -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fa-solid fa-star text-warning"></i>
+                                <p> Favoritas <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.favoritas" :key="'fav-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                                <li class="nav-item" x-show="filtered.favoritas.length === 0">
+                                    <span class="nav-link text-dim small italic">Sin favoritas...</span>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- 4. Cuentas Bancarias -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fa-solid fa-building-columns text-info"></i>
+                                <p> Bancarias <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.bancarias" :key="'bank-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </li>
+
+                        <!-- 5. Tarjetas de Crédito -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fa-solid fa-credit-card text-danger"></i>
+                                <p> Tarjetas <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.tarjetas" :key="'card-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </li>
+
+                        <!-- 6. Efectivo -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fa-solid fa-wallet text-success"></i>
+                                <p> Efectivo <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.efectivo" :key="'cash-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </li>
+
+                        <!-- 7. Plazo Fijo -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fa-solid fa-clock text-warning"></i>
+                                <p> Plazo Fijo <i class="nav-arrow fa-solid fa-chevron-right"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <template x-for="acc in filtered.plazo_fijo" :key="'term-'+acc.id_cuenta">
+                                    <li class="nav-item">
+                                        <a :href="'/transacciones?id_cuenta=' + acc.id_cuenta" class="nav-link">
+                                            <i class="nav-icon fa-solid fa-circle" :style="'color:' + (acc.color_cuenta || '#fff') + '; font-size: 0.5rem;'"></i>
+                                            <p x-text="acc.nombre_cuenta"></p>
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </li>
+                        <!-- 8. Inversiones -->
+                        <li class="nav-item">
+                            <a href="/inversiones" class="nav-link">
+                                <i class="nav-icon fa-solid fa-arrow-trend-up text-accent"></i>
+                                <p x-text="$store.lang.t('nav.stocks')">Inversiones</p>
                             </a>
                         </li>
+
+                        <!-- 9. Activos -->
                         <li class="nav-item">
-                            <a href="/categorias" class="nav-link">
-                                <i class="nav-icon fa-solid fa-folder-tree"></i>
-                                <p x-text="$store.lang.t('nav.categories')">Categorías</p>
+                            <a href="/activos" class="nav-link">
+                                <i class="nav-icon fa-solid fa-building text-secondary"></i>
+                                <p x-text="$store.lang.t('nav.assets')">Activos</p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="/etiquetas" class="nav-link">
-                                <i class="nav-icon fa-solid fa-tags"></i>
-                                <p x-text="$store.lang.t('nav.tags')">Etiquetas</p>
+
+                        <!-- Plugins Dinámicos (Mercado) -->
+                        <li class="nav-item" x-show="isPluginActive('dolar_hoy')" x-cloak>
+                            <a href="/dolar-hoy" class="nav-link">
+                                <i class="nav-icon fa-solid fa-hand-holding-dollar text-success"></i>
+                                <p>Dólar Hoy</p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="/plugins" class="nav-link">
-                                <i class="nav-icon fa-solid fa-puzzle-piece"></i>
-                                <p x-text="$store.lang.t('nav.plugins')">Módulos</p>
+                        <li class="nav-item" x-show="isPluginActive('criptoya_multi')" x-cloak>
+                            <a href="/criptoya" class="nav-link">
+                                <i class="nav-icon fa-solid fa-chart-pie text-warning"></i>
+                                <p>CriptoYa</p>
                             </a>
                         </li>
+                        <li class="nav-item" x-show="isPluginActive('crypto_tracker')" x-cloak>
+                            <a href="/crypto-live" class="nav-link">
+                                <i class="nav-icon fa-solid fa-bolt text-info"></i>
+                                <p>Crypto Live</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header text-uppercase mt-3 small opacity-50">INTELIGENCIA</li>
+                        <li class="nav-item">
+                            <a href="/forecasting" class="nav-link">
+                                <i class="nav-icon fa-solid fa-robot text-primary"></i>
+                                <p>IA Forecasting</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header text-uppercase mt-3 small opacity-50">SISTEMA</li>
+
                         <li class="nav-item">
                             <a href="/metas" class="nav-link">
                                 <i class="nav-icon fa-solid fa-bullseye"></i>
@@ -345,27 +366,9 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/activos" class="nav-link">
-                                <i class="nav-icon fa-solid fa-building"></i>
-                                <p x-text="$store.lang.t('nav.assets')">Activos</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="/vault" class="nav-link">
                                 <i class="nav-icon fa-solid fa-vault"></i>
-                                <p x-text="$store.lang.t('nav.vault') || 'Bóveda Digital'">Bóveda Digital</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/audit" class="nav-link">
-                                <i class="nav-icon fa-solid fa-shield-halved"></i>
-                                <p x-text="$store.lang.t('nav.audit') || 'Auditoría'">Auditoría</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/inversiones" class="nav-link">
-                                <i class="nav-icon fa-solid fa-arrow-trend-up"></i>
-                                <p x-text="$store.lang.t('nav.stocks')">Inversiones</p>
+                                <p x-text="$store.lang.t('nav.vault') || 'Comprobantes'">Comprobantes</p>
                             </a>
                         </li>
                          <li class="nav-item">
@@ -375,18 +378,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/reportes/flujo-caja" class="nav-link">
-                                <i class="nav-icon fa-solid fa-chart-bar"></i>
-                                <p x-text="$store.lang.t('reports.cashflow.title')">Flujo vs Presupuesto</p>
+                            <a href="/plugins" class="nav-link">
+                                <i class="nav-icon fa-solid fa-puzzle-piece text-info"></i>
+                                <p x-text="$store.lang.t('nav.plugins') || 'Módulos'">Módulos</p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="/reportes/heatmap" class="nav-link">
-                                <i class="nav-icon fa-solid fa-fire-flame-curved text-warning"></i>
-                                <p x-text="$store.lang.t('reports.heatmap.title')">Hábitos de Gasto</p>
-                            </a>
-                        </li>
-
                         <li class="nav-item">
                             <a href="/settings" class="nav-link">
                                 <i class="nav-icon fa-solid fa-gears"></i>
@@ -432,8 +428,29 @@
     <script src="/static/js/layout-manager.js"></script>
     <!-- Theme Manager (for dynamic theming) -->
     <script src="/static/js/theme-manager.js"></script>
+    <!-- Category Manager (MMEX Style) -->
+    <script src="/static/js/category-manager.js"></script>
+    <!-- Beneficiary Manager (MMEX Style) -->
+    <script src="/static/js/beneficiary-manager.js"></script>
     <!-- Notification Manager (for real-time notifications) -->
     <script src="/static/js/notification-manager.js"></script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Global Modals Content -->
+    {% include "modals/category_manager.html" %}
+    {% include "modals/beneficiary_manager.html" %}
+
+    <!-- Overlay for mobile sidebar -->
+    <div class="sidebar-overlay" onclick="document.body.classList.remove('sidebar-open')"></div>
+
+    <script>
+        // Custom mobile toggle logic
+        document.getElementById('sidebar-toggle')?.addEventListener('click', (e) => {
+            if (window.innerWidth < 992) {
+                e.preventDefault();
+                document.body.classList.toggle('sidebar-open');
+            }
+        });
+    </script>
 </body>
 </html>

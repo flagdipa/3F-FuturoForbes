@@ -4,8 +4,9 @@ Utilidad para verificar el estado de instalación del sistema 3F
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from functools import lru_cache
 
-
+@lru_cache(maxsize=1)
 def is_installed() -> bool:
     """
     Verifica si el sistema está instalado correctamente

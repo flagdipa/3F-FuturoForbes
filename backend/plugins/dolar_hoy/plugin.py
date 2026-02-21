@@ -7,7 +7,8 @@ from datetime import datetime
 from sqlmodel import Session, select
 from backend.plugins.base import BasePlugin
 from backend.core.database import engine
-from backend.models.models import Divisa, HistorialDivisa
+from backend.models.models import Divisa
+from backend.models.models_extended import HistorialDivisa
 
 
 class DolarHoyPlugin(BasePlugin):

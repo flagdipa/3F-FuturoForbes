@@ -1,0 +1,219 @@
+<!-- Category Manager Modal (MMEX Style) -->
+<div class="modal fade resizable-modal" id="categoryManagerModal" tabindex="-1" aria-hidden="true" x-data="categoryTreeManager">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content neon-modal bg-body-secondary border-primary shadow-lg" style="border: 1px solid var(--3f-primary);">
+            <div class="modal-header py-2" style="background: rgba(37, 150, 190, 0.15); border-bottom: 1px solid var(--3f-border);">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-folder-tree me-2"></i> Administrador de categorías
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <!-- Toolbar -->
+            <div class="d-flex align-items-center gap-1 p-2 border-bottom border-secondary border-opacity-10 bg-black bg-opacity-30">
+                <button class="btn btn-dark btn-xs border-secondary border-opacity-25 px-2 py-1 extra-small" @click="collapseAll">Contraer todo</button>
+                <button class="btn btn-dark btn-xs border-secondary border-opacity-25 px-2 py-1 extra-small" @click="expandAll">Ampliar todo</button>
+                <button class="btn btn-dark btn-xs border-secondary border-opacity-25 px-2 py-1 extra-small" @click="loadData">Mostrar todo</button>
+                <div class="ms-auto d-flex gap-1 align-items-center">
+                    <button class="btn btn-dark btn-xs border-secondary border-opacity-25 px-2 py-1" 
+                            title="Combinar categorías"
+                            @click="openMergeModal">
+                        <i class="fa-solid fa-network-wired text-primary"></i>
+                    </button>
+                    <button class="btn btn-dark btn-xs border-secondary border-opacity-25 px-2 py-1 extra-small">Eliminar Ajustes</button>
+                </div>
+            </div>
+            
+            <div class="modal-body p-0 d-flex flex-column" style="min-height: 400px; max-height: 70vh; background: rgba(7, 30, 38, 0.4);">
+                <!-- Tree Area -->
+                <div class="flex-grow-1 overflow-auto p-4 custom-scrollbar">
+                     <p class="text-primary extra-small fw-bold border-bottom border-primary border-opacity-20 pb-1 mb-3 font-orbitron">CATEGORÍAS</p>
+                     
+                     <div class="category-tree-container">
+                         <ul class="list-unstyled ps-0" id="sortable-categories">
+                             <!-- Recursive Template using a partial or JS rendering if needed, but for simplicity let's use a nested loop for 2 levels (most common) or a custom renderer -->
+                             <template x-for="cat in treeData" :key="cat.id_categoria">
+                                 <li class="category-item mb-1" :data-id="cat.id_categoria">
+                                     <div class="category-node d-flex align-items-center py-1 px-2 rounded cursor-pointer transition" 
+                                          :class="selectedId === cat.id_categoria ? 'bg-primary bg-opacity-25 border border-primary' : 'hover-bg-white-10'"
+                                          @click="selectCat(cat)"
+                                          @dblclick="editCat">
+                                          <span class="tree-expander me-1" @click.stop="toggleCollapse(cat)">
+                                              <i class="fa-solid fa-caret-down text-dim extra-small" 
+                                                 :class="cat.collapsed ? 'fa-rotate-270' : ''"
+                                                 x-show="cat.children && cat.children.length > 0"></i>
+                                          </span>
+                                          <i class="fa-solid fa-folder-tree me-2 text-primary opacity-50 small"></i>
+                                          <span x-text="cat.nombre_categoria" class="extra-small text-white"></span>
+                                     </div>
+                                     
+                                     <!-- Nested subcategories -->
+                                     <ul class="nested-tree list-unstyled ps-4 mt-1 border-start border-secondary border-opacity-10 ms-2" 
+                                         x-show="!cat.collapsed"
+                                         :id="'nested-' + cat.id_categoria">
+                                         <template x-for="sub in cat.children" :key="sub.id_categoria">
+                                             <li class="category-item mb-1" :data-id="sub.id_categoria">
+                                                 <div class="category-node d-flex align-items-center py-1 px-2 rounded cursor-pointer transition" 
+                                                      :class="selectedId === sub.id_categoria ? 'bg-primary bg-opacity-25 border border-primary' : 'hover-bg-white-10'"
+                                                      @click="selectCat(sub)"
+                                                      @dblclick="editCat">
+                                                      <span class="tree-expander me-1"></span> <!-- Spacing -->
+                                                      <i class="fa-solid fa-angle-right me-2 text-dim opacity-50 extra-small"></i>
+                                                      <span x-text="sub.nombre_categoria" class="extra-small text-dim"></span>
+                                                 </div>
+                                             </li>
+                                         </template>
+                                     </ul>
+                                 </li>
+                             </template>
+                         </ul>
+                         <div x-show="loading" class="text-center py-5 opacity-50">
+                             <div class="spinner-border spinner-border-sm text-primary"></div>
+                         </div>
+                     </div>
+                </div>
+
+                <!-- Bottom Search (MMEX Style) -->
+                <div class="p-3 border-top border-secondary border-opacity-10 bg-black bg-opacity-20">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="extra-small text-dim text-uppercase fw-bold">Buscar</span>
+                        <div class="input-group input-group-sm flex-grow-1">
+                            <span class="input-group-text bg-black bg-opacity-50 border-secondary border-opacity-25 text-dim"><i class="fa-solid fa-search"></i></span>
+                            <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white extra-small" 
+                                   placeholder="Filtrar categorías..." x-model="searchQuery">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons (MMEX Style) -->
+            <div class="modal-footer justify-content-center border-0 py-3 bg-black bg-opacity-40 gap-2">
+                <button class="btn btn-dark btn-sm neon-border px-4 py-1 extra-small" @click="createCat">Nuevo</button>
+                <button class="btn btn-dark btn-sm neon-border px-4 py-1 extra-small" @click="editCat" :disabled="!selectedId">Editar</button>
+                <button class="btn btn-dark btn-sm border-danger border-opacity-20 text-danger px-4 py-1 extra-small" @click="deleteCat" :disabled="!selectedId">Borrar</button>
+                <button class="btn btn-outline-secondary btn-sm px-4 py-1 extra-small" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-xs { padding: 0.1rem 0.4rem; font-size: 0.7rem; }
+    .extra-small { font-size: 0.75rem !important; }
+    .tree-expander { width: 14px; display: inline-flex; align-items: center; justify-content: center; }
+    .hover-bg-white-10:hover { background: rgba(255, 255, 255, 0.05); }
+    .border-primary { border-color: var(--3f-primary) !important; }
+    
+    /* Resizable Modal Support */
+    .resizable-modal .modal-content {
+        resize: both;
+        overflow: hidden;
+        min-width: 300px;
+        min-height: 200px;
+    }
+    .resizable-modal .modal-body {
+        overflow-y: auto;
+    }
+</style>
+
+<!-- Category Form Modal (Sub-window) -->
+<div class="modal fade" id="categoryFormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" x-data="{ ...categoryTreeManager }">
+        <div class="modal-content neon-modal bg-body-tertiary border-primary shadow-lg">
+            <div class="modal-header py-2" style="background: rgba(37, 150, 190, 0.1);">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-edit me-2"></i> <span x-text="$store.catForm?.isEdit ? 'Editar Categoría' : 'Nueva Categoría'"></span>
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" x-data="{}">
+                <div class="mb-3">
+                    <label class="form-label extra-small text-dim text-uppercase">Nombre de la Categoría</label>
+                    <input type="text" class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                           x-model="$store.catForm.nombre_categoria" placeholder="Ej: Alimentación">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label extra-small text-dim text-uppercase">Categoría Superior</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-black bg-opacity-50 border-secondary border-opacity-25 text-dim"><i class="fa-solid fa-folder"></i></span>
+                        <select class="form-select bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                                x-model.number="$store.catForm.id_padre">
+                            <option :value="null">Raíz (Ninguna)</option>
+                            <template x-for="c in $store.catForm.categories.filter(x => x.id_categoria !== $store.catForm.id_categoria).sort((a,b) => a.full_name.localeCompare(b.full_name))">
+                                <option :value="c.id_categoria" x-text="c.full_name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label extra-small text-dim text-uppercase">Notas</label>
+                    <textarea class="form-control bg-black bg-opacity-50 border-secondary border-opacity-25 text-white" 
+                              x-model="$store.catForm.notas" rows="2" placeholder="Opcional..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-black bg-opacity-20">
+                <button class="btn btn-outline-secondary btn-sm px-4 extra-small" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary btn-sm px-4 extra-small fw-bold" @click="$dispatch('save-category')">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Combine Categories Modal (MMEX Style) -->
+<div class="modal fade" id="categoryMergeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" x-data="{ ...categoryTreeManager }">
+        <div class="modal-content neon-modal bg-body-tertiary border-primary shadow-lg">
+            <div class="modal-header py-2" style="background: rgba(37, 150, 190, 0.1);">
+                <h6 class="modal-title font-orbitron text-primary fw-bold mb-0">
+                    <i class="fa-solid fa-network-wired me-2"></i> Combinar categorías
+                </h6>
+                <button type="button" class="btn-close btn-close-white scale-75" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" x-data="{}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label extra-small text-dim text-uppercase">Origen:</label>
+                        <select class="form-select bg-black bg-opacity-50 border-secondary border-opacity-25 text-white extra-small" 
+                                x-model="$store.mergeData.id_origen" @change="$dispatch('fetch-merge-stats')">
+                            <option value="">Seleccione origen...</option>
+                            <template x-for="c in $store.catForm.categories.sort((a,b) => a.full_name.localeCompare(b.full_name))">
+                                <option :value="c.id_categoria" x-text="c.full_name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label extra-small text-dim text-uppercase">Destino:</label>
+                        <select class="form-select bg-black bg-opacity-50 border-secondary border-opacity-25 text-white extra-small" 
+                                x-model="$store.mergeData.id_destino">
+                            <option value="">Seleccione destino...</option>
+                            <template x-for="c in $store.catForm.categories.filter(x => x.id_categoria != $store.mergeData.id_origen).sort((a,b) => a.full_name.localeCompare(b.full_name))">
+                                <option :value="c.id_categoria" x-text="c.full_name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-check mt-3 mb-4">
+                    <input class="form-check-input" type="checkbox" id="deleteSource" x-model="$store.mergeData.eliminar_origen">
+                    <label class="form-check-label extra-small text-white" for="deleteSource">
+                        Eliminar categoría de origen después de la combinación (si no tiene subcategorías)
+                    </label>
+                </div>
+
+                <div class="stats-box p-3 rounded bg-black bg-opacity-30 border border-secondary border-opacity-10">
+                    <p class="extra-small text-dim mb-1">Registros encontrados en las transacciones: <span class="text-white fw-bold" x-text="$store.mergeData.stats.transacciones"></span></p>
+                    <p class="extra-small text-dim mb-1">Registros encontrados en las transacciones divididas: <span class="text-white fw-bold" x-text="$store.mergeData.stats.divisiones"></span></p>
+                    <p class="extra-small text-dim mb-1">Registros encontrados en transacciones programadas: <span class="text-white fw-bold" x-text="$store.mergeData.stats.programadas"></span></p>
+                    <p class="extra-small text-dim mb-1">Registros encontrados en transacciones divididas programadas: <span class="text-white fw-bold" x-text="$store.mergeData.stats.divisiones_programadas"></span></p>
+                    <p class="extra-small text-dim mb-1">Registros encontrados como categoría del beneficiario por defecto: <span class="text-white fw-bold" x-text="$store.mergeData.stats.beneficiarios"></span></p>
+                    <p class="extra-small text-dim mb-0">Presupuestos encontrados: <span class="text-white fw-bold" x-text="$store.mergeData.stats.presupuestos"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-black bg-opacity-20">
+                <button class="btn btn-dark btn-sm px-4 extra-small" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-primary btn-sm px-4 extra-small fw-bold" 
+                        @click="$dispatch('execute-merge')"
+                        :disabled="!$store.mergeData.id_origen || !$store.mergeData.id_destino">Combinar</button>
+            </div>
+        </div>
+    </div>
+</div>

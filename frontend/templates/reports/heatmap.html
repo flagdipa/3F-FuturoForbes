@@ -12,12 +12,12 @@
                 <p class="text-dim small mb-0" x-text="$store.lang.t('reports.heatmap.analysis_terminal')">TERMINAL DE ANÁLISIS TEMPORAL | STATUS: ONLINE</p>
             </div>
             <div class="d-flex gap-2">
-                <select class="form-select neon-input form-select-sm" x-model.number="filtros.year" @change="cargarDatos()">
+                <select class="form-select neon-input form-select-sm" x-model.number="filtros.year" @change="cargarDatos()" aria-label="Filtrar por año">
                     <template x-for="y in years">
                         <option :value="y" x-text="y"></option>
                     </template>
                 </select>
-                <select class="form-select neon-input form-select-sm" x-model.number="filtros.month" @change="cargarDatos()">
+                <select class="form-select neon-input form-select-sm" x-model.number="filtros.month" @change="cargarDatos()" aria-label="Filtrar por mes">
                     <option value="0" x-text="$store.lang.t('reports.heatmap.all_months')">TODOS LOS MESES</option>
                     <template x-for="(name, index) in monthNames" :key="index">
                         <option :value="index + 1" x-text="name"></option>
@@ -257,8 +257,11 @@ document.addEventListener('alpine:init', () => {
 
         getCellTitle(d, h) {
             const cell = this.getCell(d, h);
-            if (!cell || cell.count === 0) return `${this.days[d-1]} ${h}h: Sin actividad`;
-            return `${this.days[d-1]} ${h}h: ${cell.count} transacciones | ${CurrencyUtils.formatCurrency(cell.value)}`;
+            const noActivity = this.$store.lang.t('reports.heatmap.tooltip_no_activity') || 'Sin actividad';
+            const txLabel = this.$store.lang.t('reports.heatmap.transactions') || 'transacciones';
+            
+            if (!cell || cell.count === 0) return `${this.days[d-1]} ${h}h: ${noActivity}`;
+            return `${this.days[d-1]} ${h}h: ${cell.count} ${txLabel} | ${CurrencyUtils.formatCurrency(cell.value)}`;
         }
     }));
 });

@@ -41,8 +41,12 @@ def listar_transacciones(
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
     busqueda: Optional[str] = None,
+    moneda: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
+    # Build a separate count query (no joinedload — avoids subquery issues)
+    count_query = select(func.count()).select_from(LibroTransacciones)
+
     # Base query with eager loading
     query = (
         select(LibroTransacciones)
@@ -53,32 +57,51 @@ def listar_transacciones(
         )
     )
     
-    # Filter by user if possible (assuming id_usuario exists in schema)
-    # query = query.where(LibroTransacciones.id_usuario == current_user.id_usuario)
-    
     if id_etiqueta:
         query = query.join(TransaccionEtiqueta, LibroTransacciones.id_transaccion == TransaccionEtiqueta.id_transaccion)\
                      .where(TransaccionEtiqueta.id_etiqueta == id_etiqueta)
+        count_query = count_query.join(TransaccionEtiqueta, LibroTransacciones.id_transaccion == TransaccionEtiqueta.id_transaccion)\
+                                 .where(TransaccionEtiqueta.id_etiqueta == id_etiqueta)
+
+    if moneda:
+        # Filter by currency joining with ListaCuentas and Divisa
+        from ...models.models import Divisa
+        query = query.join(ListaCuentas, LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta)\
+                     .join(Divisa, ListaCuentas.id_divisa == Divisa.id_divisa)\
+                     .where(Divisa.codigo_iso == moneda)
+        count_query = count_query.join(ListaCuentas, LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta)\
+                                 .join(Divisa, ListaCuentas.id_divisa == Divisa.id_divisa)\
+                                 .where(Divisa.codigo_iso == moneda)
         
     if id_cuenta:
         query = query.where(LibroTransacciones.id_cuenta == id_cuenta)
+        count_query = count_query.where(LibroTransacciones.id_cuenta == id_cuenta)
+        
     if id_beneficiario:
         query = query.where(LibroTransacciones.id_beneficiario == id_beneficiario)
+        count_query = count_query.where(LibroTransacciones.id_beneficiario == id_beneficiario)
+        
     if id_categoria:
         query = query.where(LibroTransacciones.id_categoria == id_categoria)
+        count_query = count_query.where(LibroTransacciones.id_categoria == id_categoria)
     if fecha_inicio:
         query = query.where(LibroTransacciones.fecha_transaccion >= fecha_inicio)
+        count_query = count_query.where(LibroTransacciones.fecha_transaccion >= fecha_inicio)
     if fecha_fin:
         query = query.where(LibroTransacciones.fecha_transaccion <= fecha_fin)
+        count_query = count_query.where(LibroTransacciones.fecha_transaccion <= fecha_fin)
     if busqueda:
         query = query.where(
             (LibroTransacciones.notas.contains(busqueda)) | 
             (LibroTransacciones.numero_transaccion.contains(busqueda))
         )
+        count_query = count_query.where(
+            (LibroTransacciones.notas.contains(busqueda)) | 
+            (LibroTransacciones.numero_transaccion.contains(busqueda))
+        )
     
-    # Calculate total before limit/offset
-    total_query = select(func.count()).select_from(query.subquery())
-    total = session.exec(total_query).one()
+    # Calculate total using the dedicated count query
+    total = session.exec(count_query).one()
         
     # Apply ordering and pagination
     query = query.order_by(LibroTransacciones.id_transaccion.desc()).offset(offset).limit(limit)
@@ -99,37 +122,22 @@ def listar_transacciones(
     from decimal import Decimal
     running_balances = {}
     
-    # Only calculate if filtering by a single account and utilizing default sort (ID DESC)
-    # Ideally should check for sort params if/when implemented
     if id_cuenta and results:
-        # 1. Get Account Initial Balance
-        from ...models.models import ListaCuentas
         account = session.get(ListaCuentas, id_cuenta)
         initial_balance = account.saldo_inicial if account else Decimal(0)
-
-        # 2. Get Sum of ALL transactions for this account (Total Current Balance)
         total_sum_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(LibroTransacciones.id_cuenta == id_cuenta)
         total_sum = session.exec(total_sum_query).one() or Decimal(0)
         current_balance = initial_balance + total_sum
-
-        # 3. Calculate "Future" movement (transactions newer than the first one in this page)
         newest_id_in_page = results[0].id_transaccion
-        
         future_sum_query = select(func.sum(LibroTransacciones.monto_transaccion)).where(
             LibroTransacciones.id_cuenta == id_cuenta,
             LibroTransacciones.id_transaccion > newest_id_in_page
         )
         future_sum = session.exec(future_sum_query).one() or Decimal(0)
-
-        # 4. Determine Balance for the first row (Top of page)
-        # Balance After Row 0 = Total Balance - (Sum of transactions that happened AFTER Row 0)
         starting_balance = current_balance - future_sum
-        
-        # 5. Iterate and assign downwards
         current_iter_balance = starting_balance
         for tx in results:
             running_balances[tx.id_transaccion] = current_iter_balance
-            # Balance(Previous/Older) = Balance(Current) - Amount(Current)
             current_iter_balance = current_iter_balance - tx.monto_transaccion
 
     data = []
@@ -175,29 +183,15 @@ def actualizar_transaccion(
     
     # Actualizar Etiquetas (M:N)
     if tx_in.etiquetas is not None:
-        # Borrar previas
-        previas = session.exec(
-            select(TransaccionEtiqueta)
-            .where(TransaccionEtiqueta.id_transaccion == tx_id)
-        ).all()
-        for p in previas:
-            session.delete(p)
-        
-        # Agregar nuevas
+        previas = session.exec(select(TransaccionEtiqueta).where(TransaccionEtiqueta.id_transaccion == tx_id)).all()
+        for p in previas: session.delete(p)
         for tag_id in tx_in.etiquetas:
             session.add(TransaccionEtiqueta(id_transaccion=tx_id, id_etiqueta=tag_id))
 
-    # Actualizar Divisiones si corresponde
+    # Actualizar Divisiones
     if tx_in.es_dividida:
-        # Borrar previas
-        viejas = session.exec(
-            select(TransaccionDividida)
-            .where(TransaccionDividida.id_transaccion == tx_id)
-        ).all()
-        for v in viejas:
-            session.delete(v)
-        
-        # Agregar nuevas
+        viejas = session.exec(select(TransaccionDividida).where(TransaccionDividida.id_transaccion == tx_id)).all()
+        for v in viejas: session.delete(v)
         if tx_in.divisiones:
             for split in tx_in.divisiones:
                 db_split = TransaccionDividida(
@@ -208,38 +202,19 @@ def actualizar_transaccion(
                 )
                 session.add(db_split)
     else:
-        # Si dejó de ser dividida, borrar cualquier rastro
-        viejas = session.exec(
-            select(TransaccionDividida)
-            .where(TransaccionDividida.id_transaccion == tx_id)
-        ).all()
-        for v in viejas:
-            session.delete(v)
+        viejas = session.exec(select(TransaccionDividida).where(TransaccionDividida.id_transaccion == tx_id)).all()
+        for v in viejas: session.delete(v)
 
-    # UN SOLO COMMIT AL FINAL
     session.commit()
     session.refresh(db_tx)
-    
-    # Recargar etiquetas para el enriquecimiento
     tags_query = select(TransaccionEtiqueta.id_etiqueta).where(TransaccionEtiqueta.id_transaccion == tx_id)
     tags = session.exec(tags_query).all()
-    
     return _enriquecer_rapido(db_tx, tags)
 
 @router.get("/{tx_id}/divisiones", response_model=List[DivisionCrear])
 def obtener_divisiones_transaccion(tx_id: int, session: Session = Depends(get_session)):
-    """Obtiene el desglose de una transacción dividida"""
-    splits = session.exec(
-        select(TransaccionDividida)
-        .where(TransaccionDividida.id_transaccion == tx_id)
-    ).all()
-    
-    # Mapear a schema de salida (DivisionCrear es compatible)
-    return [DivisionCrear(
-        id_categoria=s.id_categoria,
-        monto_division=s.monto_division,
-        notas=s.notas
-    ) for s in splits]
+    splits = session.exec(select(TransaccionDividida).where(TransaccionDividida.id_transaccion == tx_id)).all()
+    return [DivisionCrear(id_categoria=s.id_categoria, monto_division=s.monto_division, notas=s.notas) for s in splits]
 
 @router.post("/", response_model=TransaccionLectura)
 async def crear_transaccion(
@@ -258,13 +233,10 @@ async def crear_transaccion(
         db_tx.fecha_transaccion = datetime.utcnow().isoformat()
         
     session.add(db_tx)
-    # Flush to get the ID without committing yet
     session.flush()
     
-    # Log creation
     audit_service.log(session, current_user.id_usuario, "CREATE", "Transaccion", db_tx.id_transaccion, tx_in.dict(exclude={"divisiones", "etiquetas"}))
     
-    # Gestionar Etiquetas (M:N)
     tags = []
     if tx_in.etiquetas:
         for tag_id in tx_in.etiquetas:
@@ -273,35 +245,12 @@ async def crear_transaccion(
     
     if tx_in.es_dividida and tx_in.divisiones:
         for split in tx_in.divisiones:
-            db_split = TransaccionDividida(
-                id_transaccion=db_tx.id_transaccion,
-                id_categoria=split.id_categoria,
-                monto_division=split.monto_division,
-                notas=split.notas
-            )
+            db_split = TransaccionDividida(id_transaccion=db_tx.id_transaccion, id_categoria=split.id_categoria, monto_division=split.monto_division, notas=split.notas)
             session.add(db_split)
     
-    # UN SOLO COMMIT AL FINAL
     session.commit()
     session.refresh(db_tx)
-    
-    # Disparar hook de plugin
-    await plugin_manager.call_hook(
-        "transaction_created",
-        transaction=db_tx,
-        user=current_user
-    )
-    
-    # Notify about high value transaction (post-commit)
-    if db_tx.monto_transaccion >= 1000:
-        from ..notifications.router import notify_info
-        await notify_info(
-            user_id=current_user.id_usuario,
-            title="Transacción Elevada",
-            message=f"Se ha registrado una transacción de {db_tx.monto_transaccion} en la cuenta.",
-            session=session
-        )
-        
+    await plugin_manager.call_hook("transaction_created", transaction=db_tx, user=current_user)
     return _enriquecer_rapido(db_tx, tags)
 
 @router.delete("/{tx_id}")
@@ -310,25 +259,10 @@ async def eliminar_transaccion(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Elimina una transacción y sus dependencias (divisiones, etiquetas)"""
     db_tx = session.get(LibroTransacciones, tx_id)
     if not db_tx:
         raise HTTPException(status_code=404, detail="Transacción no encontrada")
-    
-    # Log deletion
     audit_service.log(session, current_user.id_usuario, "DELETE", "Transaccion", tx_id, {"monto": float(db_tx.monto_transaccion)})
-    
     session.delete(db_tx)
     session.commit()
-    
-    # Notify about deletion
-    from ..notifications.router import notify_warning
-    await notify_warning(
-        user_id=current_user.id_usuario,
-        title="Transacción Eliminada",
-        message=f"Se ha eliminado una transacción del historial.",
-        session=session
-    )
-    
     return {"message": "Transacción eliminada"}
-

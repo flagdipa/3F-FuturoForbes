@@ -2,16 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from ...core.database import get_session
 from ...models.models import Categoria, Usuario
-from .schemas import CategoriaCrear, CategoriaLectura, CategoriaArbol
+from .schemas import CategoriaCrear, CategoriaLectura, CategoriaArbol, CategoriaUpdate, CategoriaCombinar, CategoriaStats
 from ..base_crud import BaseCRUDService
 from ..schemas.common import PaginatedResponse
 from ..auth.deps import get_current_user
+from .service import category_ext_service
 from typing import List
 
 router = APIRouter(prefix="/categorias", tags=["Categorías"])
 
 # Initialize generic service
-category_service = BaseCRUDService[Categoria, CategoriaCrear, CategoriaCrear](Categoria)
+category_service = BaseCRUDService[Categoria, CategoriaCrear, CategoriaUpdate](Categoria)
 
 @router.get("/", response_model=PaginatedResponse[CategoriaLectura])
 def listar_categorias(
@@ -67,7 +68,7 @@ def obtener_categoria(categoria_id: int, session: Session = Depends(get_session)
 @router.put("/{categoria_id}", response_model=CategoriaLectura)
 def actualizar_categoria(
     categoria_id: int,
-    categoria_in: CategoriaCrear, # Using CategoriaCrear for now or CategoriaUpdate
+    categoria_in: CategoriaUpdate,
     request: Request,
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
@@ -102,3 +103,21 @@ def eliminar_categoria(
     if not success:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     return {"message": "Categoría eliminada correctamente"}
+@router.get("/{categoria_id}/stats", response_model=CategoriaStats)
+def obtener_estadisticas_categoria(categoria_id: int, session: Session = Depends(get_session)):
+    """Get usage statistics for a category"""
+    return category_ext_service.get_stats(session, categoria_id)
+
+@router.post("/combinar")
+def combinar_categorias(
+    merge_in: CategoriaCombinar,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Merge two categories and move all related data"""
+    return category_ext_service.merge(
+        session, 
+        merge_in.id_origen, 
+        merge_in.id_destino, 
+        merge_in.eliminar_origen
+    )

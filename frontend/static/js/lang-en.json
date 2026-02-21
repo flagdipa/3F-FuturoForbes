@@ -48,6 +48,8 @@
         "assets": "Assets",
         "stocks": "Investments",
         "reports": "Reports",
+        "goals": "Goals",
+        "vault": "Receipts",
         "plugins": "Modules"
     },
     "accounts": {
@@ -164,6 +166,7 @@
         "date_to": "TO",
         "audit_active": "ACTIVE AUDIT",
         "columns": {
+            "tipo": "Type",
             "fecha": "Date",
             "hora": "Time",
             "cuenta": "Account",
@@ -371,7 +374,9 @@
             "peak_day": "PEAK DAY",
             "ai_tip": "PROACTIVE_AI_TIP",
             "pattern_metrics": "PATTERN_METRICS",
-            "all_months": "ALL MONTHS"
+            "all_months": "ALL MONTHS",
+            "tooltip_no_activity": "No activity",
+            "transactions": "transactions"
         }
     }
 }

@@ -3,6 +3,39 @@
 {% block title %}Programadas{% endblock %}
 {% block header %}{% endblock %}
 
+{% block extra_css %}
+<!-- FullCalendar 6 CDN -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<style>
+    :root {
+        --fc-border-color: rgba(255, 255, 255, 0.05);
+        --fc-daygrid-event-dot-width: 8px;
+    }
+    .fc { font-family: 'Inter', sans-serif; background: rgba(7, 30, 38, 0.4); border-radius: 12px; padding: 20px; border: 1px solid var(--3f-border); }
+    .fc .fc-toolbar-title { font-family: 'Orbitron', sans-serif; color: var(--3f-primary); text-transform: uppercase; font-size: 1.1rem; }
+    .fc .fc-button-primary { background: rgba(37, 150, 190, 0.1); border: 1px solid var(--3f-primary); color: var(--3f-primary); text-transform: uppercase; font-size: 0.7rem; font-weight: bold; }
+    .fc .fc-button-primary:hover { background: var(--3f-primary); color: #000; }
+    .fc .fc-button-primary:disabled { background: transparent; border-color: rgba(255,255,255,0.1); color: #555; }
+    .fc .fc-col-header-cell { padding: 10px 0; background: rgba(0,0,0,0.2); }
+    .fc .fc-col-header-cell-cushion { color: var(--3f-text-dim); font-size: 0.7rem; text-transform: uppercase; text-decoration: none; }
+    .fc .fc-daygrid-day-number { color: #fff; text-decoration: none; font-size: 0.85rem; padding: 8px; }
+    .fc .fc-daygrid-day.fc-day-today { background: rgba(37, 150, 190, 0.05) !important; }
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { color: var(--3f-primary); font-weight: bold; }
+    .fc .fc-event { cursor: pointer; border: none; padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
+    .fc-event-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    /* Neon Status Colors */
+    .event-withdrawal { background: rgba(220, 53, 69, 0.2) !important; border-left: 3px solid #dc3545 !important; color: #ffb3b3 !important; }
+    .event-deposit { background: rgba(25, 135, 84, 0.2) !important; border-left: 3px solid #198754 !important; color: #b3ffcc !important; }
+    .event-transfer { background: rgba(13, 202, 240, 0.2) !important; border-left: 3px solid #0dcaf0 !important; color: #b3f0ff !important; }
+    
+    .fc .fc-daygrid-more-link { color: var(--3f-primary); font-size: 0.7rem; }
+    
+    /* Selection HUD */
+    .selection-hud { border-left: 4px solid var(--3f-primary); background: rgba(37, 150, 190, 0.05); padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px; display: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="recurringPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
@@ -14,6 +47,46 @@
             <button class="neon-btn shadow-sm" @click="nuevaProgramacion()">
                 <i class="fa-solid fa-calendar-plus me-2"></i><span x-text="$store.lang.t('recurring.new')">Crear Programación</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Nuevo FullCalendar Profesional -->
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <div id="calendar"></div>
+        </div>
+        <div class="col-lg-4">
+            <div id="day-details" class="selection-hud h-100 shadow-hud">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="hud-title text-primary mb-0"><i class="fa-solid fa-microchip me-2"></i>DATOS_DEL_DIA</h6>
+                    <button class="btn-close btn-close-white btn-sm" @click="closeDetails()"></button>
+                </div>
+                <div id="details-content" class="custom-scrollbar" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Se inyectan detalles vía Alpine -->
+                    <template x-if="selectedDayEvents.length > 0">
+                        <div>
+                            <p class="text-dim extra-small mb-3">SECUENCIA_DE_PROCESOS_DETECTADA:</p>
+                            <template x-for="ev in selectedDayEvents" :key="ev.id">
+                                <div class="card bg-black border-secondary border-opacity-25 mb-2 hover-glow" @click="editar(ev.original)" style="cursor:pointer">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="extra-small fw-bold" :class="ev.class" x-text="ev.type"></span>
+                                            <span class="extra-small text-dim" x-text="formatCurrency(ev.monto)"></span>
+                                        </div>
+                                        <p class="small mb-0 mt-1" x-text="ev.title"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="selectedDayEvents.length === 0">
+                        <div class="text-center py-5 opacity-25">
+                            <i class="fa-solid fa-calendar-day fa-3x mb-3"></i>
+                            <p class="small">NO_SYSTEM_EVENTS_RECORDED</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -203,11 +276,81 @@ document.addEventListener('alpine:init', () => {
         bsModal: null,
         editItem: { activo: 1, frecuencia: 'Monthly', intervalo: 1 },
         colecciones: { cuentas: [], beneficiarios: [], categorias: [] },
+        fullCalendar: null,
+        selectedDayEvents: [],
 
         async init() {
             this.bsModal = new bootstrap.Modal(document.getElementById('modalScheduled'));
+            this.initCalendar();
             await this.cargarColecciones();
             await this.listar();
+        },
+
+        initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            this.fullCalendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                themeSystem: 'standard',
+                height: 'auto',
+                firstDay: 1,
+                eventClick: (info) => {
+                    this.showDayDetails(info.event.startStr);
+                },
+                dateClick: (info) => {
+                    this.showDayDetails(info.dateStr);
+                }
+            });
+            this.fullCalendar.render();
+        },
+
+        showDayDetails(dateStr) {
+            this.selectedDayEvents = this.getEventsForDate(dateStr);
+            const hud = document.getElementById('day-details');
+            if (hud) hud.style.display = 'block';
+        },
+
+        closeDetails() {
+            const hud = document.getElementById('day-details');
+            if (hud) hud.style.display = 'none';
+        },
+
+        getEventsForDate(dateStr) {
+            return this.schedules
+                .filter(s => s.activo && s.proxima_fecha && s.proxima_fecha.split('T')[0] === dateStr)
+                .map(s => ({
+                    id: s.id_recurrencia,
+                    title: s.notas || (s.id_beneficiario ? 'Programada' : 'Ajuste'),
+                    monto: s.monto_transaccion,
+                    type: s.codigo_transaccion,
+                    class: this.getEventClass(s.codigo_transaccion),
+                    original: s
+                }));
+        },
+
+        getEventClass(type) {
+            const map = { 'Withdrawal': 'text-danger', 'Deposit': 'text-success', 'Transfer': 'text-info' };
+            return map[type] || 'text-warning';
+        },
+
+        refreshCalendarEvents() {
+            if (!this.fullCalendar) return;
+            this.fullCalendar.removeAllEvents();
+            const events = this.schedules.filter(s => s.activo && s.proxima_fecha).map(s => {
+                const colors = { 'Withdrawal': 'event-withdrawal', 'Deposit': 'event-deposit', 'Transfer': 'event-transfer' };
+                return {
+                    id: s.id_recurrencia,
+                    title: s.notas || s.codigo_transaccion,
+                    start: s.proxima_fecha.split('T')[0],
+                    className: colors[s.codigo_transaccion] || ''
+                };
+            });
+            this.fullCalendar.addEventSource(events);
         },
 
         async cargarColecciones() {
@@ -230,6 +373,7 @@ document.addEventListener('alpine:init', () => {
             try {
                 const response = await api.get('/recurring/');
                 this.schedules = response.data.data || [];
+                this.refreshCalendarEvents();
             } catch (error) {
                 console.error('Error al listar programaciones:', error);
             } finally {

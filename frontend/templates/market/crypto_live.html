@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Live Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    .crypto-live-card {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .crypto-live-card:hover {
+        border-color: var(--3f-primary);
+        box-shadow: 0 0 20px var(--3f-primary-glow);
+    }
+    .price-large {
+        font-family: 'Orbitron', sans-serif;
+        color: #00f2ff;
+    }
+    .change-positive { color: #00ff88; }
+    .change-negative { color: #ff3366; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="cryptoLivePage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="hud-title mb-0 neon-glow"><i class="fa-solid fa-bolt me-2"></i>CRYPTO LIVE_TRACKER</h1>
+                <p class="text-dim extra-small mb-0">PRECIOS EN TIEMPO REAL VÍA COINGECKO</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-info neon-border" @click="fetchPrices()" :disabled="loading">
+                    <i class="fa-solid fa-sync me-1" :class="loading ? 'fa-spin' : ''"></i> ACTUALIZAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <template x-for="(data, coin) in prices" :key="coin">
+            <div class="col-md-6 col-lg-4">
+                <div class="crypto-live-card p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="font-orbitron text-white text-uppercase mb-0" x-text="coin"></h6>
+                        <span class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-10">LIVE</span>
+                    </div>
+                    
+                    <div class="hud-line mb-3"></div>
+
+                    <div class="mb-2">
+                        <small class="text-dim d-block mb-1">PRECIO USD</small>
+                        <h3 class="price-large mb-0" x-text="formatUSD(data.usd)"></h3>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-dim d-block mb-1">PRECIO ARS</small>
+                        <h5 class="text-white opacity-75 mb-0" x-text="formatARS(data.ars)"></h5>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mt-3 p-2 bg-black bg-opacity-20 rounded border border-secondary border-opacity-10">
+                        <small class="text-dim extra-small fw-bold">24H CHANGE:</small>
+                        <span class="small fw-bold" :class="data.usd_24h_change >= 0 ? 'change-positive' : 'change-negative'">
+                            <i class="fa-solid" :class="data.usd_24h_change >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
+                            <span x-text="Math.abs(data.usd_24h_change || 0).toFixed(2) + '%'"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('cryptoLivePage', () => ({
+            prices: {},
+            loading: false,
+
+            async init() {
+                await this.fetchPrices();
+                // Refresh every 60 seconds
+                setInterval(() => this.fetchPrices(), 60000);
+            },
+
+            async fetchPrices() {
+                this.loading = true;
+                try {
+                    const res = await api.get('/market/crypto-live');
+                    this.prices = res.data;
+                } catch (e) {
+                    console.error('Error fetching live crypto prices:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            formatUSD(amount) {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(amount);
+            },
+
+            formatARS(amount) {
+                return new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS'
+                }).format(amount);
+            }
+        }));
+    });
+</script>
+{% endblock %}

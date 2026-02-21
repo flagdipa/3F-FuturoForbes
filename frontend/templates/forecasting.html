@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}IA Forecasting Engine{% endblock %}
+
+{% block extra_css %}
+<style>
+    .forecast-card {
+        background: rgba(7, 30, 38, 0.4);
+        border: 1px solid var(--3f-border);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .forecast-card:hover {
+        border-color: var(--3f-primary);
+        box-shadow: 0 0 20px var(--3f-primary-glow);
+    }
+    .trend-positive { color: #00ff88; }
+    .trend-negative { color: #ff3366; }
+    .neon-text-primary {
+        color: #00f2ff;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="forecastingPage" class="content-wrapper bg-transparent">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="hud-title mb-0 neon-glow"><i class="fa-solid fa-robot me-2"></i>IA FORECASTING_ENGINE</h1>
+                <p class="text-dim extra-small mb-0">ANÁLISIS PREDICTIVO BASADO EN FLUJO Y RECURRENTES</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <select class="form-select form-select-sm bg-black border-secondary text-primary neon-border" 
+                        style="min-width: 200px;" 
+                        x-model="selectedAccountId" 
+                        @change="loadProjection()">
+                    <option value="">Seleccionar Cuenta...</option>
+                    <template x-for="acc in accounts" :key="acc.id_cuenta">
+                        <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
+                    </template>
+                </select>
+                
+                <div class="btn-group neon-border p-1 bg-black">
+                    <button class="btn btn-sm py-1 px-3" :class="days === 30 ? 'btn-primary' : 'text-dim'" @click="setDays(30)">30D</button>
+                    <button class="btn btn-sm py-1 px-3" :class="days === 60 ? 'btn-primary' : 'text-dim'" @click="setDays(60)">60D</button>
+                    <button class="btn btn-sm py-1 px-3" :class="days === 90 ? 'btn-primary' : 'text-dim'" @click="setDays(90)">90D</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="forecast-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-orbitron mb-0 text-white"><i class="fa-solid fa-chart-line me-2 text-info"></i>PROYECCIÓN DE SALDO</h5>
+                    <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25" x-text="'PROYECTANDO A ' + days + ' DÍAS'"></span>
+                </div>
+                
+                <div style="height: 400px; position: relative;">
+                    <template x-if="!selectedAccountId">
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-dim">
+                            <i class="fa-solid fa-hand-pointer fs-1 mb-3 opacity-25"></i>
+                            <p>Selecciona una cuenta para iniciar el análisis</p>
+                        </div>
+                    </template>
+                    <canvas id="forecastChart" x-show="selectedAccountId"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4 mb-4">
+            <div class="d-flex flex-column gap-4 h-100">
+                <!-- Status Card -->
+                <div class="forecast-card p-4">
+                    <h6 class="font-orbitron text-dim mb-3 text-uppercase">Estado del Motor</h6>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="spinner-grow text-success spinner-grow-sm" role="status" x-show="loading"></div>
+                        <i class="fa-solid fa-check-circle text-success" x-show="!loading"></i>
+                        <span class="text-white" x-text="loading ? 'Procesando tensores...' : 'Motor de Inferencia Listo'"></span>
+                    </div>
+                    <div class="hud-line mb-3"></div>
+                    <div class="extra-small text-dim">
+                        <p class="mb-1">MODELO: REGRESIÓN_LINEAL_PESADA</p>
+                        <p class="mb-0">INPUTS: TRANSACCIONES_REALES + PROGRAMADAS</p>
+                    </div>
+                </div>
+
+                <!-- Metrics Card -->
+                <div class="forecast-card p-4 flex-grow-1">
+                    <h6 class="font-orbitron text-dim mb-4 text-uppercase">Métricas Proyectadas</h6>
+                    
+                    <template x-if="projectionData.length > 0">
+                        <div class="d-flex flex-column gap-4">
+                            <div>
+                                <small class="text-dim d-block mb-1">SALDO FINAL ESTIMADO</small>
+                                <h3 class="neon-text-primary mb-0" x-text="formatCurrency(projectionData[projectionData.length-1].saldo)"></h3>
+                            </div>
+                            
+                            <div>
+                                <small class="text-dim d-block mb-1">VARIACIÓN TOTAL</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h4 :class="getVariation() >= 0 ? 'trend-positive' : 'trend-negative'" x-text="(getVariation() >= 0 ? '+' : '') + formatCurrency(getVariation())"></h4>
+                                    <span class="badge rounded-pill" :class="getVariation() >= 0 ? 'bg-success bg-opacity-25 text-success' : 'bg-danger bg-opacity-25 text-danger'">
+                                        <i class="fa-solid" :class="getVariation() >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
+                                        <span x-text="getVariationPercentage() + '%'"></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-dim">PUNTO MÁS BAJO</small>
+                                    <span class="text-danger smaller" x-text="getMinBalance().fecha"></span>
+                                </div>
+                                <div class="fw-bold" x-text="formatCurrency(getMinBalance().saldo)"></div>
+                            </div>
+
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-dim">PUNTO MÁS ALTO</small>
+                                    <span class="text-success smaller" x-text="getMaxBalance().fecha"></span>
+                                </div>
+                                <div class="fw-bold" x-text="formatCurrency(getMaxBalance().saldo)"></div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <template x-if="!selectedAccountId">
+                        <div class="text-center text-dim py-5">
+                            <i class="fa-solid fa-microchip fs-3 mb-3 opacity-10"></i>
+                            <p class="small">Pendiente de selección</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+         Alpine.data('forecastingPage', () => ({
+            accounts: [],
+            selectedAccountId: '',
+            days: 30,
+            loading: false,
+            projectionData: [],
+            chart: null,
+
+            async init() {
+                await this.loadAccounts();
+                
+                // If there's an account ID in URL, select it
+                const urlParams = new URLSearchParams(window.location.search);
+                const accId = urlParams.get('id_cuenta');
+                if (accId) {
+                    this.selectedAccountId = accId;
+                    this.loadProjection();
+                }
+            },
+
+            async loadAccounts() {
+                try {
+                    const res = await api.get('/cuentas/');
+                    this.accounts = res.data.data || [];
+                } catch (e) {
+                    console.error('Error loading accounts', e);
+                }
+            },
+
+            async loadProjection() {
+                if (!this.selectedAccountId) {
+                    this.projectionData = [];
+                    if (this.chart) this.chart.destroy();
+                    this.chart = null;
+                    return;
+                }
+
+                this.loading = true;
+                try {
+                    const res = await api.get(`/reportes/proyeccion-cuenta/${this.selectedAccountId}?dias=${this.days}`);
+                    this.projectionData = res.data;
+                    this.updateChart();
+                } catch (e) {
+                    notifications.show('Error al generar proyección', 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            setDays(d) {
+                this.days = d;
+                if (this.selectedAccountId) this.loadProjection();
+            },
+
+            formatCurrency(amount) {
+                return CurrencyUtils.formatCurrency(amount, localStorage.getItem('3f_pref_currency') || 'ARS');
+            },
+
+            getVariation() {
+                if (this.projectionData.length < 2) return 0;
+                return this.projectionData[this.projectionData.length-1].saldo - this.projectionData[0].saldo;
+            },
+
+            getVariationPercentage() {
+                if (this.projectionData.length < 2 || this.projectionData[0].saldo === 0) return 0;
+                return ((this.getVariation() / Math.abs(this.projectionData[0].saldo)) * 100).toFixed(1);
+            },
+
+            getMinBalance() {
+                if (this.projectionData.length === 0) return { saldo: 0, fecha: '' };
+                return this.projectionData.reduce((min, p) => p.saldo < min.saldo ? p : min, this.projectionData[0]);
+            },
+
+            getMaxBalance() {
+                if (this.projectionData.length === 0) return { saldo: 0, fecha: '' };
+                return this.projectionData.reduce((max, p) => p.saldo > max.saldo ? p : max, this.projectionData[0]);
+            },
+
+            updateChart() {
+                const ctx = document.getElementById('forecastChart');
+                if (!ctx) return;
+
+                const labels = this.projectionData.map(p => p.fecha);
+                const data = this.projectionData.map(p => p.saldo);
+
+                if (this.chart) {
+                    this.chart.data.labels = labels;
+                    this.chart.data.datasets[0].data = data;
+                    this.chart.update();
+                } else {
+                    this.chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Saldo Proyectado',
+                                data: data,
+                                borderColor: '#00f2ff',
+                                backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                                pointHoverRadius: 6,
+                                borderWidth: 3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: (context) => ' Saldo: ' + this.formatCurrency(context.raw)
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                    ticks: { color: '#bee0ec' }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { 
+                                        color: '#bee0ec',
+                                        maxRotation: 0,
+                                        autoSkip: true,
+                                        maxTicksLimit: 10
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

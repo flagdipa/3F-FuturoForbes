@@ -22,16 +22,23 @@ from backend.models.models_config import Configuracion
 
 def test_connection(db_type: str, host: str, port: int, user: str, password: str, database: Optional[str] = None) -> Dict[str, any]:
     try:
-        import pymysql
         if db_type.lower() == "mysql":
+            import pymysql
             connection_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database if database else ''}"
         elif db_type.lower() == "postgresql":
             connection_url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database if database else 'postgres'}"
+        elif db_type.lower() == "sqlite":
+            db_name = database if database else "futuroforbes.db"
+            if not db_name.endswith(".db"): db_name += ".db"
+            connection_url = f"sqlite:///{db_name}"
         else:
             return {"success": False, "message": f"Unsupported DB: {db_type}"}
         
         # Timeout corto para pruebas de conexión
-        engine = create_engine(connection_url, echo=False, connect_args={"connect_timeout": 10} if db_type.lower() == "mysql" else {})
+        connect_args = {}
+        if db_type.lower() == "mysql": connect_args = {"connect_timeout": 10}
+        
+        engine = create_engine(connection_url, echo=False, connect_args=connect_args)
         
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -48,6 +55,9 @@ def test_connection(db_type: str, host: str, port: int, user: str, password: str
 
 def create_database_if_not_exists(db_type: str, host: str, port: int, user: str, password: str, database: str) -> Dict[str, any]:
     try:
+        if db_type.lower() == "sqlite":
+            return {"success": True, "created": True, "message": "SQLite database will be created automatically."}
+            
         if db_type.lower() == "mysql":
             url = f"mysql+pymysql://{user}:{password}@{host}:{port}"
             sql = f"CREATE DATABASE IF NOT EXISTS `{database}` CHARACTER SET utf8mb4"
