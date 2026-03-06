@@ -1,0 +1,70 @@
+:root {
+    --primary: #00ff88;
+    --secondary: #ff00ff;
+    --bg-main: #0a0a1a;
+    --bg-card: rgba(16, 16, 35, 0.7);
+    --bg-sidebar: #050510;
+    --text-main: #e0e0ff;
+    --text-muted: #8888aa;
+    --text-on-primary: #000;
+    --border-color: #00ff8844;
+    --neon-glow: 0 0 10px #00ff8888, 0 0 20px #00ff8844;
+    --card-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+}
+
+body {
+    background-image:
+        radial-gradient(circle at 50% 50%, #1a1a3a 0%, #0a0a1a 100%),
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    background-size: 100% 100%, 100% 3px, 3px 100%;
+}
+
+.card {
+    backdrop-filter: blur(10px);
+    border-color: var(--border-color);
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.nav-link.active {
+    color: var(--primary) !important;
+    text-shadow: 0 0 8px var(--primary);
+}
+
+.btn-primary {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    box-shadow: inset 0 0 5px var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 15px var(--primary);
+}

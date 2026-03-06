@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración Global | 3F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .settings-sidebar {
+        background: rgba(10, 10, 25, 0.7);
+        border: 1px solid var(--3f-primary-border);
+        border-radius: 12px;
+        backdrop-filter: blur(15px);
+        overflow: hidden;
+    }
+    
+    .nav-settings .nav-link {
+        color: rgba(255,255,255,0.7);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.85rem;
+        padding: 15px 20px;
+        border-radius: 0;
+        border-left: 3px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .nav-settings .nav-link:hover {
+        background: rgba(255,255,255,0.05);
+        color: white;
+    }
+    
+    .nav-settings .nav-link.active {
+        background: rgba(0, 242, 255, 0.1);
+        color: var(--neon-blue);
+        border-left-color: var(--neon-blue);
+    }
+    
+    .settings-panel {
+        background: rgba(10, 10, 25, 0.7);
+        border: 1px solid var(--3f-primary-border);
+        border-radius: 12px;
+        padding: 30px;
+        backdrop-filter: blur(15px);
+        min-height: 500px;
+    }
+    
+    .settings-section-title {
+        color: var(--neon-green);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        color: rgba(255,255,255,0.8);
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .setting-hint {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.4);
+        margin-top: 4px;
+        display: block;
+    }
+    
+    /* Theme Cards */
+    .theme-card {
+        border: 2px solid transparent;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color 0.3s;
+    }
+    .theme-card:hover {
+        border-color: rgba(255,255,255,0.5);
+    }
+    .theme-card.active {
+        border-color: var(--neon-blue);
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+    }
+    .theme-preview {
+        height: 80px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container py-4" x-data="settingsManager">
+    
+    <div class="row g-4">
+        <!-- Sidebar de Navegación -->
+        <div class="col-md-3">
+            <div class="settings-sidebar">
+                <div class="p-3 border-bottom border-secondary border-opacity-25 bg-black bg-opacity-25">
+                    <h5 class="mb-0 font-orbitron text-white"><i class="fa-solid fa-cogs me-2 text-primary"></i>SYSTEM</h5>
+                </div>
+                <div class="nav flex-column nav-pills nav-settings" role="tablist">
+                    <button class="nav-link active text-start" data-bs-toggle="pill" data-bs-target="#v-pills-general" type="button" @click="currentTab = 'general'">
+                        <i class="fa-solid fa-globe me-2 w-20px text-center"></i> GENERAL
+                    </button>
+                    <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#v-pills-appearance" type="button" @click="currentTab = 'appearance'">
+                        <i class="fa-solid fa-paint-roller me-2 w-20px text-center"></i> APARIENCIA
+                    </button>
+                    <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#v-pills-ai" type="button" @click="currentTab = 'ai'">
+                        <i class="fa-solid fa-brain me-2 w-20px text-center"></i> INTELIGENCIA ARTIFICIAL
+                    </button>
+                    <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#v-pills-currencies" type="button" @click="currentTab = 'currencies'">
+                        <i class="fa-solid fa-coins me-2 w-20px text-center"></i> DIVISAS
+                    </button>
+                    <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#v-pills-notifications" type="button" @click="currentTab = 'notifications'">
+                        <i class="fa-solid fa-bell me-2 w-20px text-center"></i> NOTIFICACIONES
+                    </button>
+                    <button class="nav-link text-start text-danger" data-bs-toggle="pill" data-bs-target="#v-pills-danger" type="button" @click="currentTab = 'danger'">
+                        <i class="fa-solid fa-triangle-exclamation me-2 w-20px text-center"></i> ZONA DE RIESGO
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paneles de Configuración -->
+        <div class="col-md-9">
+            <div class="settings-panel">
+                <div class="tab-content" id="v-pills-tabContent">
+                    
+                    <!-- TAB: General -->
+                    <div class="tab-pane fade show active" id="v-pills-general">
+                        <h4 class="settings-section-title">CONFIGURACIÓN GENERAL</h4>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Idioma del Sistema</label>
+                                <select class="form-select bg-dark text-white border-secondary" x-model="config.language">
+                                    <option value="es_AR">Español (Argentina)</option>
+                                    <option value="en_US">English (US)</option>
+                                </select>
+                                <span class="setting-hint">Idioma principal para menús y reportes.</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Moneda Base (Default)</label>
+                                <select class="form-select bg-dark text-white border-secondary" x-model="config.base_currency">
+                                    <option value="ARS">ARS - Peso Argentino</option>
+                                    <option value="USD">USD - Dólar Estadounidense</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                </select>
+                                <span class="setting-hint">Moneda usada para calcular el Patrimonio Neto total.</span>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Mes de inicio Fiscal</label>
+                                <select class="form-select bg-dark text-white border-secondary" x-model="config.fiscal_year_start">
+                                    <option value="1">Enero</option>
+                                    <option value="4">Abril (UK)</option>
+                                    <option value="7">Julio (AU)</option>
+                                    <option value="10">Octubre (US)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Formato de Fecha</label>
+                                <select class="form-select bg-dark text-white border-secondary" x-model="config.date_format">
+                                    <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2026)</option>
+                                    <option value="YYYY-MM-DD">YYYY-MM-DD (2026-12-31)</option>
+                                    <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2026)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Apariencia -->
+                    <div class="tab-pane fade" id="v-pills-appearance">
+                        <h4 class="settings-section-title text-info">APARIENCIA & TEMAS</h4>
+                        
+                        <label class="form-label mb-3">Selector de Tema</label>
+                        <div class="row g-3 mb-4">
+                            <!-- Theme: Neon -->
+                            <div class="col-md-4">
+                                <div class="theme-card" :class="config.theme === '3f-neon' ? 'active' : ''" @click="setTheme('3f-neon')">
+                                    <div class="theme-preview" style="background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%); position: relative;">
+                                        <div style="position:absolute; top:20px; left:20px; width:40px; height:10px; background:#00ff88; box-shadow:0 0 10px #00ff88;"></div>
+                                        <div style="position:absolute; top:40px; left:20px; width:80px; height:10px; background:#00f2ff; box-shadow:0 0 10px #00f2ff;"></div>
+                                    </div>
+                                    <div class="p-2 text-center bg-black bg-opacity-50">
+                                        <small class="font-orbitron">3F NEON (HUD)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Theme: Dark Pro -->
+                            <div class="col-md-4">
+                                <div class="theme-card" :class="config.theme === '3f-dark' ? 'active' : ''" @click="setTheme('3f-dark')">
+                                    <div class="theme-preview" style="background: #121212; position: relative; border-bottom: 1px solid #333;">
+                                        <div style="position:absolute; top:20px; left:20px; width:40px; height:10px; background:#ffffff;"></div>
+                                        <div style="position:absolute; top:40px; left:20px; width:80px; height:10px; background:#444444;"></div>
+                                    </div>
+                                    <div class="p-2 text-center bg-black bg-opacity-50">
+                                        <small class="font-orbitron">DARK PRO</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Theme: Light -->
+                            <div class="col-md-4">
+                                <div class="theme-card opacity-50 cursor-not-allowed">
+                                    <div class="theme-preview" style="background: #f8f9fa;"></div>
+                                    <div class="p-2 text-center bg-white text-dark">
+                                        <small class="font-orbitron">LIGHT CLEAN (WIP)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="sidebarCollapse" x-model="config.sidebar_collapsed">
+                            <label class="form-check-label text-white" for="sidebarCollapse">Barra lateral colapsada por defecto</label>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Inteligencia Artificial -->
+                    <div class="tab-pane fade" id="v-pills-ai">
+                        <h4 class="settings-section-title" style="color: #bc13fe;">INTELIGENCIA ARTIFICIAL (GEMINI)</h4>
+                        
+                        <div class="alert bg-black bg-opacity-25 border border-secondary border-opacity-50 mb-4">
+                            <i class="fa-solid fa-info-circle text-info me-2"></i>
+                            <small>Provee tu API Key de Google AI Studio para habilitar lectura de tickets vía OCR y predicciones de Cashflow. Se guarda encriptada en la base de datos local.</small>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Google Gemini API Key</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-dark border-secondary text-dim"><i class="fa-solid fa-key"></i></span>
+                                    <input :type="showKey ? 'text' : 'password'" class="form-control bg-black text-white border-secondary" 
+                                           x-model="config.gemini_api_key" placeholder="AIzaSyA...">
+                                    <button class="btn btn-outline-secondary" type="button" @click="showKey = !showKey">
+                                        <i class="fa-solid" :class="showKey ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Modelo Default para Texto</label>
+                                <select class="form-select bg-dark text-white border-secondary" x-model="config.ai_text_model">
+                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Recomendado)</option>
+                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Rápido)</option>
+                                    <option value="claude-3-opus">Anthropic Claude (Requiere Key)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Modelo para OCR (Imágenes)</label>
+                                <select class="form-select bg-dark text-white border-secondary" disabled>
+                                    <option>Gemini 1.5 Flash (Vision)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="aiAutoCat" x-model="config.ai_auto_categorization">
+                                    <label class="form-check-label text-white" for="aiAutoCat">Sugerir categorías automáticamente al tipear el Beneficiario.</label>
+                                </div>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="aiInsights" x-model="config.ai_dashboard_insights">
+                                    <label class="form-check-label text-white" for="aiInsights">Mostrar Insights de IA en el Dashboard principal.</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de guardado flotante interno -->
+                    <div class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end">
+                        <button class="btn btn-primary neon-border-static px-4" @click="saveSettings()" :disabled="saving">
+                            <i class="fa-solid fa-save me-2" :class="saving ? 'fa-spinner fa-spin' : ''"></i>
+                            <span x-text="saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'"></span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Toast para exito -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="saveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fa-solid fa-check-circle me-2"></i> Configuración guardada exitosamente.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('settingsManager', () => ({
+            currentTab: 'general',
+            loading: true,
+            saving: false,
+            showKey: false,
+            
+            // Estructura de config mockeada. En prod viene de backend
+            config: {
+                language: 'es_AR',
+                base_currency: 'ARS',
+                fiscal_year_start: '1',
+                date_format: 'DD/MM/YYYY',
+                theme: '3f-neon',
+                sidebar_collapsed: false,
+                gemini_api_key: '',
+                ai_text_model: 'gemini-1.5-pro',
+                ai_auto_categorization: true,
+                ai_dashboard_insights: true
+            },
+
+            async init() {
+                // Fetch de la API (Mock simulación)
+                setTimeout(() => {
+                    // Si ya guardó antes en localstorage (como prueba Frontend-only)
+                    const local = localStorage.getItem('3f_global_config');
+                    if (local) {
+                        this.config = {...this.config, ...JSON.parse(local)};
+                    }
+                    this.loading = false;
+                }, 500);
+            },
+
+            setTheme(themeId) {
+                this.config.theme = themeId;
+                // Almacenar en localstorage directo para preview inmediata
+                localStorage.setItem('3f_theme_override', themeId);
+                // Implementación opcional: recargar estilos dinámicamente si existiera la lógica
+            },
+
+            async saveSettings() {
+                this.saving = true;
+                try {
+                    // Aca iria el POST /api/v1/config/ 
+                    await new Promise(r => setTimeout(r, 800)); // mock network
+                    localStorage.setItem('3f_global_config', JSON.stringify(this.config));
+                    
+                    const toast = new bootstrap.Toast(document.getElementById('saveToast'));
+                    toast.show();
+                    
+                    // Si cambió el tema o idioma recomiendamos refresh
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+
+                } catch (e) {
+                    console.error("Error guardando settings:", e);
+                    alert("No se pudo guardar la configuración.");
+                } finally {
+                    this.saving = false;
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

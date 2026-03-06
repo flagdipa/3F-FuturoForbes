@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Any, Dict
 from sqlmodel import Session
-from ..models.models_audit import AuditLog
+from ..models import AuditLog
 
 from decimal import Decimal
 

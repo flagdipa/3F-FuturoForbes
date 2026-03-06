@@ -1,576 +1,485 @@
 {% extends "base.html" %}
 
-{% block title %}Central de Control{% endblock %}
-{% block header %}Central de Control{% endblock %}
+{% block title %}Dashboard | 3F Futuro Forbes{% endblock %}
 
 {% block extra_css %}
 <!-- GridStack.js CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css" />
 <style>
+    :root {
+        --widget-bg: rgba(16, 16, 35, 0.6);
+        --widget-header-bg: rgba(0, 255, 136, 0.05);
+        --neon-green: #00ff88;
+        --neon-pink: #ff00ff;
+        --neon-blue: #00f2ff;
+    }
+
+    .dashboard-container {
+        padding: 20px;
+        min-height: calc(100vh - 60px);
+    }
+
     .grid-stack-item-content {
-        background: rgba(7, 30, 38, 0.4);
-        border: 1px solid var(--3f-border);
-        backdrop-filter: blur(10px);
-        border-radius: 8px;
+        background: var(--widget-bg);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 255, 136, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
+
     .grid-stack-item-content:hover {
-        border-color: var(--3f-primary);
-        box-shadow: 0 0 15px var(--3f-primary-glow);
+        border-color: var(--neon-green);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
     }
-    
-    /* Dashboard Scrolling handled by base layout */
-    .grid-stack {
-        min-height: 100vh;
-        height: auto !important;
-        overflow-y: visible !important;
-        overflow-x: hidden;
-    }
+
     .widget-header {
-        padding: 5px 10px;
-        background: rgba(37, 150, 190, 0.1);
-        border-bottom: 1px solid var(--3f-border);
-        font-family: 'Orbitron';
-        font-size: 0.8rem;
+        padding: 10px 15px;
+        background: var(--widget-header-bg);
+        border-bottom: 1px solid rgba(0, 255, 136, 0.05);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        cursor: move;
     }
-    .currency-hud-selector {
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(0, 242, 255, 0.3);
-        transition: all 0.3s ease;
-    }
-    .currency-hud-selector:hover {
-        border-color: #00f2ff;
-        box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
-    }
-    .hud-title {
+
+    .widget-title {
         font-family: 'Orbitron', sans-serif;
-        letter-spacing: 2px;
-        color: #00f2ff;
-        text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--neon-green);
+        margin: 0;
+    }
+
+    .widget-body {
+        padding: 15px;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .widget-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .widget-actions i {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .widget-actions i:hover {
+        color: var(--neon-green);
+    }
+
+    /* Editing Mode */
+    .dashboard-editing .grid-stack-item-content {
+        outline: 2px dashed var(--neon-green);
+        outline-offset: -2px;
+    }
+
+    .widget-toolbox {
+        position: fixed;
+        right: -300px;
+        top: 60px;
+        bottom: 0;
+        width: 300px;
+        background: rgba(10, 10, 20, 0.95);
+        backdrop-filter: blur(20px);
+        border-left: 1px solid var(--neon-green);
+        transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1050;
+        padding: 20px;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+
+    .widget-toolbox.active {
+        right: 0;
+    }
+
+    .toolbox-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s;
+    }
+
+    .toolbox-item:hover {
+        background: rgba(0, 255, 136, 0.1);
+        border-color: var(--neon-green);
+        transform: translateX(-5px);
+    }
+
+    .toolbox-item i {
+        font-size: 1.2rem;
+        color: var(--neon-green);
+    }
+
+    .toolbox-item-info h6 {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .toolbox-item-info span {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Loader */
+    .loader-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    .neon-pulse {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--neon-green);
+        box-shadow: 0 0 20px var(--neon-green);
+        animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.8); opacity: 0.5; }
+    }
+
+    #chart-monthly-summary {
+        max-height: 180px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div x-data="dashboardWidgets">
-<div class="scanline"></div>
-
-<div class="row mb-3">
-    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap">
-        <h4 class="neon-glow mb-2 mb-md-0"><i class="fa-solid fa-microchip me-2"></i><span x-text="$store.lang.t('dashboard.system_status')">ESTADO DEL SISTEMA</span></h4>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <!-- Sincro Temporal con estilo botón -->
-            <span class="btn btn-sm btn-outline-info neon-border" style="cursor: default;">
-                <i class="fa-solid fa-clock me-1"></i><span x-text="fechaActual"></span>
-            </span>
-            <button @click="updateDashboard(true)" class="btn btn-sm btn-outline-primary neon-border">
-                <i class="fa-solid fa-sync"></i> <span x-text="$store.lang.t('dashboard.refresh')">REFRESCAR</span>
+<div x-data="dashboardManager" class="dashboard-container">
+    
+    <!-- Header de Dashboard -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="hud-title mb-0">MISSION CONTROL</h2>
+            <p class="text-dim small mb-0">SISTEMA 3F OPERACIONAL // USER: <span class="text-primary">ADMIN</span></p>
+        </div>
+        
+        <div class="d-flex gap-3">
+            <button @click="setEditMode(!isEditing)" 
+                    class="btn btn-sm neon-border" 
+                    :class="isEditing ? 'btn-success' : 'btn-outline-primary'">
+                <i class="fa-solid" :class="isEditing ? 'fa-save' : 'fa-th-large'"></i>
+                <span x-text="isEditing ? 'GUARDAR DISEÑO' : 'EDITAR DASHBOARD'"></span>
             </button>
-            <button @click="resetLayout()" class="btn btn-sm btn-outline-secondary neon-border">
-                <i class="fa-solid fa-rotate-left"></i> <span class="d-none d-md-inline">Diseño</span>
+            <button @click="$dispatch('open-toolbox')" 
+                    x-show="isEditing"
+                    class="btn btn-sm btn-outline-info neon-border">
+                <i class="fa-solid fa-plus-circle"></i> AGREGAR WIDGET
             </button>
-            <span id="layout-status" class="text-dim small d-none d-lg-inline"></span>
         </div>
     </div>
-</div>
 
-<!-- Grid Principal -->
-<div class="grid-stack">
-    <!-- Row 1: KPIs & Summary -->
-    
-    <!-- Widget: Patrimonio Neto (Top Left) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="0" gs-y="0" gs-id="widget-patrimonio">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.net_worth')">PATRIMONIO_NETO</span>
-                <i @click="showBreakdown = !showBreakdown" class="fa-solid fa-circle-info text-primary cursor-pointer" title="Ver desglose"></i>
-            </div>
-            
-            <div class="p-4 text-center">
-                <!-- Mini Savings Ratio Indicator (New Phase 11) -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-dim smaller">RATIO_AHORRO_MENSUAL</small>
-                        <span class="badge rounded-pill" :class="savingsRate.status === 'HEALTHY' ? 'bg-success bg-opacity-25 text-success' : 'bg-warning bg-opacity-25 text-warning'" x-text="savingsRate.savings_rate_percentage + '%'">0%</span>
-                    </div>
-                    <div class="progress bg-dark" style="height: 4px;">
-                        <div class="progress-bar" role="progressbar" :style="'width: ' + Math.min(Math.max(savingsRate.savings_rate_percentage || 0, 0), 100) + '%;'" :class="savingsRate.status === 'HEALTHY' ? 'bg-success' : 'bg-warning'"></div>
+    <!-- Grid de Widgets -->
+    <div class="grid-stack">
+        <!-- Renderizado dinámico vía loadLayout -->
+    </div>
+
+    <!-- Toolbox de Widgets -->
+    <div x-data="{ showToolbox: false }" class="widget-toolbox" :class="{ 'active': showToolbox }" @open-toolbox.window="showToolbox = true">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="widget-title">BIBLIOTECA DE WIDGETS</h5>
+            <i class="fa-solid fa-times cursor-pointer" @click="showToolbox = false"></i>
+        </div>
+        
+        <div class="toolbox-search mb-3">
+            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Buscar widget...">
+        </div>
+
+        <div class="toolbox-list">
+            <template x-for="widget in availableWidgets" :key="widget.id">
+                <div class="toolbox-item" @click="addWidget(widget.id); showToolbox = false">
+                    <i class="fa-solid" :class="widget.icon"></i>
+                    <div class="toolbox-item-info">
+                        <h6 x-text="widget.name"></h6>
+                        <span x-text="widget.category"></span>
                     </div>
                 </div>
+            </template>
+        </div>
+    </div>
 
-                <h2 class="neon-glow mb-0" x-text="formatCurrency(resumen.patrimonio_neto)">$0.00</h2>
-                
-                <!-- Budget Adherence Indicator (New Phase 13) -->
-                <div class="mb-4 mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-dim smaller">CUMPLIMIENTO_PRESUPUESTO</small>
-                        <span class="badge rounded-pill" 
-                              :class="resumen.gastos_mes <= resumen.presupuesto_mes ? 'bg-info bg-opacity-25 text-info' : 'bg-danger bg-opacity-25 text-danger'" 
-                              x-text="resumen.presupuesto_mes > 0 ? Math.round((resumen.gastos_mes / resumen.presupuesto_mes) * 100) + '%' : '0%'">0%</span>
+    <!-- Templates de Contenido de Widgets -->
+    <div style="display: none;">
+        
+        <!-- Template: Balance Total -->
+        <div id="tpl-widget-balance-total">
+            <div x-data="widgetBalanceTotal" class="h-100 d-flex flex-column">
+                <div class="widget-header">
+                    <h5 class="widget-title">BALANCE CONSOLIDADO</h5>
+                    <div class="widget-actions">
+                        <i class="fa-solid fa-sync" @click="fetchData()"></i>
                     </div>
-                    <div class="progress bg-dark" style="height: 4px;">
-                        <div class="progress-bar" role="progressbar" 
-                             :style="'width: ' + Math.min(Math.round((resumen.gastos_mes / resumen.presupuesto_mes) * 100) || 0, 100) + '%;'" 
-                             :class="resumen.gastos_mes <= resumen.presupuesto_mes ? 'bg-info' : 'bg-danger'"></div>
-                    </div>
-                    <template x-if="resumen.gastos_mes > resumen.presupuesto_mes">
-                        <small class="text-danger smaller d-block mt-1 text-start"><i class="fa-solid fa-triangle-exclamation me-1"></i>Exceso detectado</small>
+                </div>
+                <div class="widget-body text-center d-flex flex-column justify-content-center">
+                    <template x-if="loading">
+                        <div class="loader-container"><div class="neon-pulse"></div></div>
+                    </template>
+                    <template x-if="!loading">
+                        <div>
+                            <h2 class="neon-glow mb-1" x-text="'$ ' + total.toLocaleString()"></h2>
+                            <p class="text-dim small mb-0">EQUIVALENTE TOTAL (ARS)</p>
+                            <div class="mt-3 d-flex justify-content-center gap-4">
+                                <div>
+                                    <small class="text-success d-block">LÍQUIDO</small>
+                                    <span class="fw-bold">$ 450k</span>
+                                </div>
+                                <div>
+                                    <small class="text-info d-block">INVERS.</small>
+                                    <span class="fw-bold">$ 800k</span>
+                                </div>
+                            </div>
+                        </div>
                     </template>
                 </div>
-
-                <small class="text-dim" x-text="$store.lang.t('dashboard.net_worth_total')">TOTAL CONSOLIDADO (ARS)</small>
-                
-                <div class="hud-line"></div>
-                
-                <!-- Detailed Breakdown -->
-                <div class="mt-3 text-start px-2">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="small text-dim">Líquido</span>
-                        <span class="small fw-bold" x-text="formatCurrency(resumen.total_liquido)"></span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="small text-dim">Activos</span>
-                        <span class="small fw-bold" x-text="formatCurrency(resumen.total_activos)"></span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="small text-dim">Inversiones</span>
-                        <span class="small fw-bold" x-text="formatCurrency(resumen.total_inversiones)"></span>
-                    </div>
-                </div>
-
-                <div class="row mt-2 border-top border-secondary border-opacity-25 pt-2">
-                    <div class="col-6 border-end border-secondary">
-                        <small class="d-block text-success" x-text="$store.lang.t('dashboard.incomes')">INGRESOS (MES)</small>
-                        <span class="fw-bold" x-text="formatCurrency(resumen.ingresos_mes)">+ $0.00</span>
-                    </div>
-                    <div class="col-6">
-                        <small class="d-block text-danger" x-text="$store.lang.t('dashboard.expenses')">GASTOS (MES)</small>
-                        <span class="fw-bold" x-text="formatCurrency(resumen.gastos_mes)">- $0.00</span>
-                    </div>
-                </div>
-
-                <div class="mt-2 p-2 bg-primary-subtle bg-opacity-10 rounded border border-primary border-opacity-25">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-primary smaller fw-bold" x-text="$store.lang.t('dashboard.forecast_end_month')">ESTIMACIÓN CIERRE MES</small>
-                        <span class="badge bg-primary bg-opacity-25 text-primary smaller" x-text="resumen.dias_restantes + ' d ' + $store.lang.t('dashboard.remaining')"></span>
-                    </div>
-                    <h4 class="mb-0 text-primary fw-bold" x-text="formatCurrency(resumen.proyeccion_cierre)">$0.00</h4>
-                    <small class="text-dim smaller">Burn-rate: <span x-text="formatCurrency(resumen.burn_rate_diario) + '/día'"></span></small>
-                </div>
-
-
             </div>
         </div>
-    </div>
 
-    <!-- Widget: Distribución por Categorías (Top Center) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="4" gs-y="0" gs-id="widget-categorias">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.expense_distribution')">DISTRIBUCION_GASTOS</span>
-                <i class="fa-solid fa-chart-pie text-secondary"></i>
-            </div>
-            <div class="p-3">
-                <canvas id="chart-categorias" style="max-height: 250px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Widget: Inversiones (Top Right - Moved Up) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="0" gs-id="widget-inversiones">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.portfolio')">PORTAFOLIO_INVERSIONES</span>
-                <i class="fa-solid fa-arrow-trend-up text-info"></i>
-            </div>
-            <div class="p-4">
-                <div class="text-center mb-3">
-                    <small class="text-dim d-block mb-1">VALOR TOTAL DE MERCADO</small>
-                    <h3 class="mb-0 fw-bold" :class="summary.total_profit_loss >= 0 ? 'text-success' : 'text-danger'" x-text="formatCurrency(summary.current_value)">$0.00</h3>
+        <!-- Template: Dolar Hoy -->
+        <div id="tpl-widget-dolar-hoy">
+            <div x-data="widgetDolarHoy" class="h-100 d-flex flex-column">
+                <div class="widget-header">
+                    <h5 class="widget-title">COTIZACIONES AR</h5>
+                    <div class="widget-actions">
+                        <i class="fa-solid fa-external-link" onclick="window.location='/plugins/cotizaciones'"></i>
+                    </div>
                 </div>
-                <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-25 pt-3">
-                    <div class="text-start">
-                        <small class="text-dim d-block">Invertido</small>
-                        <span class="fw-bold text-light" x-text="formatCurrency(summary.total_invested)"></span>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge rounded-pill mb-1" :class="summary.profit_loss_percentage >= 0 ? 'bg-success' : 'bg-danger'">
-                            <i class="fa-solid me-1" :class="summary.profit_loss_percentage >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
-                            <span x-text="Number(summary.profit_loss_percentage || 0).toFixed(2)">0.00</span>%
-                        </span>
-
-                        <div class="small text-dim" x-text="formatCurrency(summary.total_profit_loss)"></div>
-                    </div>
+                <div class="widget-body">
+                    <template x-if="loading">
+                        <div class="loader-container"><div class="neon-pulse" style="background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue);"></div></div>
+                    </template>
+                    <template x-if="!loading">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                                    <small class="text-dim d-block">BLUE</small>
+                                    <span class="text-primary fw-bold" x-text="'$' + rates.blue.sell"></span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                                    <small class="text-dim d-block">MEP</small>
+                                    <span class="text-info fw-bold" x-text="'$' + rates.mep.price"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <small class="text-dim smaller"><i class="fa-solid fa-clock me-1"></i>Actualizado hace 2 min</small>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Row 2: Analysis & Log -->
-
-    <!-- Widget: Evolución de Flujo (Bottom Left - Wide) -->
-    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="0" gs-y="4" gs-id="widget-flujo">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                <div>
-                    <span x-text="$store.lang.t('nav.dashboard')">Central de Control</span>
-                    <span x-show="aiEnabled" class="badge bg-primary ms-2 neon-border" style="font-size: 0.6rem; vertical-align: middle;">
-                        <i class="fa-solid fa-robot"></i> AI POWERED
-                    </span>
+        <!-- Template: Recent Transactions -->
+        <div id="tpl-widget-recent-transactions">
+            <div x-data="widgetRecentTransactions" class="h-100 d-flex flex-column">
+                <div class="widget-header">
+                    <h5 class="widget-title">ACTIVIDAD RECIENTE</h5>
+                    <div class="widget-actions">
+                        <i class="fa-solid fa-list" onclick="window.location='/transacciones'"></i>
+                    </div>
                 </div>
-                <i class="fa-solid fa-chart-line text-primary"></i>
-            </div>
-            <div class="p-3">
-                <canvas id="chart-evolucion" style="max-height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Widget: Inteligencia Patrimonial (New in Phase 11) -->
-    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="14" gs-id="widget-evolucion">
-        <div class="grid-stack-item-content border-info border-opacity-50">
-            <div class="widget-header bg-info bg-opacity-10 border-info border-opacity-25">
-                <div class="d-flex align-items-center">
-                    <span class="text-info fw-bold" x-text="$store.lang.t('dashboard.evolution_trend')">EVOLUCION_PATRIMONIAL_HISTORICA</span>
-                    <span class="badge bg-info bg-opacity-25 text-info ms-2 border border-info border-opacity-25" style="font-size: 0.6rem;">HUD_SNAPSHOTS</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm bg-dark text-dim border-secondary p-0 px-2" style="font-size: 0.7rem; width: 80px;" x-model="wealthHistoryDays" @change="updateWealthChart()">
-                        <option value="7">7D</option>
-                        <option value="30" selected>30D</option>
-                        <option value="90">90D</option>
-                    </select>
-                    <i class="fa-solid fa-chart-area text-info"></i>
+                <div class="widget-body p-0">
+                    <template x-if="loading">
+                        <div class="loader-container"><div class="neon-pulse" style="background: var(--neon-pink); box-shadow: 0 0 20px var(--neon-pink);"></div></div>
+                    </template>
+                    <template x-if="!loading">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0" style="font-size: 0.75rem;">
+                                <tbody>
+                                    <template x-for="tx in transactions" :key="tx.id">
+                                        <tr>
+                                            <td class="text-dim" x-text="tx.date"></td>
+                                            <td class="fw-bold" x-text="tx.desc"></td>
+                                            <td class="text-end" :class="tx.amount < 0 ? 'text-danger' : 'text-success'" x-text="'$' + tx.amount.toLocaleString()"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
                 </div>
             </div>
-            <div class="p-3">
-                <canvas id="chart-patrimonio-hist" style="max-height: 250px;"></canvas>
-            </div>
         </div>
-    </div>
 
-    <!-- Widget: Asignación de Activos (New in Phase 7) -->
-    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="9" gs-id="widget-activos">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.portfolio')">PORTAFOLIO</span>
-                <i class="fa-solid fa-layer-group text-info"></i>
+        <!-- Template: Monthly Summary -->
+        <div id="tpl-widget-monthly-summary">
+            <div x-data="widgetMonthlySummary" class="h-100 d-flex flex-column">
+                <div class="widget-header">
+                    <h5 class="widget-title">GASTOS VS INGRESOS</h5>
+                    <div class="widget-actions">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div class="widget-body">
+                    <template x-if="loading">
+                        <div class="loader-container"><div class="neon-pulse"></div></div>
+                    </template>
+                    <template x-if="!loading">
+                        <div class="row align-items-center h-100">
+                            <div class="col-6 position-relative">
+                                <canvas id="chart-monthly-summary"></canvas>
+                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                    <small class="text-dim d-block" style="font-size: 0.5rem;">NETO</small>
+                                    <span class="fw-bold" style="font-size: 0.8rem;" x-text="'$' + (summary.income - summary.expense).toLocaleString()"></span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <small class="text-success d-block">INGRESOS</small>
+                                    <span class="fw-bold" x-text="'$' + summary.income.toLocaleString()"></span>
+                                </div>
+                                <div>
+                                    <small class="text-danger d-block">GASTOS</small>
+                                    <span class="fw-bold" x-text="'$' + summary.expense.toLocaleString()"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
-            <div class="p-3">
-                <canvas id="chart-asignacion" style="max-height: 250px;"></canvas>
+        <!-- Template: IA Insights -->
+        <div id="tpl-widget-ia-insights">
+            <div x-data="widgetIaInsights" class="h-100 d-flex flex-column">
+                <div class="widget-header" style="background: rgba(0, 195, 255, 0.1);">
+                    <h5 class="widget-title text-info"><i class="fa-solid fa-brain me-1"></i>IA INSIGHTS</h5>
+                    <div class="widget-actions">
+                        <i class="fa-solid fa-sync" @click="fetchData()"></i>
+                    </div>
+                </div>
+                <div class="widget-body">
+                    <template x-if="loading">
+                        <div class="loader-container"><div class="neon-pulse" style="background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue);"></div></div>
+                    </template>
+                    <template x-if="!loading">
+                        <div class="d-flex flex-column gap-2">
+                            <template x-for="(insight, idx) in insights" :key="idx">
+                                <div class="p-2 rounded bg-black bg-opacity-25 border border-secondary border-opacity-50">
+                                    <h6 class="mb-1 font-orbitron" style="font-size: 0.75rem;" 
+                                        :class="insight.type === 'warning' ? 'text-warning' : 'text-success'">
+                                        <i class="fa-solid me-1" 
+                                           :class="insight.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-trophy'"></i>
+                                        <span x-text="insight.title"></span>
+                                    </h6>
+                                    <p class="text-dim mb-0" style="font-size: 0.7rem;" x-text="insight.desc"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Widget: Actividad Reciente con Barra de Acciones -->
-    <div class="grid-stack-item" gs-w="8" gs-h="5" gs-x="4" gs-y="9" gs-id="widget-actividad">
-        <div class="grid-stack-item-content d-flex flex-column">
-            <div class="widget-header">
-                <span x-text="$store.lang.t('dashboard.recent_activity') || 'Actividad Reciente'">Actividad Reciente</span>
-                <i class="fa-solid fa-clock-rotate-left text-primary"></i>
-            </div>
-            <div class="flex-grow-1 overflow-auto p-2" style="max-height: 200px;">
-                <table class="table table-sm table-borderless text-white mb-0">
-                    <tbody style="font-family: 'Consolas', monospace; font-size: 0.75rem;">
-                        <template x-for="tx in transactions" :key="tx.id_transaccion">
-                            <tr class="border-bottom border-light border-opacity-10 align-middle" 
-                                :class="{'bg-primary bg-opacity-10': selectedTxId === tx.id_transaccion}"
-                                @click="selectedTxId = tx.id_transaccion"
-                                @dblclick="window.location.href='/transacciones?edit=' + tx.id_transaccion">
-                                <td width="25" class="text-center py-1">
-                                    <i class="fa-solid" :class="tx.codigo_transaccion === 'Deposit' ? 'fa-circle-chevron-up text-success' : 'fa-circle-chevron-down text-danger'"></i>
-                                </td>
-                                <td class="py-1">
-                                    <div class="fw-bold text-truncate" style="max-width: 100px; font-size: 0.7rem;" x-text="tx.nombre_beneficiario"></div>
-                                    <div class="text-dim" style="font-size: 0.65rem;" x-text="tx.nombre_categoria"></div>
-                                </td>
-                                <td class="text-end fw-bold py-1" :class="tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-danger'">
-                                    <span style="font-size: 0.75rem;" x-text="(tx.codigo_transaccion === 'Deposit' ? '+' : '-') + formatCurrency(tx.monto_transaccion)"></span>
-                                </td>
-                            </tr>
-                        </template>
-                        <template x-if="transactions.length === 0">
-                            <tr>
-                                <td colspan="3" class="text-center p-3 text-dim">No hay actividad reciente</td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-            <!-- Barra de Acciones Inferior -->
-            <div class="border-top border-secondary border-opacity-25 p-2 d-flex justify-content-center gap-2">
-                <a href="/transacciones?new=1" class="btn btn-sm btn-outline-success px-3">
-                    <i class="fa-solid fa-plus me-1"></i>Nuevo
-                </a>
-                <button class="btn btn-sm btn-outline-primary px-3" :disabled="!selectedTxId" 
-                        @click="if(selectedTxId) window.location.href='/transacciones?edit=' + selectedTxId">
-                    <i class="fa-solid fa-pen me-1"></i>Editar
-                </button>
-                <button class="btn btn-sm btn-outline-warning px-3" :disabled="!selectedTxId"
-                        @click="if(selectedTxId) window.location.href='/transacciones?duplicate=' + selectedTxId">
-                    <i class="fa-solid fa-copy me-1"></i>Duplicar
-                </button>
-                <button class="btn btn-sm btn-outline-danger px-3" :disabled="!selectedTxId"
-                        @click="if(selectedTxId && confirm('¿Eliminar esta transacción?')) deleteTx(selectedTxId)">
-                    <i class="fa-solid fa-trash me-1"></i>Borrar
-                </button>
+        <!-- Template: Quick Add -->
+        <div id="tpl-widget-quick-add">
+            <div x-data="widgetQuickAdd" class="h-100 d-flex flex-column">
+                <div class="widget-header">
+                    <h5 class="widget-title">ACCESO RÁPIDO</h5>
+                </div>
+                <div class="widget-body d-flex flex-column justify-content-center gap-2">
+                    <button class="btn btn-outline-danger btn-sm w-100" @click="openForm('EXPENSE')">
+                        <i class="fa-solid fa-minus-circle me-1"></i> NUEVO GASTO
+                    </button>
+                    <button class="btn btn-outline-success btn-sm w-100" @click="openForm('INCOME')">
+                        <i class="fa-solid fa-plus-circle me-1"></i> NUEVO INGRESO
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm w-100" @click="openForm('TRANSFER')">
+                        <i class="fa-solid fa-exchange-alt me-1"></i> TRANSFERENCIA
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+<!-- Widgets Logic -->
+<script src="/static/js/widgets/widget-balance-total.js"></script>
+<script src="/static/js/widgets/widget-dolar-hoy.js"></script>
+<script src="/static/js/widgets/widget-recent-transactions.js"></script>
+<script src="/static/js/widgets/widget-monthly-summary.js"></script>
+<script src="/static/js/widgets/widget-quick-add.js"></script>
+<script src="/static/js/widgets/widget-ia-insights.js"></script>
+
+<!-- Transaction Form Logic & Template -->
+{% include "transactions/main_form.html" %}
+<script src="/static/js/transaction-form.js"></script>
+
+<!-- Dashboard Manager -->
+<script src="/static/js/dashboard.js"></script>
+
 <script>
-    document.addEventListener('alpine:init', () => {
-        // Defensive check for API client
-        const getApiClient = () => window.api || { get: () => Promise.resolve({data:[]}), post: () => Promise.resolve({data:[]}) };
-
-        // Local Alpine wrapper for the centralized CurrencyUtils
-        Alpine.data('dashboardWidgets', () => {
-            // Non-reactive chart storage to prevent recursion/stack overflow
-            const chartInstances = { 
-                categorias: null, 
-                evolucion: null, 
-                asignacion: null, 
-                patrimonioHist: null 
-            };
-
-            return {
-                fechaActual: new Date().toLocaleString(),
-                selectedCurrency: localStorage.getItem('3f_pref_currency') || 'ARS',
-                showBreakdown: false,
-                selectedTxId: null,
-                resumen: { 
-                    patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0, 
-                    ingresos_mes: 0, gastos_mes: 0, presupuesto_mes: 0, proyeccion_cierre: 0,
-                    dias_restantes: 0, burn_rate_diario: 0, proyeccion_30d: 0 
-                },
-                summary: { total_invested: 0, current_value: 0, total_profit_loss: 0, profit_loss_percentage: 0 },
-                transactions: [],
-                aiEnabled: false,
-                wealthHistoryDays: 30,
-                savingsRate: { savings_rate_percentage: 0, status: 'AVERAGE' },
-                grid: null,
-                layoutManager: null,
-                // Removed 'charts' from reactive data object
-
-                async init() {
-                    
-                    // Clock synchronization
-                    setInterval(() => { this.fechaActual = new Date().toLocaleString(); }, 1000);
-
-                    // 1. GridStack & Layout (STRICTLY SEQUENTIAL)
-                    try {
-                        this.grid = GridStack.init({
-                            cellHeight: 70, margin: 10, column: 12,
-                            disableOneColumnMode: false, float: true,
-                            draggable: { handle: '.widget-header' }
-                        });
-                        
-                        if (window.LayoutManager) {
-                            this.layoutManager = new LayoutManager('dashboard', this.grid);
-                            await this.layoutManager.loadLayout();
-                        }
-                    } catch (e) { console.error("Grid/Layout Error:", e); }
-                    
-                    // 2. Initial Data & Charts
-                    await this.updateDashboard();
-                    
-                    // Listen for refresh events
-                    window.addEventListener('update-data', () => this.updateDashboard(true));
-                },
-
+    // Integration logic to inject widget content from templates
+    document.addEventListener('alpine:initialized', () => {
+        setTimeout(() => {
+            const el = document.querySelector('[x-data="dashboardManager"]');
+            if (el && Alpine.$data(el)) {
+                const mgr = Alpine.$data(el);
                 
-                async updateDashboard(force = false) {
-                    try {
-                        await Promise.all([
-                            this.loadResumen(),
-                            this.loadSummary(),
-                            this.loadTransactions(),
-                            this.loadSavingsRate()
-                        ]);
-                        
-                        // Check if charts exist in our non-reactive storage
-                        if (!chartInstances.categorias || force) {
-                            this.initCharts();
-                        } else {
-                            this.updateCharts();
-                        }
-                    } catch (e) { console.error("Update Error:", e); }
-                },
-                
-                async resetLayout() {
-                    if (this.layoutManager) await this.layoutManager.resetLayout();
-                },
+                // Wrap original loadLayout to handle template injection
+                const originalLoad = mgr.loadLayout;
+                mgr.loadLayout = async function() {
+            await originalLoad.call(this);
+            this.refreshWidgetContents();
+        };
 
-                async deleteTx(txId) {
-                    try {
-                        await getApiClient().delete(`/transacciones/${txId}`);
-                        this.transactions = this.transactions.filter(t => t.id_transaccion !== txId);
-                        this.selectedTxId = null;
-                        await this.updateDashboard(true);
-                    } catch (e) {
-                        alert('Error al eliminar: ' + (e.response?.data?.detail || e.message));
-                    }
-                },
+        const originalAdd = mgr.addWidget;
+        mgr.addWidget = function(widgetId) {
+            const html = document.getElementById('tpl-' + widgetId)?.innerHTML || 'Widget Template Not Found';
+            this.grid.addWidget({ 
+                w: 4, h: 2, 
+                id: widgetId, 
+                content: `<div class="grid-stack-item-content">${html}</div>` 
+            });
+            this.saveLayout();
+            // Re-initialize Alpine on the new widget
+            this.$nextTick(() => Alpine.discoverUninitializedComponents());
+        };
 
-                formatCurrency(amount) {
-                    if (typeof CurrencyUtils === 'undefined') {
-                        console.warn('CurrencyUtils not loaded yet');
-                        return '$ ' + (amount || 0).toFixed(2);
-                    }
-                    return CurrencyUtils.formatCurrency(amount, this.selectedCurrency);
-                },
-
-                async loadResumen() {
-                    try {
-                        const currency = this.selectedCurrency || 'ARS';
-                        localStorage.setItem('3f_pref_currency', currency);
-                        const res = await getApiClient().get(`/resumen/?currency=${currency}`);
-                        // Ensure all fields are present to avoid Alpine issues
-                        this.resumen = {
-                            patrimonio_neto: 0, total_liquido: 0, total_activos: 0, total_inversiones: 0,
-                            ingresos_mes: 0, gastos_mes: 0, presupuesto_mes: 0, proyeccion_cierre: 0,
-                            dias_restantes: 0, burn_rate_diario: 0, proyeccion_30d: 0,
-                            ...res.data
-                        };
-                    } catch (e) {
-                        console.error('loadResumen fail', e);
-                        // Defensive empty state on failure
-                        this.resumen = { ...this.resumen };
-                    }
-                },
-
-
-                async loadSummary() {
-                    try {
-                        const res = await getApiClient().get('/stocks/summary');
-                        if(res.data) this.summary = res.data;
-                    } catch (e) { console.warn('stocks summary empty'); }
-                },
-
-                async loadTransactions() {
-                    try {
-                        const res = await getApiClient().get('/transacciones/?limit=5');
-                        this.transactions = res.data.data || [];
-                    } catch (e) { console.error('loadTransactions fail', e); }
-                },
-
-                async loadSavingsRate() {
-                    try {
-                        const res = await getApiClient().get('/wealth/savings-rate');
-                        if(res.data) this.savingsRate = res.data;
-                    } catch (e) { console.error('loadSavingsRate fail', e); }
-                },
-
-                initCharts() {
-                    const ctxCat = document.getElementById('chart-categorias');
-                    const ctxEvo = document.getElementById('chart-evolucion');
-                    const ctxWealth = document.getElementById('chart-patrimonio-hist');
-                    const ctxAsign = document.getElementById('chart-asignacion');
-
-                    Object.values(chartInstances).forEach(c => { if(c) c.destroy(); });
-
-                    if (ctxCat) {
-                        chartInstances.categorias = new Chart(ctxCat.getContext('2d'), {
-                            type: 'doughnut',
-                            data: { labels: [], datasets: [{ data: [], backgroundColor: ['#2596be', '#6c25be', '#96be25', '#bea925', '#be4d25', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
-                        });
-                    }
-
-                    if (ctxEvo) {
-                        chartInstances.evolucion = new Chart(ctxEvo.getContext('2d'), {
-                            type: 'line',
-                            data: { labels: [], datasets: [{ label: 'REAL', data: [], borderColor: '#2596be', backgroundColor: 'rgba(37, 150, 190, 0.1)', fill: true, tension: 0.4 }, { label: 'PROYECCION', data: [], borderColor: '#2596be', borderDash: [5, 5], backgroundColor: 'transparent', fill: false, tension: 0.4 }] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { y: { grid: { color: 'rgba(37, 150, 190, 0.05)' }, ticks: { color: '#bee0ec' } }, x: { grid: { display: false }, ticks: { color: '#bee0ec' } } } }
-                        });
-                    }
-
-                    if (ctxWealth) {
-                        chartInstances.patrimonioHist = new Chart(ctxWealth.getContext('2d'), {
-                            type: 'line',
-                            data: { labels: [], datasets: [] },
-                            options: {
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0, 0, 0, 0.8)', bodyFont: { family: 'Consolas' }, callbacks: { label: (context) => this.formatCurrency(context.raw) } } },
-                                scales: { y: { grid: { color: 'rgba(0, 242, 255, 0.05)' }, ticks: { color: '#00f2ff', font: { size: 9 } } }, x: { grid: { display: false }, ticks: { color: '#00f2ff', font: { size: 9 } } } }
-                            }
-                        });
-                    }
-
-                    if (ctxAsign) {
-                        chartInstances.asignacion = new Chart(ctxAsign.getContext('2d'), {
-                            type: 'doughnut',
-                            data: { labels: ['Líquido', 'Activos', 'Inversiones'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#00f2ff', '#7000ff', '#be2596'], borderColor: '#040f13', borderWidth: 2 }] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 10, family: 'Orbitron' } } } } }
-                        });
-                    }
-                    this.updateCharts();
-                },
-
-                async updateCharts() {
-                    try {
-                        const api = getApiClient();
-                        
-                        if (chartInstances.categorias && typeof chartInstances.categorias.update === 'function') {
-                            try {
-                                const resCat = await api.get('/reportes/categorias');
-                                chartInstances.categorias.data.labels = resCat.data.labels;
-                                chartInstances.categorias.data.datasets[0].data = resCat.data.data;
-                                chartInstances.categorias.update();
-                            } catch (e) { console.warn('Cat chart update error', e); }
-                        }
-                        
-                        if (chartInstances.evolucion && typeof chartInstances.evolucion.update === 'function') {
-                            try {
-                                const resTend = await api.get('/reportes/tendencia');
-                                this.aiEnabled = resTend.data.ai_enabled || false;
-                                chartInstances.evolucion.data.labels = resTend.data.labels;
-                                chartInstances.evolucion.data.datasets[0].data = resTend.data.historico;
-                                chartInstances.evolucion.data.datasets[1].data = resTend.data.tendencia;
-                                chartInstances.evolucion.update();
-                                const hC = resTend.data.historico.length;
-                                if (resTend.data.tendencia && resTend.data.tendencia.length > hC) this.resumen.proyeccion_30d = resTend.data.tendencia[hC];
-                            } catch (e) { console.warn('Evo chart update error', e); }
-                        }
-                        
-                        if (chartInstances.asignacion && typeof chartInstances.asignacion.update === 'function') {
-                            try {
-                                chartInstances.asignacion.data.datasets[0].data = [this.resumen.total_liquido, this.resumen.total_activos, this.resumen.total_inversiones];
-                                chartInstances.asignacion.update();
-                            } catch (e) { console.warn('Asign chart update error', e); }
-                        }
-                        
-                        this.updateWealthChart();
-                    } catch (e) { console.error('updateCharts fail', e); }
-                },
-
-                async updateWealthChart() {
-                    if (!chartInstances.patrimonioHist || typeof chartInstances.patrimonioHist.update !== 'function') return;
-                    try {
-                        const res = await getApiClient().get(`/wealth/history/chart?days=${this.wealthHistoryDays}`);
-                        if (!res.data || !Array.isArray(res.data.datasets)) return;
-                        
-                        chartInstances.patrimonioHist.data.labels = res.data.labels || [];
-                        chartInstances.patrimonioHist.data.datasets = res.data.datasets.map(ds => ({
-                            ...ds, borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
-                        }));
-                        chartInstances.patrimonioHist.update();
-                    } catch (e) { console.error('updateWealthChart fail', e); }
+        mgr.refreshWidgetContents = function() {
+            this.grid.getGridItems().forEach(item => {
+                const widgetId = item.gridstackNode.id;
+                const html = document.getElementById('tpl-' + widgetId)?.innerHTML;
+                if (html) {
+                    this.grid.update(item, { content: `<div class="grid-stack-item-content">${html}</div>` });
                 }
-
-            }; // return object
-        });
+            });
+            // Final Alpine refresh
+            this.$nextTick(() => Alpine.discoverUninitializedComponents());
+        };
+        
+        // Forzar pintado ahora mismo de los widgets que Alpine cargó inicialmente!
+        mgr.refreshWidgetContents();
+        
+        } // End of if
+    }, 100); // Small timeout to ensure Alpine fully boots
     });
 </script>
 {% endblock %}

@@ -1,26 +1,46 @@
-from typing import Dict, Any, List
+"""
+IA OCR Plugin — Extracción de datos de tickets/facturas con Gemini.
+Pre-llena el formulario de transacción automáticamente.
+"""
 from backend.plugins.base import BasePlugin
-from backend.core.ia_service import ia_service
+from backend.plugins.ia_ocr.services import ocr_service
+
 
 class IaOcrPlugin(BasePlugin):
     nombre_tecnico = "ia_ocr"
-    nombre_display = "IA OCR Vision"
-    version = "1.0.2"
+    nombre_display = "IA OCR — Escaneo de Tickets"
+    version = "1.1.0"
     autor = "3F Core"
-    descripcion = "Extracción inteligente de datos de facturas y tickets mediante Computer Vision."
-    hooks = ["vault_file_upload", "transaction_created"]
+    descripcion = (
+        "Extrae automáticamente datos financieros de imágenes de tickets y facturas "
+        "usando Google Gemini 1.5 Flash. Pre-llena el formulario de transacción y "
+        "sugiere splits por ítem si el ticket tiene detalle de productos."
+    )
+    hooks = ["vault_file_upload"]
 
     async def initialize(self):
-        self.logger.info("IA OCR Plugin inicializado")
+        # Pre-inicializar el motor de OCR
+        ocr_service._ensure_init()
+        engine = "Gemini" if ocr_service._gemini_model else (
+            "Tesseract" if ocr_service._tesseract_available else "ninguno"
+        )
+        self.logger.info(
+            f"IA OCR Plugin inicializado. Motor disponible: {engine}"
+        )
 
     async def shutdown(self):
         self.logger.info("IA OCR Plugin desactivado")
 
     async def on_vault_file_upload(self, file_content: bytes, mime_type: str, **kwargs):
-        """Hook disparado cuando se sube un archivo al vault"""
-        self.logger.info("IA OCR: Procesando nuevo archivo en vault")
-        return await ia_service.procesar_ticket(file_content, mime_type)
+        """
+        Hook: procesa automáticamente imágenes subidas al Vault.
+        Retorna los datos para pre-llenar el formulario de transacción.
+        """
+        if not mime_type.startswith("image/") and mime_type != "application/pdf":
+            return None
+        self.logger.info("IA OCR: Procesando archivo subido al Vault...")
+        return await ocr_service.process_image(file_content, mime_type)
 
-    async def on_transaction_created(self, transaction_id: int, **kwargs):
-        """Hook disparado al crear una transacción (para sugerir datos si hay adjunto)"""
-        pass
+    async def process_file(self, file_content: bytes, mime_type: str) -> dict:
+        """API pública del plugin: procesar imagen/PDF directamente."""
+        return await ocr_service.process_image(file_content, mime_type)

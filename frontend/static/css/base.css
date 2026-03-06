@@ -1,0 +1,31 @@
+:root {
+    /* Layout Variables */
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    
+    /* Default spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}
+
+body {
+    background-color: var(--bg-main, #f4f6f9);
+    color: var(--text-main, #333);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card {
+    background-color: var(--bg-card, #fff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow, 0 0 1px rgba(0,0,0,.125),0 1px 3px rgba(0,0,0,.2));
+}
+
+.btn-primary {
+    background-color: var(--primary, #0d6efd);
+    border-color: var(--primary, #0d6efd);
+    color: var(--text-on-primary, #fff);
+}

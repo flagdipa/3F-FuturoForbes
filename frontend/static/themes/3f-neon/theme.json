@@ -1,0 +1,13 @@
+{
+    "id": "3f-neon",
+    "name": "3F Neon",
+    "description": "Estética Cyberpunk High-Tech con efectos de escaneo y brillo neon.",
+    "author": "Antigravity AI",
+    "version": "2.0",
+    "dark_mode": true,
+    "colors": {
+        "primary": "#00ff88",
+        "secondary": "#ff00ff",
+        "background": "#0a0a1a"
+    }
+}

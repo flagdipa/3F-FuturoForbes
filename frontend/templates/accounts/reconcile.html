@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Conciliación Bancaria | 3F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reconcile-card {
+        background: rgba(10, 10, 25, 0.7);
+        border: 1px solid var(--3f-primary-border);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(15px);
+    }
+    .status-panel {
+        background: linear-gradient(135deg, rgba(0,242,255,0.05) 0%, rgba(0,0,0,0.5) 100%);
+        border: 1px dashed var(--neon-blue);
+        border-radius: 8px;
+    }
+    
+    .status-panel.balanced {
+        border-color: var(--neon-green);
+        background: linear-gradient(135deg, rgba(0,255,136,0.05) 0%, rgba(0,0,0,0.5) 100%);
+    }
+    
+    .status-panel.unbalanced {
+        border-color: var(--neon-pink);
+        background: linear-gradient(135deg, rgba(255,0,85,0.05) 0%, rgba(0,0,0,0.5) 100%);
+    }
+
+    .tx-row {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .tx-row:hover {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .tx-row.selected {
+        background: rgba(0, 242, 255, 0.15) !important;
+        border-left: 3px solid var(--neon-blue);
+    }
+    
+    .difference-value {
+        font-size: 2.5rem;
+        font-family: 'Orbitron', sans-serif;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="reconciliationApp()" class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/accounts" class="text-dim text-decoration-none">Cuentas</a></li>
+                    <li class="breadcrumb-item active text-info" aria-current="page">Conciliación</li>
+                </ol>
+            </nav>
+            <h2 class="font-orbitron text-primary mb-0">
+                <i class="fa-solid fa-check-double me-2"></i>CONCILIACIÓN: <span x-text="accountName"></span>
+            </h2>
+        </div>
+        <button class="btn btn-outline-secondary" @click="window.location.href='/accounts'">
+            <i class="fa-solid fa-arrow-left me-1"></i> VOLVER
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <!-- Panel Izquierdo: Formularios y Estado -->
+        <div class="col-md-4">
+            
+            <!-- Target Statement -->
+            <div class="reconcile-card mb-4">
+                <h6 class="font-orbitron text-white border-bottom border-secondary border-opacity-50 pb-2 mb-3">DATOS DEL EXTRACTO BANCARIO</h6>
+                
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Fecha de Corte</label>
+                    <input type="date" class="form-control bg-dark text-white border-secondary" x-model="statementDate" @change="fetchTransactions">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Saldo Final del Extracto</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-dim">$</span>
+                        <input type="number" step="0.01" class="form-control bg-black text-white border-secondary text-end font-orbitron" x-model="statementBalance">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reconciliation Status -->
+            <div class="reconcile-card status-panel p-4 text-center" :class="{ 'balanced': isBalanced, 'unbalanced': !isBalanced && difference !== 0 }">
+                <p class="text-dim font-orbitron mb-1">DIFERENCIA RESTANTE</p>
+                <div class="difference-value fw-bold mb-3" 
+                     :class="isBalanced ? 'text-success' : 'text-danger'" 
+                     x-text="formatCurrency(difference)">
+                </div>
+
+                <div class="d-flex justify-content-between text-dim small mb-1">
+                    <span>Saldo Limpio (Sistema):</span>
+                    <span x-text="formatCurrency(clearedBalance)"></span>
+                </div>
+                <div class="d-flex justify-content-between text-dim small border-bottom border-secondary border-opacity-25 pb-2 mb-3">
+                    <span>Saldo del Extracto:</span>
+                    <span x-text="formatCurrency(statementBalance || 0)"></span>
+                </div>
+
+                <template x-if="isBalanced">
+                    <button class="btn btn-success w-100 neon-border-static" @click="finishReconciliation()" :disabled="saving">
+                        <i class="fa-solid fa-lock me-2" :class="saving ? 'fa-spinner fa-spin' : ''"></i> 
+                        <span x-text="saving ? 'PROCESANDO...' : 'FINALIZAR CONCILIACIÓN'"></span>
+                    </button>
+                </template>
+                <template x-if="!isBalanced">
+                    <button class="btn btn-outline-danger w-100 disabled">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i> DESBALANCEADO
+                    </button>
+                </template>
+            </div>
+            
+            <!-- Help Box -->
+            <div class="mt-4 p-3 rounded bg-black bg-opacity-25 border border-primary border-opacity-25">
+                <p class="small text-info mb-1"><i class="fa-solid fa-info-circle me-1"></i> <strong>Instrucciones:</strong></p>
+                <ul class="small text-dim mb-0 ps-3">
+                    <li>Ingresa la Fecha y el Saldo exacto que figuran en el extracto de tu banco o tarjeta.</li>
+                    <li>Selecciona las operaciones en la tabla de la derecha que coincidan con tu extracto.</li>
+                    <li>Cuando la diferencia llegue a cero, podrás finalizar el proceso y asegurar las líneas.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Transacciones Pendientes -->
+        <div class="col-md-8">
+            <div class="reconcile-card h-100 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="font-orbitron text-white mb-0">OPERACIONES PENDIENTES HASTA LA FECHA DE CORTE</h6>
+                    <button class="btn btn-sm btn-link text-info text-decoration-none" @click="selectAll()">
+                        <i class="fa-solid fa-check-square me-1"></i> Seleccionar Todas
+                    </button>
+                </div>
+                
+                <div class="table-responsive flex-grow-1" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-dark table-borderless align-middle mb-0">
+                        <thead class="text-dim" style="position: sticky; top: 0; background: rgba(10,10,25,0.9); z-index: 10;">
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>FECHA</th>
+                                <th>DESCRIPCIÓN</th>
+                                <th class="text-end">CARGO (-)</th>
+                                <th class="text-end">ABONO (+)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="border-top border-secondary border-opacity-50">
+                            <template x-if="loading">
+                                <tr><td colspan="5" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-info fs-4"></i></td></tr>
+                            </template>
+                            
+                            <template x-if="!loading && transactions.length === 0">
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-dim">
+                                        <i class="fa-solid fa-check-circle fs-3 text-success mb-2 d-block"></i>
+                                        No hay operaciones pendientes de conciliar para esta fecha.
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <template x-for="tx in transactions" :key="tx.id">
+                                <tr class="tx-row border-bottom border-light border-opacity-10" 
+                                    :class="tx.selected ? 'selected' : ''"
+                                    @click="toggleTx(tx)">
+                                    
+                                    <td class="text-center">
+                                        <i class="fa-regular fs-5" 
+                                           :class="tx.selected ? 'fa-square-check text-info' : 'fa-square text-dim'"></i>
+                                    </td>
+                                    <td x-text="formatDate(tx.date)"></td>
+                                    <td>
+                                        <div class="fw-bold" x-text="tx.description"></div>
+                                    </td>
+                                    <td class="text-end text-danger font-orbitron" x-text="tx.amount < 0 ? formatCurrency(tx.amount) : ''"></td>
+                                    <td class="text-end text-success font-orbitron" x-text="tx.amount >= 0 ? formatCurrency(tx.amount) : ''"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('reconciliationApp', () => ({
+            accountId: {{ account_id | default(1) }},
+            accountName: 'Cargando...',
+            currentSystemBalance: 0,
+            
+            statementDate: new Date().toISOString().split('T')[0],
+            statementBalance: null, // Input by user
+            
+            transactions: [],
+            loading: true,
+            saving: false,
+
+            async init() {
+                // In production, fetch Account Details to get its name and true starting balance
+                await this.fetchAccountDetails();
+                await this.fetchTransactions();
+            },
+
+            async fetchAccountDetails() {
+                try {
+                    // Mock
+                    const res = await fetch(`/api/v1/accounts/${this.accountId}`);
+                    if(res.ok) {
+                        const acc = await res.json();
+                        this.accountName = acc.name;
+                    } else {
+                        this.accountName = "Cuenta #" + this.accountId;
+                    }
+                    
+                    // Mock balance at start of time before uncleared
+                    this.currentSystemBalance = 450300.50; // Replace with logic
+                    
+                } catch (e) {
+                    console.error(e);
+                    this.accountName = "Cuenta Local";
+                }
+            },
+
+            async fetchTransactions() {
+                this.loading = true;
+                try {
+                    // Fetch real ledger logic here filtering out reconciled=True 
+                    // AND date <= statementDate and building the list
+                    
+                    await new Promise(r => setTimeout(r, 600)); // Mock wait
+                    
+                    // Mock Uncleared Txs generated dynamically for demonstration
+                    this.transactions = [
+                        { id: 101, date: '2024-03-01', description: 'Supermercado', amount: -65000.00, selected: false },
+                        { id: 102, date: '2024-03-05', description: 'Transferencia Entrante', amount: 150000.00, selected: false },
+                        { id: 103, date: '2024-03-10', description: 'Cafetería', amount: -4500.00, selected: false },
+                        { id: 104, date: '2024-03-15', description: 'Suscripción Netflix', amount: -8500.00, selected: false },
+                    ];
+                    
+                    // Calculate starting cleared balance based on historical
+                    this.currentSystemBalance = 318300.50; 
+                } catch(e) {
+                    console.error(e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            toggleTx(tx) {
+                tx.selected = !tx.selected;
+            },
+
+            selectAll() {
+                const someUnselected = this.transactions.some(t => !t.selected);
+                this.transactions.forEach(t => t.selected = someUnselected);
+            },
+
+            get clearedBalance() {
+                // Saldo Limpio = Saldo de todo lo histórico conciliado + las sumas de las lineas seleccionadas en esta pantalla
+                let sumSelected = this.transactions
+                    .filter(t => t.selected)
+                    .reduce((acc, t) => acc + t.amount, 0);
+                    
+                return this.currentSystemBalance + sumSelected;
+            },
+
+            get difference() {
+                if(this.statementBalance === null || this.statementBalance === "") return null;
+                return parseFloat(this.statementBalance) - this.clearedBalance;
+            },
+
+            get isBalanced() {
+                return this.difference !== null && Math.abs(this.difference) < 0.01;
+            },
+
+            formatCurrency(val) {
+                if(val === null || val === undefined) return "$ 0.00";
+                return "$ " + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            },
+
+            formatDate(d) {
+                const date = new Date(d);
+                return date.toLocaleDateString();
+            },
+
+            async finishReconciliation() {
+                if(!this.isBalanced) return;
+                
+                this.saving = true;
+                try {
+                    // Aca hariamos POST /api/v1/accounts/{id}/reconcile enviando el bank balance y lista de IDs si es necesario
+                    const payload = {
+                        statement_balance: parseFloat(this.statementBalance),
+                        statement_date: this.statementDate + "T00:00:00Z"
+                    };
+                    
+                    const res = await fetch(`/api/v1/accounts/${this.accountId}/reconcile`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if(res.ok) {
+                        alert("¡Conciliación exitosa! Las transacciones fueron blindadas.");
+                        window.location.href = "/accounts";
+                    } else {
+                        const err = await res.json();
+                        alert("Error conciliando: " + err.detail);
+                    }
+                    
+                } catch(e) {
+                    console.error(e);
+                    alert("Error de conexión");
+                } finally {
+                    this.saving = false;
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

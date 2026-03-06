@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from sqlmodel import Session, select
 from ..core.database import engine
-from ..models.models_config import Configuracion
+from ..models import SystemConfig
 import logging
 
 def get_smtp_config():
@@ -17,13 +17,13 @@ def get_smtp_config():
     }
     
     with Session(engine) as session:
-        settings = session.exec(select(Configuracion).where(Configuracion.clave.like('SMTP_%'))).all()
+        settings = session.exec(select(SystemConfig).where(SystemConfig.key.like('SMTP_%'))).all()
         for s in settings:
-            if s.clave == 'SMTP_host': config['host'] = s.valor
-            if s.clave == 'SMTP_port': config['port'] = int(s.valor) if s.valor.isdigit() else 587
-            if s.clave == 'SMTP_user': config['user'] = s.valor
-            if s.clave == 'SMTP_password': config['password'] = s.valor
-            if s.clave == 'SMTP_from': config['from'] = s.valor
+            if s.key == 'SMTP_host': config['host'] = s.value
+            if s.key == 'SMTP_port': config['port'] = int(s.value) if s.value.isdigit() else 587
+            if s.key == 'SMTP_user': config['user'] = s.value
+            if s.key == 'SMTP_password': config['password'] = s.value
+            if s.key == 'SMTP_from': config['from'] = s.value
             
     return config
 

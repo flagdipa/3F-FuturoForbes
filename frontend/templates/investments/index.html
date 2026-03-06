@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Portafolio de Inversiones | 3F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inv-card {
+        background: rgba(10, 10, 25, 0.7);
+        border: 1px solid rgba(0, 242, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .inv-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 242, 255, 0.15);
+    }
+    .chart-container {
+        position: relative;
+        flex-grow: 1;
+        min-height: 250px;
+    }
+    .simulator-box {
+        background: linear-gradient(145deg, rgba(255, 0, 255, 0.05) 0%, rgba(0,0,0,0.4) 100%);
+        border: 1px dashed var(--neon-pink);
+        border-radius: 8px;
+        padding: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="investmentsDashboard" class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="font-orbitron text-info mb-0"><i class="fa-solid fa-arrow-trend-up me-2"></i>PORTAFOLIO & CRYPTO</h2>
+            <p class="text-dim small mb-0">MONITOREO DE ACTIVOS Y RENDIMIENTO</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" @click="fetchData()">
+                <i class="fa-solid fa-sync me-1"></i> ACTUALIZAR
+            </button>
+            <button class="btn btn-sm btn-primary neon-border-static" data-bs-toggle="modal" data-bs-target="#new-investment-modal">
+                <i class="fa-solid fa-plus-circle me-1"></i> NUEVA POSICIÓN
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="inv-card text-center justify-content-center py-4" style="border-top: 3px solid var(--neon-blue)">
+                <small class="text-dim font-orbitron mb-2">VALOR TOTAL DEL PORTAFOLIO</small>
+                <h2 class="text-white fw-bold mb-0" x-text="formatCurrency(performance.total_value)"></h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="inv-card text-center justify-content-center py-4" style="border-top: 3px solid var(--neon-success)">
+                <small class="text-dim font-orbitron mb-2">CAPITAL INVERTIDO</small>
+                <h3 class="text-secondary fw-bold mb-0" x-text="formatCurrency(performance.invested_capital)"></h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="inv-card text-center justify-content-center py-4" :style="'border-top: 3px solid ' + (performance.unrealized_pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-pink)')">
+                <small class="text-dim font-orbitron mb-2">P&L NO REALIZADO</small>
+                <h3 class="fw-bold mb-0" :class="performance.unrealized_pnl >= 0 ? 'text-success' : 'text-danger'">
+                    <span x-text="(performance.unrealized_pnl >= 0 ? '+' : '') + formatCurrency(performance.unrealized_pnl)"></span>
+                    <small class="ms-2" style="font-size: 0.5em;" x-text="'(' + performance.unrealized_pnl_pct + '%)'"></small>
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row g-4 mb-4">
+        <!-- Tabla de Posiciones -->
+        <div class="col-md-8">
+            <div class="inv-card">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                    <h6 class="mb-0 font-orbitron text-white">POSICIONES ACTUALES</h6>
+                    <div class="input-group input-group-sm" style="width: 200px;">
+                        <span class="input-group-text bg-transparent border-secondary text-dim"><i class="fa-solid fa-search"></i></span>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Buscar ticker..." x-model="searchQuery">
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead class="text-dim" style="font-size: 0.8rem;">
+                            <tr>
+                                <th>SÍMBOLO</th>
+                                <th>TIPO</th>
+                                <th class="text-end">CANTIDAD</th>
+                                <th class="text-end">PRECIO PROMEDIO</th>
+                                <th class="text-end">MDO. ACTUAL</th>
+                                <th class="text-end">P&L</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody style="border-top: none;">
+                            <template x-if="loading">
+                                <tr><td colspan="7" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin text-info"></i> Cargando portfolio...</td></tr>
+                            </template>
+                            <template x-for="pos in filteredPositions" :key="pos.symbol">
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-secondary bg-opacity-25" style="width: 32px; height: 32px;">
+                                                <i class="fa-solid" :class="getIcon(pos.type)"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold font-orbitron text-white" x-text="pos.symbol"></div>
+                                                <div class="small text-dim" x-text="pos.name"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge border border-secondary border-opacity-50 text-dim bg-transparent" x-text="pos.type"></span></td>
+                                    <td class="text-end" x-text="pos.quantity"></td>
+                                    <td class="text-end" x-text="formatCurrency(pos.avg_price)"></td>
+                                    <td class="text-end" x-text="formatCurrency(pos.current_price)"></td>
+                                    <td class="text-end">
+                                        <div :class="pos.pnl >= 0 ? 'text-success' : 'text-danger'">
+                                            <span x-text="formatCurrency(pos.pnl)"></span>
+                                            <br>
+                                            <small x-text="(pos.pnl_pct > 0 ? '+' : '') + pos.pnl_pct + '%'"></small>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-link text-info p-0 ms-2" title="Operar"><i class="fa-solid fa-plus-minus"></i></button>
+                                        <button class="btn btn-sm btn-link text-dim p-0 ms-2" title="Historial"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Allocation & Simulator -->
+        <div class="col-md-4 d-flex flex-column gap-4">
+            <!-- Allocation Donut -->
+            <div class="inv-card flex-grow-1">
+                <h6 class="mb-3 font-orbitron text-white border-bottom border-secondary border-opacity-25 pb-2">DISTRIBUCIÓN (ALLOCATION)</h6>
+                <div class="chart-container d-flex justify-content-center">
+                    <canvas id="chart-allocation" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="mt-3">
+                    <template x-for="alloc in performance.allocation" :key="alloc.type">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-dim"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;" :style="'color:' + getAllocColor(alloc.type)"></i> <span x-text="alloc.type"></span></span>
+                            <span class="text-white fw-bold"><span x-text="alloc.percentage"></span>%</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Simulador -->
+            <div class="inv-card">
+                <h6 class="mb-2 font-orbitron text-warning border-bottom border-warning border-opacity-25 pb-2"><i class="fa-solid fa-flask me-1"></i> SIMULADOR DE ESCENARIOS</h6>
+                <div class="simulator-box mt-2">
+                    <p class="small text-white-50 mb-2">Si el mercado sube un:</p>
+                    <div class="d-flex gap-2 mb-3">
+                        <input type="range" class="form-range" min="-50" max="100" step="1" x-model="simPct" @input="updateSim">
+                        <span class="badge bg-warning text-dark fw-bold" style="min-width: 60px;" x-text="(simPct > 0 ? '+' : '') + simPct + '%'"></span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-end">
+                        <span class="small text-dim">Nuevo Valor Estimado:</span>
+                        <h5 class="mb-0 text-white font-orbitron" x-text="formatCurrency(simValue)"></h5>
+                    </div>
+                    <div class="text-end mt-1">
+                        <small :class="simDiff >= 0 ? 'text-success' : 'text-danger'" x-text="(simDiff >= 0 ? 'Ganancia: +' : 'Pérdida: ') + formatCurrency(simDiff)"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Posición -->
+<div class="modal fade" id="new-investment-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-info" style="box-shadow: 0 0 20px rgba(0,242,255,0.2);">
+            <div class="modal-header border-info border-opacity-25">
+                <h5 class="modal-title font-orbitron text-info"><i class="fa-solid fa-plus-circle me-2"></i>NUEVO ACTIVO / TICKER</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="new-inv-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small text-dim">SÍMBOLO (TICKER)</label>
+                            <input type="text" class="form-control bg-black text-white border-secondary" placeholder="Ej: AAPL, BTC...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-dim">TIPO DE ACTIVO</label>
+                            <select class="form-select bg-black text-white border-secondary">
+                                <option>STOCK (Acción)</option>
+                                <option>CRYPTO</option>
+                                <option>ETF / FONDO</option>
+                                <option>BOND (Bono)</option>
+                                <option>OTRO</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="small text-dim">NOMBRE DESCRIPTIVO</label>
+                            <input type="text" class="form-control bg-black text-white border-secondary" placeholder="Ej: Apple Inc.">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-info border-opacity-25">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">CANCELAR</button>
+                <button type="button" class="btn btn-sm btn-info text-dark fw-bold" data-bs-dismiss="modal" onclick="alert('Funcionalidad en desarrollo.')">GUARDAR ACTIVO</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('investmentsDashboard', () => ({
+            loading: true,
+            searchQuery: '',
+            positions: [],
+            performance: {
+                total_value: 0,
+                invested_capital: 0,
+                unrealized_pnl: 0,
+                unrealized_pnl_pct: 0,
+                allocation: []
+            },
+            
+            // Simulator data
+            simPct: 10,
+            simValue: 0,
+            simDiff: 0,
+
+            async init() {
+                await this.fetchData();
+            },
+
+            async fetchData() {
+                this.loading = true;
+                try {
+                    // API Calls
+                    const resPerf = await fetch('/api/v1/investments/performance').then(r => r.json());
+                    // Mock positions for now, in reality call /api/v1/investments/positions
+                    await new Promise(r => setTimeout(r, 600)); 
+                    const mockPositions = [
+                        { symbol: 'AAPL', name: 'Apple Inc.', type: 'STOCK', quantity: 50, avg_price: 150.00, current_price: 185.20, pnl: 1760.00, pnl_pct: 23.4 },
+                        { symbol: 'SPY', name: 'S&P 500 ETF', type: 'ETF', quantity: 15, avg_price: 450.00, current_price: 512.30, pnl: 934.50, pnl_pct: 13.8 },
+                        { symbol: 'BTC', name: 'Bitcoin', type: 'CRYPTO', quantity: 0.25, avg_price: 42000.00, current_price: 68000.00, pnl: 6500.00, pnl_pct: 61.9 },
+                        { symbol: 'TSLA', name: 'Tesla Inc.', type: 'STOCK', quantity: 30, avg_price: 240.00, current_price: 175.50, pnl: -1935.00, pnl_pct: -26.8 }
+                    ];
+
+                    this.performance = resPerf;
+                    this.positions = mockPositions;
+                    
+                    this.updateSim();
+                    this.$nextTick(() => this.initCharts());
+                } catch(e) {
+                    console.error("Error cargando inversiones", e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            get filteredPositions() {
+                if (!this.searchQuery) return this.positions;
+                const q = this.searchQuery.toLowerCase();
+                return this.positions.filter(p => p.symbol.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+            },
+
+            formatCurrency(val) {
+                if (val === undefined || val === null) return "$ 0.00";
+                return "$ " + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            },
+
+            getIcon(type) {
+                const icons = {
+                    'STOCK': 'fa-chart-line text-info',
+                    'ETF': 'fa-layer-group text-primary',
+                    'CRYPTO': 'fa-brands fa-bitcoin text-warning',
+                    'BOND': 'fa-file-invoice-dollar text-success'
+                };
+                return icons[type] || 'fa-coins text-secondary';
+            },
+
+            getAllocColor(type) {
+                const colors = {
+                    'STOCK': '#00f2ff',
+                    'CRYPTO': '#ffcc00',
+                    'ETF': '#bb00ff',
+                    'BOND': '#00ff88'
+                };
+                return colors[type] || '#888';
+            },
+
+            updateSim() {
+                const currentVal = this.performance.total_value;
+                const change = currentVal * (this.simPct / 100);
+                this.simValue = currentVal + change;
+                this.simDiff = change;
+            },
+
+            initCharts() {
+                Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
+                
+                const ctxAlloc = document.getElementById('chart-allocation');
+                if (ctxAlloc && this.performance.allocation.length > 0) {
+                    // Verificamos si ya hay un chart creado, Chart.getChart(ctxAlloc) no funciona directo a veces, mejor guardamos la referencia si es necesario, pero re-crearemos
+                    let chartStatus = Chart.getChart("chart-allocation");
+                    if (chartStatus != undefined) {
+                      chartStatus.destroy();
+                    }
+                    
+                    new Chart(ctxAlloc, {
+                        type: 'doughnut',
+                        data: {
+                            labels: this.performance.allocation.map(a => a.type),
+                            datasets: [{
+                                data: this.performance.allocation.map(a => a.percentage),
+                                backgroundColor: this.performance.allocation.map(a => this.getAllocColor(a.type)),
+                                borderWidth: 0,
+                                hoverOffset: 15
+                            }]
+                        },
+                        options: {
+                            cutout: '75%',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes & Analytics Avanzado | 3F{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --chart-bg: rgba(10, 10, 25, 0.7);
+        --chart-border: rgba(0, 255, 136, 0.2);
+    }
+    .report-card {
+        background: var(--chart-bg);
+        border: 1px solid var(--chart-border);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .report-card.neon-glow:hover {
+        border-color: var(--neon-green);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+    }
+    .report-header {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .chart-container {
+        position: relative;
+        flex-grow: 1;
+        min-height: 250px;
+    }
+    
+    .ai-summary-box {
+        background: linear-gradient(145deg, rgba(0,242,255,0.1) 0%, rgba(0,0,0,0.4) 100%);
+        border-left: 3px solid var(--neon-blue);
+        border-radius: 8px;
+        padding: 15px;
+        font-family: 'Inter', sans-serif;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="reportsDashboard" class="container-fluid py-4">
+
+    <!-- Header & Filtros -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="font-orbitron text-primary mb-0"><i class="fa-solid fa-chart-pie me-2"></i>INTELIGENCIA FINANCIERA</h2>
+            <p class="text-dim small mb-0">POWERED BY GEMINI PRO & 3F ANALYTICS</p>
+        </div>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm bg-dark text-white border-primary neon-border" style="width: auto;">
+                <option>ÚLTIMO MES</option>
+                <option selected>ÚLTIMOS 3 MESES</option>
+                <option>AÑO ACTUAL (YTD)</option>
+                <option>AÑO ANTERIOR</option>
+                <option>PERSONALIZADO</option>
+            </select>
+            <button class="btn btn-sm btn-outline-info" @click="exportReport('pdf')">
+                <i class="fa-solid fa-file-pdf me-1"></i> EXPORTAR
+            </button>
+        </div>
+    </div>
+
+    <!-- IA Forecasting Summary -->
+    <div class="row mb-4" x-show="forecastData.recommendations.length > 0" x-cloak>
+        <div class="col-12">
+            <div class="ai-summary-box d-flex align-items-start gap-3">
+                <div class="text-info fs-1">
+                    <i class="fa-solid fa-brain neon-text"></i>
+                </div>
+                <div>
+                    <h5 class="font-orbitron text-white mb-2">GEMINI FORECASTING & INSIGHTS</h5>
+                    <ul class="mb-0 text-white-50 small ps-3">
+                        <template x-for="(rec, i) in forecastData.recommendations" :key="'rec'+i">
+                            <li class="mb-1">
+                                <span x-text="rec"></span>
+                            </li>
+                        </template>
+                        <template x-for="(anomaly, i) in forecastData.anomalies_detected" :key="'ano'+i">
+                            <li class="mb-1 text-warning">
+                                <strong>Anomalía:</strong> <span x-text="anomaly"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="report-card text-center justify-content-center py-4 neon-glow" style="border-top: 3px solid var(--neon-green)">
+                <small class="text-dim font-orbitron mb-2">FLUJO DE CAJA NETO</small>
+                <h3 class="text-success fw-bold mb-0" x-text="formatCurrency(cashflow.net_cashflow)"></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="report-card text-center justify-content-center py-4 neon-glow" style="border-top: 3px solid var(--neon-blue)">
+                <small class="text-dim font-orbitron mb-2">INGRESOS PROMEDIO</small>
+                <h3 class="text-info fw-bold mb-0" x-text="formatCurrency(cashflow.total_income / 3)"></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="report-card text-center justify-content-center py-4 neon-glow" style="border-top: 3px solid var(--neon-pink)">
+                <small class="text-dim font-orbitron mb-2">GASTOS PROMEDIO</small>
+                <h3 class="text-danger fw-bold mb-0" x-text="formatCurrency(cashflow.total_expense / 3)"></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="report-card text-center justify-content-center py-4 neon-glow" style="border-top: 3px solid #ffcc00">
+                <small class="text-dim font-orbitron mb-2">TASA DE AHORRO</small>
+                <h3 class="text-warning fw-bold mb-0" x-text="calculateSavingsRate() + '%'"></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-4 mb-4">
+        <!-- Cashflow y Predicciones -->
+        <div class="col-md-8">
+            <div class="report-card">
+                <div class="report-header">
+                    <h6 class="mb-0 font-orbitron text-white">EVOLUCIÓN & FORECAST (CASHFLOW)</h6>
+                    <i class="fa-solid fa-expand text-dim cursor-pointer"></i>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-cashflow"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribución de Gastos -->
+        <div class="col-md-4">
+            <div class="report-card">
+                <div class="report-header">
+                    <h6 class="mb-0 font-orbitron text-white">DISTRIBUCIÓN DE GASTOS</h6>
+                </div>
+                <div class="chart-container d-flex justify-content-center">
+                    <canvas id="chart-categories" style="max-height: 250px;"></canvas>
+                </div>
+                <div class="mt-3 table-responsive">
+                    <table class="table table-dark table-sm table-borderless small mb-0">
+                        <tbody>
+                            <template x-for="cat in categories" :key="cat.category_id">
+                                <tr>
+                                    <td>
+                                        <i class="fa-solid fa-circle" style="font-size: 0.5rem;" :style="'color:' + getCategoryColor(cat.category_id)"></i>
+                                        <span class="ms-1" x-text="cat.name"></span>
+                                    </td>
+                                    <td class="text-end" x-text="formatCurrency(cat.total_expense)"></td>
+                                    <td class="text-end text-dim" x-text="cat.percentage + '%'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-4 mb-4">
+        <!-- Net Worth Trend -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h6 class="mb-0 font-orbitron text-white">PATRIMONIO NETO (EVOLUCIÓN)</h6>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-networth"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget vs Actual -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h6 class="mb-0 font-orbitron text-white">PRESUPUESTOS VS GASTO REAL</h6>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-budget"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('reportsDashboard', () => ({
+            loading: true,
+            cashflow: { monthly_breakdown: [], total_income: 0, total_expense: 0, net_cashflow: 0 },
+            categories: [],
+            netWorth: [],
+            budgets: [],
+            forecastData: { predicted_income: [], predicted_expenses: [], anomalies_detected: [], recommendations: [] },
+
+            async init() {
+                await this.fetchData();
+                this.initCharts();
+            },
+
+            formatCurrency(val) {
+                if(!val) return "$ 0.00";
+                return "$ " + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            },
+
+            calculateSavingsRate() {
+                if (this.cashflow.total_income === 0) return 0;
+                return ((this.cashflow.net_cashflow / this.cashflow.total_income) * 100).toFixed(1);
+            },
+
+            getCategoryColor(id) {
+                const colors = ['#00f2ff', '#ff0055', '#ffcc00', '#00ff88', '#bb00ff'];
+                return colors[id % colors.length];
+            },
+
+            async fetchData() {
+                this.loading = true;
+                try {
+                    // API Calls
+                    const [resCf, resCat, resNw, resBud, resFc] = await Promise.all([
+                        fetch('/api/v1/reports/cashflow').then(r => r.json()),
+                        fetch('/api/v1/reports/categories').then(r => r.json()),
+                        fetch('/api/v1/reports/net-worth').then(r => r.json()),
+                        fetch('/api/v1/reports/budget?month=2024-03').then(r => r.json()),
+                        fetch('/api/v1/ia/forecast?months=3').then(r => r.json())
+                    ]);
+
+                    this.cashflow = resCf;
+                    this.categories = resCat;
+                    this.netWorth = resNw;
+                    this.budgets = resBud;
+                    this.forecastData = resFc;
+                } catch (e) {
+                    console.error("Error cargando reportes:", e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            initCharts() {
+                Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
+                Chart.defaults.font.family = "'Inter', sans-serif";
+
+                // 1. Cashflow + Forecast (Bar + Line Combo)
+                const ctxCf = document.getElementById('chart-cashflow');
+                if (ctxCf && this.cashflow.monthly_breakdown) {
+                    const labels = this.cashflow.monthly_breakdown.map(m => m.month);
+                    // Add forecast months
+                    const forecastLabels = ['Abr', 'May', 'Jun']; // Simplification
+                    
+                    new Chart(ctxCf, {
+                        type: 'bar',
+                        data: {
+                            labels: [...labels, ...forecastLabels],
+                            datasets: [
+                                {
+                                    label: 'Ingresos Históricos',
+                                    data: [...this.cashflow.monthly_breakdown.map(m => m.income), null, null, null],
+                                    backgroundColor: 'rgba(0, 255, 136, 0.7)',
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Gastos Históricos',
+                                    data: [...this.cashflow.monthly_breakdown.map(m => m.expense), null, null, null],
+                                    backgroundColor: 'rgba(255, 0, 85, 0.7)',
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Ingresos Forecast',
+                                    type: 'line',
+                                    data: [null, null, null, ...this.forecastData.predicted_income],
+                                    borderColor: 'rgba(0, 255, 136, 1)',
+                                    borderDash: [5, 5],
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Gastos Forecast',
+                                    type: 'line',
+                                    data: [null, null, null, ...this.forecastData.predicted_expenses],
+                                    borderColor: 'rgba(255, 0, 85, 1)',
+                                    borderDash: [5, 5],
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top' } },
+                            scales: {
+                                y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+
+                // 2. Categories Donut
+                const ctxCat = document.getElementById('chart-categories');
+                if (ctxCat && this.categories.length > 0) {
+                    new Chart(ctxCat, {
+                        type: 'doughnut',
+                        data: {
+                            labels: this.categories.map(c => c.name),
+                            datasets: [{
+                                data: this.categories.map(c => c.total_expense),
+                                backgroundColor: this.categories.map(c => this.getCategoryColor(c.category_id)),
+                                borderWidth: 0,
+                                hoverOffset: 10
+                            }]
+                        },
+                        options: {
+                            cutout: '70%',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+
+                // 3. Net Worth Trend
+                const ctxNw = document.getElementById('chart-networth');
+                if (ctxNw && this.netWorth.length > 0) {
+                    new Chart(ctxNw, {
+                        type: 'line',
+                        data: {
+                            labels: this.netWorth.map(n => n.date),
+                            datasets: [{
+                                label: 'Patrimonio Neto',
+                                data: this.netWorth.map(n => n.net_worth),
+                                borderColor: '#00f2ff',
+                                backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#00f2ff',
+                                pointBorderColor: '#fff',
+                                pointRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+
+                // 4. Budget vs Actual (Horizontal Bar)
+                const ctxBud = document.getElementById('chart-budget');
+                if (ctxBud && this.budgets.length > 0) {
+                    new Chart(ctxBud, {
+                        type: 'bar',
+                        data: {
+                            labels: this.budgets.map(b => b.category),
+                            datasets: [
+                                {
+                                    label: 'Gastado',
+                                    data: this.budgets.map(b => b.spent),
+                                    backgroundColor: this.budgets.map(b => 
+                                        b.status === 'overbudget' ? 'rgba(255, 0, 85, 0.9)' : 
+                                        b.status === 'underbudget' ? 'rgba(0, 255, 136, 0.9)' : 'rgba(255, 204, 0, 0.9)'),
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Presupuestado',
+                                    data: this.budgets.map(b => b.budgeted),
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    borderWidth: 1,
+                                    borderRadius: 4
+                                }
+                            ]
+                        },
+                        options: {
+                            indexAxis: 'y', // Hace que sea barra horizontal
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                                y: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            },
+
+            exportReport(format) {
+                alert(`Generando exportación en ${format.toUpperCase()}... En producción esto llamará a /api/v1/reports/export`);
+            }
+        }));
+    });
+</script>
+{% endblock %}

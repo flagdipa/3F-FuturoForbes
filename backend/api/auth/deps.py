@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from sqlmodel import Session, select
 from ...core.database import get_session
 from ...core.config import settings
-from ...models.models import Usuario
+from ...models import User
 from typing import Optional
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
@@ -12,7 +12,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session)
-) -> Usuario:
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudo validar las credenciales",
@@ -27,7 +27,7 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
         
-    user = session.get(Usuario, user_id)
+    user = session.get(User, user_id)
     if user is None:
         raise credentials_exception
     return user
@@ -35,7 +35,7 @@ def get_current_user(
 def get_optional_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     session: Session = Depends(get_session)
-) -> Optional[Usuario]:
+) -> Optional[User]:
     if not token:
         return None
     try:
@@ -43,6 +43,6 @@ def get_optional_current_user(
         user_id: int = payload.get("id")
         if user_id is None:
             return None
-        return session.get(Usuario, user_id)
+        return session.get(User, user_id)
     except JWTError:
         return None

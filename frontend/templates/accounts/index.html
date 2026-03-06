@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Cuentas{% endblock %}
+
+{% block content %}
+<div x-data="accountsManager" class="container-fluid py-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="font-orbitron text-primary mb-0"><i class="fa-solid fa-wallet me-2"></i>ESTADO DE CUENTAS</h2>
+        <button class="btn btn-primary neon-border-static" @click="openCreateModal()">
+            <i class="fa-solid fa-plus-circle me-1"></i> NUEVA CUENTA
+        </button>
+    </div>
+
+    <!-- Filtros Rápidos -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="btn-group btn-group-sm neon-border p-1 bg-black bg-opacity-25">
+                <button class="btn" :class="filterType === 'ALL' ? 'btn-primary' : 'btn-outline-secondary'" @click="filterType = 'ALL'">TODAS</button>
+                <button class="btn" :class="filterType === 'ASSET' ? 'btn-primary' : 'btn-outline-secondary'" @click="filterType = 'ASSET'">ACTIVOS</button>
+                <button class="btn" :class="filterType === 'LIABILITY' ? 'btn-primary' : 'btn-outline-secondary'" @click="filterType = 'LIABILITY'">DEUDAS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Cuentas -->
+    <div class="row g-4">
+        <template x-for="acc in filteredAccounts" :key="acc.id">
+            <div class="col-md-4 col-xl-3">
+                <div class="card hud-container h-100 border-opacity-25" :style="'border-color: ' + (acc.color || 'var(--neon-blue)')">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="badge bg-opacity-25" :class="acc.type === 'ASSET' ? 'bg-success text-success' : 'bg-danger text-danger'" x-text="acc.type"></div>
+                            <div class="dropdown">
+                                <i class="fa-solid fa-ellipsis-v text-dim cursor-pointer" data-bs-toggle="dropdown"></i>
+                                <ul class="dropdown-menu dropdown-menu-dark">
+                                    <li><a class="dropdown-item" href="#" @click="openEditModal(acc)"><i class="fa-solid fa-edit me-2"></i> Editar</a></li>
+                                    <li><a class="dropdown-item" :href="'/cuentas/' + acc.id"><i class="fa-solid fa-list me-2"></i> Ver Libro Mayor</a></li>
+                                    <li><a class="dropdown-item" :href="'/accounts/' + acc.id + '/reconcile'"><i class="fa-solid fa-check-double me-2"></i> Conciliar Banco</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" @click="deleteAccount(acc)"><i class="fa-solid fa-trash me-2"></i> Eliminar</a></li>
+                                </ul>
+                            </div>
+
+                        </div>
+                        
+                        <h4 class="fw-bold mb-1" x-text="acc.name"></h4>
+                        <p class="text-dim small mb-4" x-text="acc.notes || 'Sin anotaciones'"></p>
+                        
+                        <div class="mt-auto">
+                            <div class="hud-line mb-3"></div>
+                            <div class="text-end">
+                                <small class="text-dim d-block" x-text="acc.currency_code"></small>
+                                <h3 class="mb-0 font-orbitron" :class="acc.current_balance >= 0 ? 'text-white' : 'text-danger'" x-text="formatCurrency(acc.current_balance, acc.currency_code)"></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('accountsManager', () => ({
+            accounts: [],
+            filterType: 'ALL',
+            loading: true,
+
+            async init() {
+                await this.fetchAccounts();
+            },
+
+            async fetchAccounts() {
+                this.loading = true;
+                try {
+                    // Simulado por ahora
+                    this.accounts = [
+                        { id: 1, name: 'Banco Galicia', type: 'ASSET', currency_code: 'ARS', current_balance: 450300.50, color: '#ff8800' },
+                        { id: 2, name: 'Caja de Ahorro USD', type: 'ASSET', currency_code: 'USD', current_balance: 1250.00, color: '#00ff88' },
+                        { id: 3, name: 'Tarjeta VISA', type: 'LIABILITY', currency_code: 'ARS', current_balance: -85000.00, color: '#ff0055' },
+                        { id: 4, name: 'Efectivo', type: 'ASSET', currency_code: 'ARS', current_balance: 15400.00, color: '#00ccff' }
+                    ];
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            get filteredAccounts() {
+                if (this.filterType === 'ALL') return this.accounts;
+                return this.accounts.filter(a => a.type === this.filterType);
+            },
+
+            formatCurrency(val, code) {
+                return (val < 0 ? '-' : '') + '$ ' + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            },
+
+            openCreateModal() {
+                alert("Abriendo formulario de creación...");
+            },
+
+            openEditModal(acc) {
+                console.log("Edit account", acc);
+            }
+        }));
+    });
+</script>
+{% endblock %}

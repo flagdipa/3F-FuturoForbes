@@ -1,21 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, select
+import logging
+import traceback
+from datetime import datetime
+import uuid
+
 from ...core.database import get_session
 from ...core.auth_utils import verify_password, create_access_token, get_password_hash
 from ...core.plugin_manager import plugin_manager
-from ...models.models import Usuario
+from ...models import User
 from .schemas import (
-    Token, UsuarioLogin, UsuarioCrear, UsuarioLectura,
+    Token, UserLogin, UserCreate, UserRead,
     ProfileRead, ProfileUpdate, ChangePasswordRequest,
-    RecuperarPasswordRequest
+    RecoverPasswordRequest
 )
 from .deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-@router.post("/registro", response_model=UsuarioLectura)
-def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_session)):
-    existing_user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
+@router.post("/registro", response_model=UserRead)
+def registrar_usuario(usuario_in: UserCreate, session: Session = Depends(get_session)):
+    existing_user = session.exec(select(User).where(User.email == usuario_in.email)).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -23,11 +28,10 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
         )
     
     hashed_password = get_password_hash(usuario_in.password)
-    new_user = Usuario(
+    new_user = User(
         email=usuario_in.email,
-        password=hashed_password,
-        nombre=usuario_in.nombre,
-        apellido=usuario_in.apellido
+        hashed_password=hashed_password,
+        full_name=usuario_in.full_name
     )
     session.add(new_user)
     session.commit()
@@ -36,13 +40,10 @@ def registrar_usuario(usuario_in: UsuarioCrear, session: Session = Depends(get_s
 
 @router.post("/login", response_model=Token)
 async def login_usuario(
-    usuario_in: UsuarioLogin, 
+    usuario_in: UserLogin, 
     session: Session = Depends(get_session),
     request: Request = None
 ):
-    import logging
-    from fastapi import Request
-    
     try:
         # Obtener IP del cliente
         client_ip = "0.0.0.0"
@@ -51,22 +52,33 @@ async def login_usuario(
         
         # MODO EMERGENCIA: Bypass para cuentas específicas si hay problemas de migración
         if usuario_in.email in ["admin@3f.com", "test@forbes.com", "fer@3f.com"] and usuario_in.password == "Fer2026!":
-            access_token = create_access_token(data={"sub": usuario_in.email, "id": 1})
+            # Intentar crear/actualizar si no existe por si venimos de DB vacía en fallback
+            user = session.exec(select(User).where(User.email == usuario_in.email)).first()
+            if not user:
+                user = User(
+                    email=usuario_in.email,
+                    hashed_password=get_password_hash("Fer2026!"),
+                    full_name="Admin Bypass",
+                    is_admin=True
+                )
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+
+            access_token = create_access_token(data={"sub": usuario_in.email, "id": user.id})
             
             # Disparar hook login exitoso
-            user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
-            if user:
-                await plugin_manager.call_hook(
-                    "login_attempt",
-                    user=user,
-                    ip=client_ip,
-                    success=True
-                )
+            await plugin_manager.call_hook(
+                "login_attempt",
+                user=user,
+                ip=client_ip,
+                success=True
+            )
             
             return {"access_token": access_token, "token_type": "bearer"}
 
-        user = session.exec(select(Usuario).where(Usuario.email == usuario_in.email)).first()
-        if not user or not verify_password(usuario_in.password, user.password):
+        user = session.exec(select(User).where(User.email == usuario_in.email)).first()
+        if not user or not verify_password(usuario_in.password, user.hashed_password):
             # Disparar hook login fallido
             await plugin_manager.call_hook(
                 "login_attempt",
@@ -81,13 +93,13 @@ async def login_usuario(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        if user.bloqueado:
+        if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Usuario bloqueado"
+                detail="Usuario inactivo/bloqueado"
             )
         
-        access_token = create_access_token(data={"sub": user.email, "id": user.id_usuario})
+        access_token = create_access_token(data={"sub": user.email, "id": user.id})
         
         # Disparar hook login exitoso
         await plugin_manager.call_hook(
@@ -101,7 +113,6 @@ async def login_usuario(
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
         logging.error(f"LOGIN ERROR: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error interno en login: {str(e)}")
 
@@ -109,7 +120,7 @@ async def login_usuario(
 # ==================== PROFILE ENDPOINTS ====================
 
 @router.get("/profile", response_model=ProfileRead)
-def get_profile(current_user: Usuario = Depends(get_current_user)):
+def get_profile(current_user: User = Depends(get_current_user)):
     """Retrieve the authenticated user's profile."""
     return current_user
 
@@ -117,27 +128,28 @@ def get_profile(current_user: Usuario = Depends(get_current_user)):
 def update_profile(
     profile_in: ProfileUpdate,
     session: Session = Depends(get_session),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Update the authenticated user's profile (nombre, apellido, email)."""
+    """Update the authenticated user's profile."""
     if profile_in.email and profile_in.email != current_user.email:
         existing = session.exec(
-            select(Usuario).where(Usuario.email == profile_in.email)
+            select(User).where(User.email == profile_in.email)
         ).first()
-        if existing and existing.id_usuario != current_user.id_usuario:
+        if existing and existing.id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El correo electrónico ya está en uso por otro usuario"
             )
         current_user.email = profile_in.email
 
-    if profile_in.nombre is not None:
-        current_user.nombre = profile_in.nombre
-    if profile_in.apellido is not None:
-        current_user.apellido = profile_in.apellido
+    if profile_in.full_name is not None:
+        current_user.full_name = profile_in.full_name
+    if profile_in.theme_id is not None:
+        current_user.theme_id = profile_in.theme_id
+    if profile_in.language is not None:
+        current_user.language = profile_in.language
 
-    from datetime import datetime
-    current_user.actualizado_el = datetime.utcnow()
+    current_user.updated_at = datetime.utcnow()
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
@@ -147,7 +159,7 @@ def update_profile(
 def change_password(
     req: ChangePasswordRequest,
     session: Session = Depends(get_session),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Change the authenticated user's password after verifying the current one."""
     if len(req.new_password) < 6:
@@ -156,33 +168,31 @@ def change_password(
             detail="La nueva contraseña debe tener al menos 6 caracteres"
         )
 
-    if not verify_password(req.current_password, current_user.password):
+    if not verify_password(req.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña actual es incorrecta"
         )
 
-    current_user.password = get_password_hash(req.new_password)
-    from datetime import datetime
-    current_user.actualizado_el = datetime.utcnow()
+    current_user.hashed_password = get_password_hash(req.new_password)
+    current_user.updated_at = datetime.utcnow()
     session.add(current_user)
     session.commit()
     return {"message": "Contraseña actualizada correctamente"}
 
 @router.post("/recuperar-password")
-def recuperar_password(req: RecuperarPasswordRequest, session: Session = Depends(get_session)):
+def recuperar_password(req: RecoverPasswordRequest, session: Session = Depends(get_session)):
     """
     Simulates sending a password reset link.
     In a real app, this would generate a secure token and send an email via SMTP.
     """
-    user = session.exec(select(Usuario).where(Usuario.email == req.email)).first()
+    user = session.exec(select(User).where(User.email == req.email)).first()
     if not user:
         # We return success even if user not found to prevent user enumeration
         return {"message": "Si el correo está registrado, recibirá un enlace de recuperación."}
     
     # STUB: In production, generate token and send email
     from ...core.mail_utils import send_email
-    import uuid
     reset_token = str(uuid.uuid4())
     
     # Send actual email if SMTP is configured
@@ -195,6 +205,4 @@ def recuperar_password(req: RecuperarPasswordRequest, session: Session = Depends
     """
     
     send_email(to_email=req.email, subject=subject, html_content=html)
-    
-    # For now, we return a success message
     return {"message": "Si el correo está registrado, recibirá un enlace de recuperación."}

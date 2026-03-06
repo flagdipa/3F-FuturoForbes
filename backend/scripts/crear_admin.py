@@ -18,7 +18,7 @@ if db_url and "@db:" in db_url:
 # Path al backend
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from models.models import Usuario
+from models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -31,7 +31,7 @@ def crear_admin():
     try:
         with Session(engine) as session:
             # Buscar si ya existe el admin
-            query = select(Usuario).where(Usuario.email == "admin@3f.com")
+            query = select(User).where(User.email == "admin@3f.com")
             existente = session.exec(query).first()
             
             if existente:
@@ -39,10 +39,12 @@ def crear_admin():
                 admin = existente
             else:
                 print("CREATE: admin@3f.com")
-                admin = Usuario(email="admin@3f.com")
+                admin = User(email="admin@3f.com")
             
-            admin.password = pwd_context.hash("Fer2026!")
-            admin.bloqueado = False
+            admin.hashed_password = pwd_context.hash("Fer2026!")
+            admin.is_active = True
+            admin.is_admin = True
+            admin.full_name = "Administrador"
             session.add(admin)
             session.commit()
             

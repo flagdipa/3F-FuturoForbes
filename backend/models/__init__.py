@@ -1,6 +1,13 @@
-from .models import *
-from .models_config import *
-from .models_extended import *
-from .models_advanced import *
-from .models_plugins import *
-from .models_layouts import *
+from .models_v2 import (
+    User, Currency, ExchangeRate, AccountType, Account, Category, Payee,
+    TransactionStatus, Transaction, TransactionSplit, Tag, Budget, BudgetLine,
+    SavingGoal, GoalContribution, Asset, AssetValuation, Investment, InvestmentPrice,
+    InvestmentTransaction, CustomField, CustomFieldValue, AuditLog, Plugin, SystemConfig
+)
+
+metadata_models = [
+    User, Currency, ExchangeRate, Account, Category, Payee, 
+    Transaction, TransactionSplit, Tag, Budget, BudgetLine, SavingGoal, GoalContribution,
+    Asset, AssetValuation, Investment, InvestmentPrice, InvestmentTransaction,
+    CustomField, CustomFieldValue, AuditLog, Plugin, SystemConfig
+]

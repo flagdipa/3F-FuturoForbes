@@ -1,8 +1,8 @@
 """
 Enhanced configuration with strict validation and environment-aware settings.
 """
-from pydantic import Field, validator, ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 import os
 
@@ -10,7 +10,7 @@ import os
 class Settings(BaseSettings):
     """Application settings with validation"""
     
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,

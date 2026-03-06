@@ -75,7 +75,7 @@ class VaultService:
         """
         # Phase 6.4: Plugin Integration
         from .database import engine
-        from ..models.models_plugins import Plugin
+        from ..models import Plugin
         from sqlmodel import Session, select
         
         with Session(engine) as session:

@@ -157,10 +157,7 @@ class ListaCuentas(SQLModel, table=True):
     # Relationships
     identidad_financiera: Optional["IdentidadFinanciera"] = Relationship(back_populates="cuentas")
     divisa: Optional["Divisa"] = Relationship()
-    transacciones: List["LibroTransacciones"] = Relationship(
-        back_populates="cuenta",
-        sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}
-    )
+    # Note: transacciones relationship removed - two FKs from LibroTransacciones cause AmbiguousForeignKeysError
 
 # --- TRANSACCIONES ---
 
@@ -189,10 +186,7 @@ class LibroTransacciones(SQLModel, table=True):
     es_dividida: bool = Field(default=False)
     
     # Relationships
-    cuenta: "ListaCuentas" = Relationship(
-        back_populates="transacciones",
-        sa_relationship_kwargs={"primaryjoin": "LibroTransacciones.id_cuenta == ListaCuentas.id_cuenta"}
-    )
+    # cuenta relationship removed - use direct queries (two FKs to lista_cuentas cause AmbiguousForeignKeysError)
     beneficiario: "Beneficiario" = Relationship(back_populates="transacciones")
     categoria: "Categoria" = Relationship(back_populates="transacciones")
 
@@ -216,11 +210,7 @@ class Presupuesto(SQLModel, table=True):
     """
     __tablename__ = "tabla_presupuestos"
     id_presupuesto: Optional[int] = Field(default=None, primary_key=True)
-    id_anio_presupuesto: Optional[int] = Field(
-        default=None, 
-        foreign_key="anios_presupuesto.id_anio_presupuesto",
-        ondelete="SET NULL"
-    )
+    id_anio_presupuesto: Optional[int] = Field(default=None)
     id_categoria: int = Field(foreign_key="categorias.id_categoria")
     periodo: str = Field(default="Monthly")
     monto: Decimal = Field(default=0.00, max_digits=15, decimal_places=2)

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Control de Presupuestos | 3F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .budget-card {
+        background: rgba(10, 10, 25, 0.7);
+        border: 1px solid var(--3f-primary-border);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(15px);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .budget-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 242, 255, 0.1);
+    }
+    
+    .budget-progress-bg {
+        height: 12px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    
+    .budget-progress-bar {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 1s ease-in-out;
+        box-shadow: 0 0 10px currentColor; /* glow effect */
+    }
+    
+    .status-ontrack .budget-progress-bar {
+        background: var(--neon-green);
+        color: var(--neon-green);
+    }
+    
+    .status-warning .budget-progress-bar {
+        background: var(--neon-pink); /* using pink/magenta as warning/danger */
+        color: var(--neon-pink);
+    }
+    
+    .status-overbudget .budget-progress-bar {
+        background: #ff0000;
+        color: #ff0000;
+        box-shadow: 0 0 15px #ff0000;
+    }
+    
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .summary-box {
+        background: linear-gradient(135deg, rgba(0,242,255,0.1) 0%, rgba(0,0,0,0.5) 100%);
+        border: 1px solid var(--neon-blue);
+        border-radius: 12px;
+        padding: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="budgetsManager" class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="font-orbitron text-primary mb-0"><i class="fa-solid fa-bullseye me-2"></i>PRESUPUESTOS</h2>
+            <p class="text-dim small mb-0">CONTROL DE GASTOS Y OBJETIVOS MENSUALES</p>
+        </div>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm bg-dark text-white border-secondary" x-model="currentPeriod" @change="fetchData()">
+                <option value="2024-03">Marzo 2024</option>
+                <option value="2024-02">Febrero 2024</option>
+                <option value="2024-01">Enero 2024</option>
+            </select>
+            <button class="btn btn-sm btn-primary neon-border-static" data-bs-toggle="modal" data-bs-target="#new-budget-modal">
+                <i class="fa-solid fa-plus-circle me-1"></i> NUEVO PRESUPUESTO
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Box -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="summary-box d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="category-icon text-info fs-4 border-info">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <h6 class="font-orbitron text-white mb-0" x-text="activeBudget.name || 'Presupuesto General'"></h6>
+                        <small class="text-dim" x-text="activeBudget.period_type || 'MENSUAL'"></small>
+                    </div>
+                </div>
+                
+                <div class="text-center px-4 border-start border-end border-secondary border-opacity-50">
+                    <small class="text-dim font-orbitron d-block">Ppto. Total</small>
+                    <h4 class="text-white mb-0 font-orbitron" x-text="formatCurrency(totalAllocated)"></h4>
+                </div>
+                
+                <div class="text-center px-4">
+                    <small class="text-dim font-orbitron d-block">Total Gastado</small>
+                    <h4 class="mb-0 font-orbitron" :class="totalSpent > totalAllocated ? 'text-danger' : 'text-warning'" x-text="formatCurrency(totalSpent)"></h4>
+                </div>
+                
+                <div class="text-end">
+                    <div class="badge fs-6 font-orbitron" 
+                         :class="totalSpent > totalAllocated ? 'bg-danger' : 'bg-success'"
+                         x-text="(totalSpent > totalAllocated ? 'EXCEDIDO POR ' : 'DISPONIBLE ') + formatCurrency(Math.abs(totalAllocated - totalSpent))">
+                    </div>
+                    <div class="small text-dim mt-1" x-text="Math.round((totalSpent / totalAllocated) * 100) + '% Utilizado'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de Estado -->
+    <div class="mb-3 d-flex gap-2">
+        <button class="btn btn-sm" :class="filterStatus === 'ALL' ? 'btn-outline-info' : 'btn-link text-dim'" @click="filterStatus = 'ALL'">Todos</button>
+        <button class="btn btn-sm" :class="filterStatus === 'ontrack' ? 'btn-outline-success' : 'btn-link text-success text-opacity-50'" @click="filterStatus = 'ontrack'">En Camino</button>
+        <button class="btn btn-sm" :class="filterStatus === 'warning' ? 'btn-outline-warning' : 'btn-link text-warning text-opacity-50'" @click="filterStatus = 'warning'">Advertencia</button>
+        <button class="btn btn-sm" :class="filterStatus === 'overbudget' ? 'btn-outline-danger' : 'btn-link text-danger text-opacity-50'" @click="filterStatus = 'overbudget'">Excedidos</button>
+    </div>
+
+    <!-- Grid de Líneas de Presupuesto -->
+    <div class="row g-4">
+        <template x-if="loading">
+            <div class="col-12 text-center py-5">
+                <div class="neon-pulse d-inline-block" style="width: 30px; height: 30px; background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue);"></div>
+                <p class="text-info mt-3 font-orbitron">CALCULANDO GASTOS...</p>
+            </div>
+        </template>
+
+        <template x-for="line in filteredLines" :key="line.id">
+            <div class="col-md-6 col-lg-4">
+                <div class="budget-card" :class="'status-' + line.status">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="category-icon text-white">
+                                <!-- Podriamos usar un mapa de iconos si tuvieramos la base entera de categorias -->
+                                <i class="fa-solid fa-tags"></i>
+                            </div>
+                            <h6 class="text-white mb-0 fw-bold" x-text="line.category_name"></h6>
+                        </div>
+                        <div class="dropdown">
+                            <i class="fa-solid fa-ellipsis-v text-dim cursor-pointer" data-bs-toggle="dropdown"></i>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="#"><i class="fa-solid fa-edit me-2"></i> Editar Monto</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fa-solid fa-chart-line me-2"></i> Ver Historial</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-end mt-3">
+                        <div>
+                            <small class="text-dim">Gastado</small>
+                            <h5 class="mb-0 font-orbitron" x-text="formatCurrency(line.spent)"></h5>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-dim">de <span x-text="formatCurrency(line.allocated)"></span></small>
+                            <div class="fw-bold" :class="line.status === 'overbudget' ? 'text-danger' : (line.status === 'warning' ? 'text-warning' : 'text-success')" x-text="line.percentage + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="budget-progress-bg">
+                        <div class="budget-progress-bar" :style="'width: ' + Math.min(line.percentage, 100) + '%;'"></div>
+                    </div>
+                    
+                    <div class="text-end mt-1">
+                        <template x-if="line.status !== 'overbudget'">
+                            <small class="text-secondary">Quedan <strong class="text-white" x-text="formatCurrency(line.allocated - line.spent)"></strong></small>
+                        </template>
+                        <template x-if="line.status === 'overbudget'">
+                            <small class="text-danger">Excedido en <strong x-text="formatCurrency(line.spent - line.allocated)"></strong></small>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<!-- Modal Nuevo Presupuesto / Línea -->
+<div class="modal fade" id="new-budget-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-primary" style="box-shadow: 0 0 20px rgba(0,242,255,0.2);">
+            <div class="modal-header border-secondary border-opacity-50">
+                <h5 class="modal-title font-orbitron text-primary"><i class="fa-solid fa-bullseye me-2"></i>NUEVA META DE PRESUPUESTO</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="new-budget-form">
+                    <div class="mb-3">
+                        <label class="small text-dim">Categoría</label>
+                        <select class="form-select bg-black text-white border-secondary">
+                            <option>Comida & Sumermercado</option>
+                            <option>Transporte</option>
+                            <option>Ocio & Salidas</option>
+                            <option>Vivienda & Servicios</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-dim">Monto Máximo (Límite)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-black border-secondary text-dim">$</span>
+                            <input type="number" class="form-control bg-black text-white border-secondary font-orbitron" placeholder="0.00">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary border-opacity-50">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">CANCELAR</button>
+                <button type="button" class="btn btn-sm btn-primary neon-border-static" data-bs-dismiss="modal" onclick="alert('Lógica de guardado en desarrollo.')">GUARDAR META</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('budgetsManager', () => ({
+            loading: true,
+            currentPeriod: '2024-03',
+            filterStatus: 'ALL',
+            activeBudget: { id: 1, name: 'Presupuesto Marzo 2024', period_type: 'MENSUAL' },
+            lines: [],
+
+            async init() {
+                await this.fetchData();
+            },
+
+            async fetchData() {
+                this.loading = true;
+                try {
+                    // LLamar a GET /api/v1/budgets/current/status (Usaremos id=1 mockeado)
+                    const res = await fetch(`/api/v1/budgets/1/status`);
+                    if(res.ok) {
+                        this.lines = await res.json();
+                    } else {
+                        // fallback local
+                        this.lines = [];
+                    }
+                } catch(e) {
+                    console.error(e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            get filteredLines() {
+                if(this.filterStatus === 'ALL') return this.lines;
+                return this.lines.filter(l => l.status === this.filterStatus);
+            },
+
+            get totalAllocated() {
+                return this.lines.reduce((sum, line) => sum + parseFloat(line.allocated), 0);
+            },
+
+            get totalSpent() {
+                return this.lines.reduce((sum, line) => sum + parseFloat(line.spent), 0);
+            },
+
+            formatCurrency(val) {
+                if(!val) return "$ 0.00";
+                return "$ " + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }));
+    });
+</script>
+{% endblock %}

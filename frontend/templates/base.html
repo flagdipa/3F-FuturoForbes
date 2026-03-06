@@ -56,7 +56,7 @@
                             <li><a class="dropdown-item" href="/entidades#entidades"><i class="fa-solid fa-building-columns small me-2 text-info"></i> Gestión de Financieras</a></li>
                             <li><a class="dropdown-item" href="/entidades#tipos"><i class="fa-solid fa-layer-group small me-2 text-warning"></i> Tipos de Financiera</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/cuentas"><i class="fa-solid fa-wallet small me-2 text-success"></i> Gestión de Cuentas</a></li>
+                            <li><a class="dropdown-item" href="/accounts"><i class="fa-solid fa-wallet small me-2 text-success"></i> Gestión de Cuentas</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.dispatchEvent(new CustomEvent('open-beneficiary-manager'))"><i class="fa-solid fa-users small me-2 text-primary"></i> Gestión de Beneficiarios</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.dispatchEvent(new CustomEvent('open-category-manager'))"><i class="fa-solid fa-folder-tree small me-2 text-info"></i> Gestión de Categorías</a></li>
                         </ul>
@@ -309,9 +309,9 @@
                         </li>
                         <!-- 8. Inversiones -->
                         <li class="nav-item">
-                            <a href="/inversiones" class="nav-link">
+                            <a href="/investments" class="nav-link">
                                 <i class="nav-icon fa-solid fa-arrow-trend-up text-accent"></i>
-                                <p x-text="$store.lang.t('nav.stocks')">Inversiones</p>
+                                <p x-text="$store.lang.t('nav.stocks') || 'Inversiones'">Inversiones</p>
                             </a>
                         </li>
 
@@ -370,8 +370,14 @@
                         <li class="nav-header text-uppercase mt-3 small opacity-50">SISTEMA</li>
 
                         <li class="nav-item">
-                            <a href="/metas" class="nav-link">
+                            <a href="/budgets" class="nav-link">
                                 <i class="nav-icon fa-solid fa-bullseye"></i>
+                                <p>Presupuestos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/metas" class="nav-link">
+                                <i class="nav-icon fa-solid fa-flag-checkered"></i>
                                 <p x-text="$store.lang.t('nav.goals') || 'Metas'">Metas</p>
                             </a>
                         </li>
@@ -388,9 +394,9 @@
                             </a>
                         </li>
                          <li class="nav-item">
-                            <a href="/reportes" class="nav-link">
+                            <a href="/reports" class="nav-link">
                                 <i class="nav-icon fa-solid fa-chart-line"></i>
-                                <p x-text="$store.lang.t('nav.reports')">Reportes</p>
+                                <p x-text="$store.lang.t('nav.reports') || 'Reportes'">Reportes</p>
                             </a>
                         </li>
                         <li class="nav-item">

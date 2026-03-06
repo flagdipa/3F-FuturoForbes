@@ -8,20 +8,22 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-class UsuarioLogin(BaseModel):
+class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-class UsuarioCrear(BaseModel):
+class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
+    full_name: Optional[str] = None
 
-class UsuarioLectura(BaseModel):
-    id_usuario: int
+class UserRead(BaseModel):
+    id: int
     email: EmailStr
-    bloqueado: bool
+    is_active: bool
+    is_admin: bool
+    theme_id: str
+    language: str
 
     class Config:
         from_attributes = True
@@ -29,23 +31,24 @@ class UsuarioLectura(BaseModel):
 # --- Profile & Password ---
 
 class ProfileRead(BaseModel):
-    id_usuario: int
+    id: int
     email: EmailStr
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
-    theme_preference: str = "dark_neon"
+    full_name: Optional[str] = None
+    theme_id: str
+    language: str
 
     class Config:
         from_attributes = True
 
 class ProfileUpdate(BaseModel):
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
+    full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    theme_id: Optional[str] = None
+    language: Optional[str] = None
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
 
-class RecuperarPasswordRequest(BaseModel):
+class RecoverPasswordRequest(BaseModel):
     email: EmailStr

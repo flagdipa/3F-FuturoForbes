@@ -1,0 +1,13 @@
+{
+    "id": "cotizaciones_latam",
+    "name": "Cotizaciones Latam & Cripto",
+    "description": "Unifica fuentes de Bluelytics, Ámbito y CriptoYa para cotizaciones en tiempo real.",
+    "author": "Antigravity AI",
+    "version": "2.0.0",
+    "category": "Mercado",
+    "hooks": [
+        "displayDashboardTop",
+        "actionDailySummary",
+        "actionScheduledTask"
+    ]
+}

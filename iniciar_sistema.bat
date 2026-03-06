@@ -11,6 +11,10 @@ echo ==========================================
 set PYTHONPATH=c:\xampp\htdocs\3F
 
 :: Iniciar servidor FastAPI con Uvicorn
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+if exist .venv\Scripts\python.exe (
+    .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+) else (
+    py -3.13 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+)
 
 pause
