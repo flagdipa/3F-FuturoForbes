@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
 from ....models import TransactionStatus
 
@@ -16,6 +16,7 @@ class SplitCreate(SplitBase):
     pass
 
 class SplitResponse(SplitBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 class TransactionBase(BaseModel):
@@ -36,6 +37,7 @@ class TransactionUpdate(BaseModel):
     notes: Optional[str] = None
 
 class TransactionResponse(TransactionBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: int
     status: TransactionStatus

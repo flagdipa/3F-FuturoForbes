@@ -417,16 +417,17 @@
 
             async cargarColecciones() {
                 try {
+                    const unwrap = r => Array.isArray(r.data) ? r.data : (r.data?.data || []);
                     const [tags, cuentas, benfs, cats] = await Promise.all([
                         api.get('/tags/'),
                         api.get('/cuentas/'),
                         api.get('/beneficiarios/'),
                         api.get('/categorias/')
                     ]);
-                    this.allTags = tags.data.data || [];
-                    this.colecciones.cuentas = cuentas.data.data || [];
-                    this.colecciones.beneficiarios = benfs.data.data || [];
-                    this.colecciones.categorias = cats.data.data || [];
+                    this.allTags = unwrap(tags);
+                    this.colecciones.cuentas = unwrap(cuentas);
+                    this.colecciones.beneficiarios = unwrap(benfs);
+                    this.colecciones.categorias = unwrap(cats);
                 } catch (e) { console.error('Error cargando iniciales:', e); }
             },
 
@@ -434,22 +435,24 @@
                 if (this.loading || !this.hasMore) return;
                 this.loading = true;
                 try {
-                    // Construir query string con filtros
-                    let url = `/transacciones/?offset=${this.offset}&limit=${this.limit}`;
+                    let url = `/transactions/?skip=${this.offset}&limit=${this.limit}`;
                     Object.keys(this.filtros).forEach(key => {
                         if (this.filtros[key]) {
                             url += `&${key}=${encodeURIComponent(this.filtros[key])}`;
                         }
                     });
                     
-                    // Add sorting params
                     url += `&sort_by=${this.sortCol}&order=${this.sortAsc ? 'asc' : 'desc'}`;
 
                     const response = await api.get(url);
+                    // The v1 API returns a list directly
                     const payload = response.data;
-                    const nuevas = payload.data || [];
+                    const resultList = Array.isArray(payload) ? payload : (payload.data || []);
                     
-                    this.hasMore = payload.pagination?.has_more ?? (nuevas.length >= this.limit);
+                    const nuevas = resultList.map(tx => this.formatDataFromV2(tx));
+                    
+                    // No pagination metadata yet, assume has_more if we get full limit
+                    this.hasMore = (resultList.length >= this.limit);
                     this.transacciones = [...this.transacciones, ...nuevas];
                     this.offset += this.limit;
                 } catch (error) {
@@ -487,6 +490,87 @@
                 };
                 this.aplicarFiltros();
             },
+            
+            getNombreCuenta(id) {
+                let acc = this.colecciones.cuentas.find(c => c.id_cuenta == id || c.id === id);
+                return acc ? (acc.nombre_cuenta || acc.name) : 'Cuenta #' + id;
+            },
+            
+            getNombreCategoria(id) {
+                if (!id) return null;
+                let c = this.colecciones.categorias.find(c => c.id_categoria == id || c.id === id);
+                return c ? (c.nombre_categoria || c.name) : 'Cat #' + id;
+            },
+            
+            getNombreBeneficiario(id) {
+                if (!id) return null;
+                let b = this.colecciones.beneficiarios.find(b => b.id_beneficiario == id || b.id === id);
+                return b ? (b.nombre_beneficiario || b.name) : 'Ben #' + id;
+            },
+            
+            formatDataFromV2(tx) {
+                let mainRow = {
+                    id_transaccion: tx.id,
+                    fecha_transaccion: tx.date,
+                    estado: tx.status === 1 ? 'Conciled' : (tx.status === 2 ? 'Void' : 'None'), // mapping enum
+                    notas: tx.notes || tx.description || '',
+                    id_beneficiario: tx.payee_id,
+                    nombre_beneficiario: this.getNombreBeneficiario(tx.payee_id),
+                    etiquetas: [], 
+                    es_dividida: false
+                };
+
+                let splits = tx.splits || [];
+                let isTransfer = false;
+                
+                if (splits.length === 2 && parseFloat(splits[0].amount) === -parseFloat(splits[1].amount)) {
+                    isTransfer = true; // simplifying transfer logic
+                }
+
+                if (isTransfer) {
+                    mainRow.codigo_transaccion = 'Transfer';
+                    mainRow.monto_transaccion = Math.abs(parseFloat(splits[0].amount));
+                    let fromAcc = splits.find(s => parseFloat(s.amount) < 0)?.account_id;
+                    let toAcc = splits.find(s => parseFloat(s.amount) > 0)?.account_id;
+                    mainRow.id_cuenta = fromAcc;
+                    mainRow.id_cuenta_destino = toAcc;
+                    mainRow.nombre_cuenta = `${this.getNombreCuenta(fromAcc)} -> ${this.getNombreCuenta(toAcc)}`;
+                    mainRow.nombre_categoria = 'Transferencia';
+                } else {
+                    if (splits.length === 0) {
+                        mainRow.codigo_transaccion = 'Unknown';
+                        mainRow.monto_transaccion = 0;
+                        mainRow.nombre_cuenta = '-';
+                        mainRow.nombre_categoria = '-';
+                    } else if (splits.length === 1) {
+                        let amount = parseFloat(splits[0].amount);
+                        mainRow.codigo_transaccion = amount > 0 ? 'Deposit' : 'Withdrawal';
+                        mainRow.monto_transaccion = Math.abs(amount);
+                        mainRow.id_cuenta = splits[0].account_id;
+                        mainRow.id_categoria = splits[0].category_id;
+                        mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
+                        mainRow.nombre_categoria = this.getNombreCategoria(splits[0].category_id);
+                        mainRow.saldo = null; // Can't resolve real time here easily
+                    } else {
+                        mainRow.es_dividida = true;
+                        let absTotal = splits.reduce((acc, val) => acc + Math.abs(parseFloat(val.amount)), 0);
+                        let amount = parseFloat(splits[0].amount);
+                        mainRow.codigo_transaccion = amount > 0 ? 'Deposit' : 'Withdrawal';
+                        mainRow.monto_transaccion = absTotal / 2; // Approximating base amount visually
+                        mainRow.id_cuenta = splits[0].account_id;
+                        mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
+                        mainRow.nombre_categoria = 'Dividida (' + splits.length + ' divs)';
+                        
+                        // Parse divisions for editing mapping
+                        mainRow.divisiones = splits.map(s => ({
+                            id_categoria: s.category_id,
+                            monto_division: Math.abs(parseFloat(s.amount)),
+                            notas: s.memo || ''
+                        }));
+                    }
+                }
+                return mainRow;
+            },
 
             nuevaTransaccion() {
                 this.editTx = {
@@ -517,13 +601,16 @@
                     this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
                 }
 
-                // Cargar divisiones si es una TX dividida
+                // Cargar divisiones si es una TX dividida (en V2 las divisiones ya vienen en el tx, mapeadas por formatDataFromV2)
                 if (this.editTx.es_dividida) {
-                    try {
-                        const res = await api.get(`/transacciones/${tx.id_transaccion}/divisiones`);
-                        this.editTx.divisiones = res.data;
-                    } catch (e) {
-                        console.error('Error cargando divisiones:', e);
+                    // Las divisiones ya deberían estar pobladas si usó formatDataFromV2
+                    if (!this.editTx.divisiones || this.editTx.divisiones.length === 0) {
+                        try {
+                            const res = await api.get(`/transactions/${tx.id_transaccion}`);
+                            this.editTx.divisiones = res.data.splits || [];
+                        } catch (e) {
+                            console.error('Error cargando divisiones:', e);
+                        }
                     }
                 }
 
@@ -697,12 +784,11 @@
                     let response;
                     
                     if (this.editTx.id_transaccion === 'NEW') {
-                        response = await api.post('/transacciones/', txPayload);
-                        // Refresh data from server to get standard format (retro.py returns a specific shape)
-                        await this.cargarTransacciones();
+                        response = await api.post('/transactions/', txPayload);
+                        this.aplicarFiltros(); 
                     } else {
-                        response = await api.put(`/transacciones/${this.editTx.id_transaccion}`, txPayload);
-                        await this.cargarTransacciones();
+                        response = await api.put(`/transactions/${this.editTx.id_transaccion}`, txPayload);
+                        this.aplicarFiltros(); 
                     }
                     if (this.bsModal) this.bsModal.hide();
                 } catch (error) {
@@ -715,7 +801,7 @@
 
             async eliminarTransaccion(id) {
                 try {
-                    await api.delete(`/transacciones/${id}`);
+                    await api.post(`/transactions/${id}/void`);
                     this.transacciones = this.transacciones.filter(t => t.id_transaccion !== id);
                     if (this.selectedTxId === id) this.selectedTxId = null;
                 } catch (error) {

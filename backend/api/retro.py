@@ -24,37 +24,6 @@ def get_assets():
 def get_plugins():
     return []
 
-@router.get("/transacciones")
-@router.get("/transacciones/")
-def get_retro_transactions(db: Session = Depends(get_db)):
-    txs = db.exec(select(Transaction).options(selectinload(Transaction.splits)).order_by(Transaction.date.desc())).all()
-    res = []
-    for t in txs:
-        # Get primary split to guess account/category (first element)
-        primary_split = t.splits[0] if t.splits else None
-        
-        monto = float(primary_split.amount) if primary_split else 0.0
-        
-        # Determine transaction type visually
-        tipo = "ingreso" if monto > 0 else "gasto"
-        
-        res.append({
-            "id_transaccion": t.id,
-            "tipo_transaccion": tipo,
-            "fecha_transaccion": t.date.isoformat(),
-            "id_cuenta": primary_split.account_id if primary_split else None,
-            "monto_transaccion": abs(monto),
-            "codigo_transaccion": "deposit" if monto > 0 else "withdrawal",
-            "descripcion": t.description,
-            "id_beneficiario": t.payee_id,
-            "id_categoria": primary_split.category_id if primary_split else None,
-            "etiquetas": [],
-            "estado": t.status,
-            "saldo_resultante": 0.0
-        })
-    return {"data": res, "total": len(res)}
-
-
 @router.get("/categorias/")
 def get_categories(db: Session = Depends(get_db)):
     # The frontend expects array of categories with specific Spanish fields
@@ -67,6 +36,22 @@ def get_categories(db: Session = Depends(get_db)):
             "tipo_categoria": c.type,
             "color": c.color or "#FFFFFF",
             "full_name": c.name # used by the frontend
+        })
+    return res
+
+@router.get("/cuentas/")
+def get_cuentas(db: Session = Depends(get_db)):
+    """Retro-compat: Returns accounts in V1 Spanish format."""
+    accounts = db.exec(select(Account).where(Account.deleted_at == None)).all()
+    res = []
+    for a in accounts:
+        res.append({
+            "id_cuenta": a.id,
+            "nombre_cuenta": a.name,
+            "tipo_cuenta": a.type.value if hasattr(a.type, 'value') else str(a.type),
+            "moneda": a.currency_code,
+            "saldo_actual": float(a.current_balance),
+            "activo": 1 if a.is_active else 0
         })
     return res
 

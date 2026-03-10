@@ -1,21 +1,18 @@
 """
-PaddleOCR Engine Wrapper para el plugin IA OCR.
-Carga el modelo de forma perezosa (lazy-load) para no impactar el inicio del sistema.
-Extrae texto crudo y usa expresiones regulares (heredadas de Tesseract) para encontrar
-información financiera.
+EasyOCR Engine Wrapper para el plugin IA OCR.
+Reemplaza a PaddleOCR en caso de problemas de entorno bajo Python 3.13.
 """
 import logging
 import re
-import io
 import asyncio
 from typing import Optional
 from datetime import datetime
 
-logger = logging.getLogger("ia_ocr.paddle_engine")
+logger = logging.getLogger("ia_ocr.easyocr_engine")
 
-class PaddleOcrEngine:
+class EasyOcrEngine:
     def __init__(self):
-        self._ocr = None
+        self._reader = None
         self._available = False
         self._initialized = False
 
@@ -25,91 +22,47 @@ class PaddleOcrEngine:
         self._initialized = True
         
         try:
-            import os
-            os.environ["FLAGS_use_mkldnn"] = "0"
-            os.environ["FLAGS_enable_pir_api"] = "0"
-            
-            # Requires paddleocr to be installed
-            from paddleocr import PaddleOCR
-            
-            # Initialize with Spanish by default
-            # Disable MKLDNN and TensorRT to avoid PIR bug in paddle 3.3.0
-            self._ocr = PaddleOCR(use_angle_cls=True, lang='es', enable_mkldnn=False, use_tensorrt=False)
+            import easyocr
+            # Inicializamos en español e inglés, y le decimos que no use GPU si no hay torch+cuda
+            self._reader = easyocr.Reader(['es', 'en'], gpu=False)
             self._available = True
-            logger.info("✅ PaddleOCR inicializado correctamente (v3.x compatible)")
+            logger.info("✅ EasyOCR inicializado correctamente")
         except ImportError:
-            logger.info("ℹ️ PaddleOCR no disponible. Instalar con: pip install paddlepaddle paddleocr onnxruntime")
+            logger.info("ℹ️ EasyOCR no disponible. Instalar con: pip install easyocr")
         except Exception as e:
-            logger.error(f"❌ Error al inicializar PaddleOCR: {e}")
-            import traceback
-            logger.debug(traceback.format_exc())
+            logger.error(f"❌ Error al inicializar EasyOCR: {e}")
 
     async def process(self, file_content: bytes, mime_type: str) -> dict:
         """
-        Runs PaddleOCR on the given image bytes and parses it to a structured format.
+        Runs EasyOCR on the given image bytes and parses it to a structured format.
         """
         self._ensure_init()
         if not self._available:
-            raise Exception("PaddleOCR no está disponible")
+            raise Exception("EasyOCR no está disponible")
             
-        # We need to run it in a thread pool since paddleocr is synchronous and CPU-bound
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self._run_ocr_sync, file_content)
         
         return self._parse_text_to_structured(result)
         
     def _run_ocr_sync(self, file_content: bytes) -> str:
-        """Synchronous wrapper for PaddleOCR."""
-        import tempfile
-        import os
-        
-        tmp_path = None
+        """Synchronous wrapper for EasyOCR."""
         try:
-            # PaddleOCR works better with files on some platforms
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                tmp.write(file_content)
-                tmp_path = tmp.name
-                
-            # Perform OCR on the file path
-            result = self._ocr.ocr(tmp_path)
+            # EasyOCR can directly read from bytes
+            # result is a list of tuples: (bbox, text, prob)
+            result = self._reader.readtext(file_content)
             
             extracted_text_lines = []
-            
-            if result:
-                # result is usually a list of items
-                for res_item in result:
-                    if not res_item:
-                        continue
-                        
-                    # Handling Paddlex dictionary-like return
-                    if hasattr(res_item, 'keys') or isinstance(res_item, dict):
-                        texts = res_item.get('rec_text', []) or res_item.get('rec_texts', [])
-                        if isinstance(texts, list):
-                            extracted_text_lines.extend([str(t) for t in texts if t])
-                        elif isinstance(texts, str):
-                            extracted_text_lines.append(texts)
-                            
-                    # Handling classic PaddleOCR list format [[[[x,y]...], ('text', conf)], ...]
-                    elif isinstance(res_item, list):
-                        for line in res_item:
-                            if isinstance(line, (list, tuple)) and len(line) > 1:
-                                if isinstance(line[1], (list, tuple)) and len(line[1]) > 0:
-                                    text = line[1][0]
-                                    if text:
-                                        extracted_text_lines.append(str(text))
+            for item in result:
+                text = item[1]
+                extracted_text_lines.append(text)
             
             return "\n".join(extracted_text_lines)
             
         except Exception as e:
             import traceback
-            logger.error(f"Error procesando imagen con PaddleOCR: {e}\n{traceback.format_exc()}")
+            logger.error(f"Error procesando imagen con EasyOCR: {e}\n{traceback.format_exc()}")
             raise e
-        finally:
-            if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except:
-                    pass
 
     def _parse_text_to_structured(self, text: str) -> dict:
         """
@@ -130,7 +83,7 @@ class PaddleOcrEngine:
             "monto_total": monto,
             "moneda": "ARS",
             "categoria_sugerida": categoria_sugerida,
-            "notas": f"Procesado vía PaddleOCR local.",
+            "notas": f"Procesado vía EasyOCR local.",
             "items": items,
         }
 
@@ -219,24 +172,18 @@ class PaddleOcrEngine:
             'total', 'subtotal', 'vuelto', 'su pago', 'descuento', 
             'tarjeta', 'efectivo', 'cambio', 'iva ', 'pago', 'importe', 'cuit'
         ]
-        
-        # Regex to catch line with text and a price at the end "Leche 1L  1500.00"
-        # Permite formato "1.500,00" o "1500.00"
-        item_pattern = re.compile(r'^(.*?)\s+\$?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s*$')
-        
+        # Very simple heuristic: try to find a float price at the end of a line
         for line in lines:
             if any(k in line.lower() for k in ignore_keywords):
                 continue
-                
-            match = item_pattern.match(line)
+            
+            match = re.search(r"^(.*?)\s+[\$]?\s*([\d.,]+)$", line)
             if match:
-                desc = match.group(1).strip()
-                if len(desc) > 3 and not re.match(r'^[\d\W]+$', desc): # No es solo números y simbolos
-                    precio_str = match.group(2).replace(',', '.')
-                    items.append({
-                        "descripcion": desc[:50], # Limitar longitud de descripción
-                        "cantidad": 1,
-                        "precio_unitario": precio_str,
-                        "subtotal": precio_str
-                    })
+                name = match.group(1).strip()
+                price = match.group(2).replace(",", ".")
+                
+                # Minimum filters
+                if len(name) > 3 and not re.match(r"^\d+$", name):
+                    items.append({"nombre": name, "precio": price})
+                    
         return items
