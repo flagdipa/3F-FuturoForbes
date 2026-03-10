@@ -45,10 +45,19 @@ document.addEventListener('alpine:init', () => {
 
         async loadLayout() {
             try {
-                // In a real app, fetch from /api/v1/users/me/config/dashboard
-                const saved = localStorage.getItem('3f_dashboard_layout');
-                if (saved) {
-                    const layout = JSON.parse(saved);
+                let layout = null;
+                try {
+                    const response = await api.get('/auth/profile/dashboard-layout');
+                    if (response.data && response.data.layout) {
+                        layout = JSON.parse(response.data.layout);
+                    }
+                } catch (apiError) {
+                    console.warn("Could not load layout from API, falling back to localStorage", apiError);
+                    const saved = localStorage.getItem('3f_dashboard_layout');
+                    if (saved) layout = JSON.parse(saved);
+                }
+
+                if (layout && layout.length > 0) {
                     this.grid.load(layout);
                 } else {
                     // Default layout
@@ -64,10 +73,16 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        saveLayout() {
+        async saveLayout() {
             const layout = this.grid.save(false);
-            localStorage.setItem('3f_dashboard_layout', JSON.stringify(layout));
-            // TODO: Post to API
+            const layoutStr = JSON.stringify(layout);
+            localStorage.setItem('3f_dashboard_layout', layoutStr);
+
+            try {
+                await api.post('/auth/profile/dashboard-layout', { layout: layoutStr });
+            } catch (e) {
+                console.error("Failed to save layout to API", e);
+            }
         },
 
         addWidget(widgetId) {

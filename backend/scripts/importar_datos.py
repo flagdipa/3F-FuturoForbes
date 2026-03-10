@@ -141,6 +141,25 @@ def migrar_datos():
             except: continue
         session.commit()
 
+        # 8. Transacciones Divididas (Splits)
+        print("Sincronizando transacciones divididas...")
+        for row in run_mysql_query("SELECT id_division, id_transaccion, id_categoria, monto_division, notas FROM transacciones_divididas"):
+            try:
+                id_v = int(row[0])
+                if not session.get(TransaccionDividida, id_v):
+                    # Check if the parent transaction exists first
+                    if session.get(LibroTransacciones, int(row[1])):
+                        session.add(TransaccionDividida(
+                            id_division=id_v,
+                            id_transaccion=int(row[1]),
+                            id_categoria=int(row[2]) if row[2] != "NULL" else None,
+                            monto_division=decimal.Decimal(row[3]),
+                            notas=row[4] if row[4] != "NULL" else None
+                        ))
+            except Exception as e:
+                continue
+        session.commit()
+
     print("✅ Sincronización exitosa.")
 
 if __name__ == "__main__":

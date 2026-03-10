@@ -1,37 +1,50 @@
-<div id="transaction-modal" class="modal fade" tabindex="-1" x-data="transactionForm">
+<!-- 3F Transaction Form Modal — HUD Neon Edition -->
+<!-- Included from transactions.html, shares Alpine scope `transaccionesPage` -->
+<div id="modalNuevo" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content hud-container bg-dark text-white border-primary" style="backdrop-filter: blur(20px); background: rgba(10, 10, 25, 0.9) !important;">
+        <div class="modal-content bg-dark text-white border-primary" style="backdrop-filter: blur(20px); background: rgba(10, 10, 25, 0.95) !important; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15), inset 0 0 60px rgba(0, 0, 0, 0.3);">
             
             <!-- Modal Header -->
             <div class="modal-header border-bottom border-primary border-opacity-25 py-2">
                 <div class="d-flex align-items-center gap-3">
-                    <i class="fa-solid fa-money-bill-transfer text-primary"></i>
-                    <h5 class="modal-title font-orbitron smaller mb-0" x-text="editMode ? 'MODIFICAR TRANSACCIÓN' : 'NUEVA TRANSACCIÓN'"></h5>
+                    <div class="position-relative">
+                        <i class="fa-solid fa-money-bill-transfer text-primary fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" 
+                              style="font-size: 0.5rem; padding: 2px 4px;" x-show="editTx.id_transaccion === 'NEW'">NEW</span>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-orbitron mb-0" style="font-size: 0.85rem; letter-spacing: 2px;" 
+                            x-text="editTx.id_transaccion === 'NEW' ? 'NUEVA TRANSACCIÓN' : 'MODIFICAR TRANSACCIÓN #' + editTx.id_transaccion"></h5>
+                        <small class="text-dim d-block" style="font-size: 0.6rem; letter-spacing: 1px;">SISTEMA_LEDGER v2.0 | MODO EDICIÓN</small>
+                    </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <!-- Modal Body -->
             <div class="modal-body p-4">
-                <form id="tx-form" @submit.prevent="submitForm">
+                <form id="tx-form-nuevo" @submit.prevent="guardarCambios()">
                     
                     <!-- Tipo de Transacción (Toggle Visual) -->
                     <div class="transaction-type-switcher d-flex justify-content-center mb-4">
-                        <div class="btn-group w-100 neon-border p-1" style="background: rgba(0,0,0,0.3);">
-                            <button type="button" class="btn btn-sm flex-grow-1" 
-                                    :class="formData.type === 'EXPENSE' ? 'btn-danger' : 'btn-outline-secondary'"
-                                    @click="formData.type = 'EXPENSE'">
-                                <i class="fa-solid fa-minus-circle me-1"></i> GASTO
+                        <div class="btn-group w-100 p-1 rounded-3" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0, 242, 255, 0.1);">
+                            <button type="button" class="btn btn-sm flex-grow-1 fw-bold" 
+                                    :class="editTx.codigo_transaccion === 'Withdrawal' ? 'btn-danger shadow-lg' : 'btn-outline-secondary border-0 text-dim'"
+                                    @click="editTx.codigo_transaccion = 'Withdrawal'"
+                                    style="transition: all 0.3s ease;">
+                                <i class="fa-solid fa-arrow-down me-1"></i> GASTO
                             </button>
-                            <button type="button" class="btn btn-sm flex-grow-1" 
-                                    :class="formData.type === 'INCOME' ? 'btn-success' : 'btn-outline-secondary'"
-                                    @click="formData.type = 'INCOME'">
-                                <i class="fa-solid fa-plus-circle me-1"></i> INGRESO
+                            <button type="button" class="btn btn-sm flex-grow-1 fw-bold" 
+                                    :class="editTx.codigo_transaccion === 'Deposit' ? 'btn-success shadow-lg' : 'btn-outline-secondary border-0 text-dim'"
+                                    @click="editTx.codigo_transaccion = 'Deposit'"
+                                    style="transition: all 0.3s ease;">
+                                <i class="fa-solid fa-arrow-up me-1"></i> INGRESO
                             </button>
-                            <button type="button" class="btn btn-sm flex-grow-1" 
-                                    :class="formData.type === 'TRANSFER' ? 'btn-primary' : 'btn-outline-secondary'"
-                                    @click="formData.type = 'TRANSFER'">
-                                <i class="fa-solid fa-exchange-alt me-1"></i> TRF
+                            <button type="button" class="btn btn-sm flex-grow-1 fw-bold" 
+                                    :class="editTx.codigo_transaccion === 'Transfer' ? 'btn-primary shadow-lg' : 'btn-outline-secondary border-0 text-dim'"
+                                    @click="editTx.codigo_transaccion = 'Transfer'"
+                                    style="transition: all 0.3s ease;">
+                                <i class="fa-solid fa-right-left me-1"></i> TRANSFER
                             </button>
                         </div>
                     </div>
@@ -41,54 +54,79 @@
                         <div class="col-md-7">
                             
                             <!-- Monto (Input Gigante) -->
-                            <div class="amount-container mb-4">
-                                <label class="text-dim smaller font-orbitron mb-1">MONTO PRINCIPAL</label>
+                            <div class="amount-container-nuevo mb-4">
+                                <label class="text-dim font-orbitron mb-1 d-block" style="font-size: 0.65rem; letter-spacing: 2px;">MONTO PRINCIPAL</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-transparent border-primary text-primary fw-bold" x-text="currencySymbol"></span>
-                                    <input type="text" 
-                                           class="form-control form-control-lg bg-transparent border-primary text-white amount-input"
-                                           x-model="formData.amount"
-                                           @input="evaluateExpression"
+                                    <span class="input-group-text bg-transparent border-primary text-primary fw-bold fs-4"
+                                          :class="{
+                                              'text-danger border-danger': editTx.codigo_transaccion === 'Withdrawal',
+                                              'text-success border-success': editTx.codigo_transaccion === 'Deposit',
+                                              'text-primary border-primary': editTx.codigo_transaccion === 'Transfer'
+                                          }">$</span>
+                                    <input type="number" step="0.01"
+                                           class="form-control form-control-lg bg-transparent text-white tx-amount-input"
+                                           :class="{
+                                               'border-danger': editTx.codigo_transaccion === 'Withdrawal',
+                                               'border-success': editTx.codigo_transaccion === 'Deposit',
+                                               'border-primary': editTx.codigo_transaccion === 'Transfer'
+                                           }"
+                                           x-model.number="editTx.monto_transaccion"
                                            placeholder="0.00"
                                            required>
                                 </div>
-                                <small class="text-dim mt-1 d-block" x-show="previewValue" x-text="'= ' + previewValue"></small>
                             </div>
 
                             <!-- Beneficiario (Payee) -->
                             <div class="mb-3">
-                                <label class="text-dim smaller font-orbitron">BENEFICIARIO / ORIGEN</label>
+                                <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">BENEFICIARIO / ORIGEN</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-transparent border-secondary text-dim"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" class="form-control bg-dark text-white border-secondary" 
-                                           placeholder="¿A quién le pagaste?" x-model="formData.payee_name" 
-                                           list="payees-list">
-                                    <datalist id="payees-list">
-                                        <template x-for="p in payees" :key="p.id">
-                                            <option :value="p.name"></option>
+                                    <select class="form-select bg-dark text-white border-secondary" x-model.number="editTx.id_beneficiario">
+                                        <option value="" disabled>(Seleccionar beneficiario)</option>
+                                        <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
+                                            <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
                                         </template>
-                                    </datalist>
+                                    </select>
                                 </div>
                             </div>
 
                             <!-- Cuenta y Categoría -->
-                            <div class="row">
+                            <div class="row g-2">
                                 <div class="col-6">
-                                    <label class="text-dim smaller font-orbitron">CUENTA</label>
-                                    <select class="form-select bg-dark text-white border-secondary" x-model="formData.account_id" required>
-                                        <template x-for="acc in accounts" :key="acc.id">
-                                            <option :value="acc.id" x-text="acc.name"></option>
+                                    <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">CUENTA</label>
+                                    <select class="form-select bg-dark text-white border-secondary" x-model.number="editTx.id_cuenta" required>
+                                        <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
+                                            <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
                                         </template>
                                     </select>
                                 </div>
-                                <div class="col-6">
-                                    <label class="text-dim smaller font-orbitron">CATEGORÍA</label>
-                                    <select class="form-select bg-dark text-white border-secondary" x-model="formData.category_id">
-                                        <option value="">(Sin categoría)</option>
-                                        <template x-for="cat in categories" :key="cat.id">
-                                            <option :value="cat.id" x-text="cat.name"></option>
+                                <div class="col-6" x-show="editTx.codigo_transaccion === 'Transfer'">
+                                    <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">CUENTA DESTINO</label>
+                                    <select class="form-select bg-dark text-white border-secondary" x-model.number="editTx.id_cuenta_destino">
+                                        <option value="">(Seleccionar)</option>
+                                        <template x-for="c in colecciones.cuentas" :key="'dest-' + c.id_cuenta">
+                                            <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
                                         </template>
                                     </select>
+                                </div>
+                                <div class="col-6" x-show="editTx.codigo_transaccion !== 'Transfer' && !editTx.es_dividida">
+                                    <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">CATEGORÍA</label>
+                                    <select class="form-select bg-dark text-white border-secondary" x-model.number="editTx.id_categoria">
+                                        <option :value="null">(Sin categoría)</option>
+                                        <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
+                                            <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Split Toggle -->
+                            <div class="mt-3" x-show="editTx.codigo_transaccion !== 'Transfer'">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="splitToggleNuevo" x-model="editTx.es_dividida" @change="toggleSplitMode()">
+                                    <label class="form-check-label text-warning small fw-bold" for="splitToggleNuevo">
+                                        <i class="fa-solid fa-scissors me-1"></i> DIVIDIR EN CATEGORÍAS
+                                    </label>
                                 </div>
                             </div>
 
@@ -99,53 +137,137 @@
                             
                             <!-- Fecha -->
                             <div class="mb-3">
-                                <label class="text-dim smaller font-orbitron">FECHA</label>
-                                <input type="date" class="form-control bg-dark text-white border-secondary" x-model="formData.date">
+                                <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">FECHA</label>
+                                <input type="datetime-local" class="form-control bg-dark text-white border-secondary" x-model="editTx.fecha_transaccion">
                                 <div class="mt-1 d-flex gap-1">
-                                    <button type="button" @click="setDate('today')" class="btn btn-xs btn-outline-secondary">HOY</button>
-                                    <button type="button" @click="setDate('yesterday')" class="btn btn-xs btn-outline-secondary">AYER</button>
+                                    <button type="button" @click="editTx.fecha_transaccion = new Date().toISOString().slice(0, 16)" 
+                                            class="btn btn-xs btn-outline-secondary">HOY</button>
+                                    <button type="button" @click="editTx.fecha_transaccion = new Date(Date.now() - 86400000).toISOString().slice(0, 16)" 
+                                            class="btn btn-xs btn-outline-secondary">AYER</button>
                                 </div>
                             </div>
 
-                            <!-- Tags -->
+                            <!-- Estado -->
                             <div class="mb-3">
-                                <label class="text-dim smaller font-orbitron">ETIQUETAS</label>
-                                <div class="d-flex flex-wrap gap-1 p-2 border border-secondary rounded bg-black bg-opacity-25" style="min-height: 40px;">
-                                    <template x-for="tag in formData.tags" :key="tag">
-                                        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25">
-                                            <span x-text="tag"></span>
-                                            <i class="fa-solid fa-times ms-1 cursor-pointer" @click="removeTag(tag)"></i>
-                                        </span>
+                                <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">ESTADO</label>
+                                <select class="form-select bg-dark text-white border-secondary form-select-sm" x-model="editTx.estado">
+                                    <option value="None">Pendiente</option>
+                                    <option value="Conciled">Conciliado</option>
+                                    <option value="Void">Anulado</option>
+                                    <option value="Follow up">Seguimiento</option>
+                                    <option value="Duplicate">Duplicado</option>
+                                </select>
+                            </div>
+
+                            <!-- Etiquetas -->
+                            <div class="mb-3">
+                                <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">ETIQUETAS</label>
+                                <div class="d-flex flex-wrap gap-1 p-2 border border-secondary border-opacity-25 rounded bg-black bg-opacity-25" style="min-height: 36px;">
+                                    <template x-for="tag in allTags" :key="'modal-tag-' + tag.id_etiqueta">
+                                        <span class="badge cursor-pointer px-2 py-1 transition-all" style="font-size: 0.7rem;"
+                                               @click="toggleTag(tag.id_etiqueta)"
+                                               :style="(editTx.etiquetas || []).includes(tag.id_etiqueta) 
+                                                    ? 'background-color: ' + tag.color + '; color: #000; border: 1px solid ' + tag.color + '; box-shadow: 0 0 8px ' + tag.color 
+                                                    : 'background-color: transparent; color: ' + tag.color + '; border: 1px solid ' + tag.color + '44'"
+                                               x-text="tag.nombre_etiqueta"></span>
                                     </template>
-                                    <input type="text" class="border-0 bg-transparent text-white small" style="outline: none; width: 60px;" 
-                                           placeholder="+ Tag" @keydown.enter.prevent="addTag($event.target.value); $event.target.value=''">
+                                    <span x-show="allTags.length === 0" class="text-dim" style="font-size: 0.65rem; font-style: italic;">Sin etiquetas...</span>
                                 </div>
                             </div>
 
                             <!-- Notas -->
                             <div class="mb-3">
-                                <label class="text-dim smaller font-orbitron">NOTAS / REFERENCIA</label>
-                                <textarea class="form-control bg-dark text-white border-secondary small" rows="3" x-model="formData.notes"></textarea>
+                                <label class="text-dim font-orbitron" style="font-size: 0.65rem; letter-spacing: 2px;">NOTAS / REFERENCIA</label>
+                                <textarea class="form-control bg-dark text-white border-secondary" rows="2" x-model="editTx.notas" 
+                                          placeholder="Detalle adicional..." style="font-size: 0.85rem;"></textarea>
                             </div>
 
                         </div>
                     </div>
 
-                    <!-- Sección Extra: OCR & Archivos -->
-                    <div class="mt-4 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                    <!-- Sección Split (Divisiones) -->
+                    <div x-show="editTx.es_dividida && editTx.codigo_transaccion !== 'Transfer'" x-transition class="mt-3">
+                        <div class="card bg-black bg-opacity-50 border-warning border-opacity-25 p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 text-warning font-orbitron" style="font-size: 0.75rem; letter-spacing: 1px;">
+                                    <i class="fa-solid fa-scissors me-1"></i> DIVISIONES | TOTAL: <span x-text="formatCurrency(editTx.monto_transaccion)"></span>
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-outline-warning" @click="agregarDivision()">
+                                    <i class="fa-solid fa-plus me-1"></i> AGREGAR
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-sm table-dark table-borderless mb-0">
+                                    <thead>
+                                        <tr class="text-dim" style="font-size: 0.65rem;">
+                                            <th style="width: 40%">CATEGORÍA</th>
+                                            <th style="width: 25%">MONTO</th>
+                                            <th style="width: 25%">NOTAS</th>
+                                            <th style="width: 10%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(div, index) in editTx.divisiones" :key="'split-' + index">
+                                            <tr>
+                                                <td>
+                                                    <select class="form-select form-select-sm bg-dark text-white border-secondary" x-model.number="div.id_categoria">
+                                                        <template x-for="cat in colecciones.categorias" :key="'div-cat-' + cat.id_categoria">
+                                                            <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <input type="number" step="0.01" class="form-control form-control-sm bg-dark text-white border-secondary" x-model.number="div.monto_division">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" x-model="div.notas" placeholder="...">
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm text-danger p-0" @click="quitarDivision(index)">
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-2 border-top border-secondary border-opacity-25 pt-2">
+                                <span class="small fw-bold" :class="Math.abs(getSplitSum() - parseFloat(editTx.monto_transaccion || 0)) < 0.01 ? 'text-success' : 'text-danger'">
+                                    <i class="fa-solid fa-calculator me-1"></i> SUMA: <span x-text="formatCurrency(getSplitSum())"></span>
+                                </span>
+                                <span class="small text-dim">
+                                    RESTANTE: <span x-text="formatCurrency((editTx.monto_transaccion || 0) - getSplitSum())" 
+                                                    :class="(editTx.monto_transaccion || 0) - getSplitSum() !== 0 ? 'text-warning' : 'text-success'"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Adjuntos + OCR -->
+                    <div class="mt-3 pt-3 border-top border-secondary border-opacity-15 d-flex justify-content-between align-items-center">
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-info" @click="triggerOCR">
+                            <button type="button" class="btn btn-sm btn-outline-info" @click="$refs.ocrInput.click()">
                                 <i class="fa-solid fa-camera me-1"></i> ESCANEAR TICKET (IA)
                             </button>
-                            <label class="btn btn-sm btn-outline-secondary mb-0">
+                            <input type="file" x-ref="ocrInput" hidden @change="procesarOCR($event)" accept="image/*,application/pdf">
+
+                            <label class="btn btn-sm btn-outline-secondary mb-0" x-show="editTx.id_transaccion !== 'NEW'">
                                 <i class="fa-solid fa-paperclip me-1"></i> ADJUNTAR
-                                <input type="file" hidden @change="handleFileUpload">
+                                <input type="file" hidden @change="subirAdjunto($event)">
                             </label>
                         </div>
                         
-                        <div class="form-check form-switch pt-1">
-                            <input class="form-check-input" type="checkbox" id="reconciled" x-model="formData.reconciled">
-                            <label class="form-check-label text-dim smaller" for="reconciled">CONCILIADO</label>
+                        <!-- Adjuntos Mini List -->
+                        <div class="d-flex gap-1" x-show="attachments.length > 0">
+                            <template x-for="adj in attachments" :key="adj.id_adjunto">
+                                <span class="badge bg-dark border border-secondary" style="font-size: 0.6rem;">
+                                    <i class="fa-solid" :class="adj.tipo_mime?.includes('image') ? 'fa-file-image text-warning' : 'fa-file-pdf text-danger'"></i>
+                                    <span x-text="adj.nombre_archivo?.substring(0, 12)"></span>
+                                </span>
+                            </template>
                         </div>
                     </div>
 
@@ -153,18 +275,29 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="modal-footer border-top border-primary border-opacity-25">
-                <button type="button" class="btn btn-sm btn-outline-secondary px-4" data-bs-dismiss="modal">CANCELAR</button>
-                <button type="submit" form="tx-form" class="btn btn-sm btn-primary px-5 neon-border-static" :disabled="submitting">
-                    <i class="fa-solid fa-save me-1"></i>
-                    <span x-text="submitting ? 'GUARDANDO...' : 'PROCESAR TRANSACCIÓN'"></span>
-                </button>
-            </div>
-
-            <!-- Scanner Overlay (for OCR simulation) -->
-            <div class="ocr-scanner" x-show="scanning" x-transition>
-                <div class="scanner-line"></div>
-                <p class="mt-3 font-orbitron text-primary">ANALIZANDO DOCUMENTO...</p>
+            <div class="modal-footer border-top border-primary border-opacity-25 py-2">
+                <div class="d-flex justify-content-between w-100 align-items-center">
+                    <div class="d-flex align-items-center gap-2 text-dim" style="font-size: 0.6rem;">
+                        <i class="fa-solid fa-shield-halved text-success"></i>
+                        <span>DOUBLE-ENTRY LEDGER</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-4" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i> CANCELAR
+                        </button>
+                        <button type="submit" form="tx-form-nuevo" class="btn btn-sm px-5 fw-bold" 
+                                :class="{
+                                    'btn-danger': editTx.codigo_transaccion === 'Withdrawal',
+                                    'btn-success': editTx.codigo_transaccion === 'Deposit',
+                                    'btn-primary': editTx.codigo_transaccion === 'Transfer'
+                                }"
+                                style="box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);"
+                                :disabled="saving || (editTx.es_dividida && Math.abs(getSplitSum() - parseFloat(editTx.monto_transaccion || 0)) > 0.01)">
+                            <span x-show="!saving"><i class="fa-solid fa-bolt me-1"></i> PROCESAR</span>
+                            <span x-show="saving"><span class="spinner-border spinner-border-sm me-1"></span> PROCESANDO...</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -172,37 +305,40 @@
 </div>
 
 <style>
-    .amount-input {
-        font-size: 2rem !important;
-        font-family: 'Consolas', monospace;
+    .tx-amount-input {
+        font-size: 2.2rem !important;
+        font-family: 'Consolas', 'Fira Code', monospace;
         letter-spacing: -1px;
+        font-weight: 700;
     }
-    .neon-border-static {
-        box-shadow: 0 0 10px var(--3f-primary-glow);
+    .tx-amount-input:focus {
+        box-shadow: 0 0 20px rgba(0, 242, 255, 0.3) !important;
     }
     .btn-xs {
-        padding: 1px 5px;
-        font-size: 0.65rem;
+        padding: 1px 6px;
+        font-size: 0.6rem;
+        letter-spacing: 1px;
     }
-    .ocr-scanner {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
+    .cursor-pointer { cursor: pointer; }
+    .transition-all { transition: all 0.2s ease; }
+    
+    /* Animate the type-switcher buttons */
+    .transaction-type-switcher .btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .scanner-line {
-        width: 80%;
-        height: 2px;
-        background: var(--neon-green);
-        box-shadow: 0 0 15px var(--neon-green);
-        animation: scan-move 2s infinite ease-in-out;
+    .transaction-type-switcher .btn.btn-danger { box-shadow: 0 0 15px rgba(220, 53, 69, 0.4); }
+    .transaction-type-switcher .btn.btn-success { box-shadow: 0 0 15px rgba(25, 135, 84, 0.4); }
+    .transaction-type-switcher .btn.btn-primary { box-shadow: 0 0 15px rgba(0, 242, 255, 0.4); }
+    
+    /* Neon label style */
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    
+    /* Modal backdrop blur */
+    #modalNuevo .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
     }
-    @keyframes scan-move {
-        0%, 100% { transform: translateY(-50px); }
-        50% { transform: translateY(50px); }
+    @keyframes modalSlideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 </style>

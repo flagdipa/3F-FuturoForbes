@@ -206,3 +206,42 @@ def recuperar_password(req: RecoverPasswordRequest, session: Session = Depends(g
     
     send_email(to_email=req.email, subject=subject, html_content=html)
     return {"message": "Si el correo está registrado, recibirá un enlace de recuperación."}
+
+# ==================== DASHBOARD LAYOUT ENDPOINTS ====================
+
+from pydantic import BaseModel
+
+class DashboardLayoutRequest(BaseModel):
+    layout: str
+
+@router.get("/profile/dashboard-layout")
+def get_dashboard_layout(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    from ...models import SystemConfig
+    config_key = f"dashboard_layout_user_{current_user.id}"
+    config = session.exec(select(SystemConfig).where(SystemConfig.key == config_key)).first()
+    
+    if config:
+        return {"layout": config.value}
+    return {"layout": None}
+
+@router.post("/profile/dashboard-layout")
+def update_dashboard_layout(
+    req: DashboardLayoutRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    from ...models import SystemConfig
+    config_key = f"dashboard_layout_user_{current_user.id}"
+    config = session.exec(select(SystemConfig).where(SystemConfig.key == config_key)).first()
+    
+    if config:
+        config.value = req.layout
+    else:
+        config = SystemConfig(key=config_key, value=req.layout, description="User specific dashboard layout")
+        session.add(config)
+        
+    session.commit()
+    return {"status": "success"}

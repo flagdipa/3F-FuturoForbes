@@ -229,233 +229,8 @@
         </div>
     </div>
 
-    <!-- Modal de Edición -->
-    <div class="modal fade" id="modalEdicion" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content neon-modal">
-                <div class="modal-header neon-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-terminal me-2"></i>EDITOR_TRANSACCION_V1.0</h5>
-                    <button type="button" class="btn-close btn-close-neon" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-edicion" x-on:submit.prevent="guardarCambios">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">ID_REGISTRO</label>
-                                <input type="text" class="form-control neon-input" x-model="editTx.id_transaccion" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">FECHA_SINCRO</label>
-                                <input type="datetime-local" class="form-control neon-input" x-model="editTx.fecha_transaccion">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">TIPO_TRANSACCION</label>
-                                <select class="form-select neon-input" x-model="editTx.codigo_transaccion">
-                                    <option value="Withdrawal">Retiro (Withdrawal)</option>
-                                    <option value="Deposit">Depósito (Deposit)</option>
-                                    <option value="Transfer">Transferencia (Transfer)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">ESTADO</label>
-                                <select class="form-select neon-input" x-model="editTx.estado">
-                                    <option value="None">Ninguno</option>
-                                    <option value="Conciled">Conciliado</option>
-                                    <option value="Void">Anulado</option>
-                                    <option value="Follow up">Seguimiento</option>
-                                    <option value="Duplicate">Duplicado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">CUENTA_ORIGEN</label>
-                                <select class="form-select neon-input" x-model.number="editTx.id_cuenta">
-                                    <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
-                                        <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small">BENEFICIARIO</label>
-                                <select class="form-select neon-input" x-model.number="editTx.id_beneficiario">
-                                    <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
-                                        <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
-                                    </template>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="checkSplit" x-model="editTx.es_dividida" @change="toggleSplitMode()">
-                                    <label class="form-check-label text-warning small fw-bold" for="checkSplit" x-text="$store.lang.t('transactions.split')"></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Single Category Mode -->
-                        <div class="row" x-show="!editTx.es_dividida">
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small" x-text="$store.lang.t('transactions.columns.category')"></label>
-                                <select class="form-select neon-input" x-model.number="editTx.id_categoria">
-                                    <option :value="null">Sin Categoría</option>
-                                    <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
-                                        <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="text-dim small" x-text="$store.lang.t('transactions.columns.amount')"></label>
-                                <input type="number" step="0.01" class="form-control neon-input" x-model.number="editTx.monto_transaccion">
-                            </div>
-                        </div>
-
-                        <!-- Split Category Mode -->
-                        <div class="row" x-show="editTx.es_dividida">
-                            <div class="col-12 mb-3">
-                                <div class="card bg-dark bg-opacity-50 border-secondary border-opacity-25 p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 text-accent" x-text="$store.lang.t('transactions.split_total') + ': ' + formatCurrency(editTx.monto_transaccion)"></h6>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" @click="agregarDivision()">
-                                            <i class="fa-solid fa-plus me-1"></i> <span x-text="$store.lang.t('transactions.add_split')"></span>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-dark table-borderless mb-0">
-                                            <thead>
-                                                <tr class="text-dim extra-small">
-                                                    <th style="width: 40%" x-text="$store.lang.t('transactions.columns.category')"></th>
-                                                    <th style="width: 25%" x-text="$store.lang.t('transactions.columns.amount')"></th>
-                                                    <th style="width: 25%">NOTAS</th>
-                                                    <th style="width: 10%"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <template x-for="(div, index) in editTx.divisiones" :key="index">
-                                                    <tr>
-                                                        <td>
-                                                            <select class="form-select form-select-sm neon-input" x-model.number="div.id_categoria">
-                                                                <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
-                                                                    <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
-                                                                </template>
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <input type="number" step="0.01" class="form-control form-control-sm neon-input" x-model.number="div.monto_division">
-                                                        </td>
-                                                        <td>
-                                                            <input type="text" class="form-control form-control-sm neon-input" x-model="div.notas">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <button type="button" class="btn btn-sm text-danger" @click="quitarDivision(index)">
-                                                                <i class="fa-solid fa-times"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                </template>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between mt-2 border-top border-secondary border-opacity-25 pt-2">
-                                        <span class="small" :class="getSplitSum() == editTx.monto_transaccion ? 'text-success' : 'text-danger'">
-                                            SUMA_DIV: <span x-text="formatCurrency(getSplitSum())"></span>
-                                        </span>
-                                        <span class="small text-dim" x-text="$store.lang.t('transactions.split_remaining') + ': ' + formatCurrency(editTx.monto_transaccion - getSplitSum())"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Fixed Total for Split Mode -->
-                        <div class="row" x-show="editTx.es_dividida">
-                            <div class="col-md-12 mb-3">
-                                <label class="text-dim small">MONTO_TOTAL_TRANSACCION</label>
-                                <input type="number" step="0.01" class="form-control neon-input border-warning border-opacity-50" x-model.number="editTx.monto_transaccion">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="text-dim small">NOTAS_DE_CAMPO</label>
-                                <textarea class="form-control neon-input" rows="2" x-model="editTx.notas"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="text-dim small">ETIQUETADO_MULTIPLE</label>
-                                <div class="d-flex flex-wrap gap-2 p-2 border border-secondary border-opacity-25 rounded bg-dark bg-opacity-50">
-                                    <template x-for="tag in allTags" :key="tag.id_etiqueta">
-                                        <div class="m-0">
-                                            <span class="badge cursor-pointer px-3 py-2 transition-all" 
-                                                   @click="toggleTag(tag.id_etiqueta)"
-                                                   :style="(editTx.etiquetas || []).includes(tag.id_etiqueta) 
-                                                        ? 'background-color: ' + tag.color + '; color: #000; border: 1px solid ' + tag.color 
-                                                        : 'background-color: transparent; color: ' + tag.color + '; border: 1px solid ' + tag.color + '44'"
-                                                   x-text="tag.nombre_etiqueta"></span>
-                                        </div>
-                                    </template>
-                                    <span x-show="allTags.length === 0" class="text-dim small italic">Sin etiquetas configuradas...</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Attachments Section -->
-                        <div class="row mt-3" x-show="editTx.id_transaccion !== 'NEW'">
-                            <div class="col-md-12 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="text-dim small mb-0">ADJUNTOS_DE_RESPALDO</label>
-                                    <button type="button" class="btn btn-xs btn-outline-info" @click="$refs.fileInput.click()">
-                                        <i class="fa-solid fa-paperclip me-1"></i> ADJUNTAR
-                                    </button>
-                                    <input type="file" x-ref="fileInput" class="d-none" @change="subirAdjunto($event)">
-                                </div>
-                                <div class="p-2 border border-secondary border-opacity-25 rounded bg-dark bg-opacity-30">
-                                    <div class="d-flex flex-column gap-2">
-                                        <template x-for="adj in attachments" :key="adj.id_adjunto">
-                                            <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-2 rounded border border-secondary border-opacity-10">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid " :class="adj.tipo_mime?.includes('image') ? 'fa-file-image text-warning' : 'fa-file-pdf text-danger'"></i>
-                                                    <span class="ms-2 small text-accent" x-text="adj.nombre_archivo"></span>
-                                                    <span class="ms-2 extra-small text-dim" x-text="'(' + (adj.tamaño_bytes/1024).toFixed(1) + ' KB)'"></span>
-                                                </div>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn text-info px-2" @click="descargarAdjunto(adj)"><i class="fa-solid fa-download"></i></button>
-                                                    <button type="button" class="btn text-danger px-2" @click="eliminarAdjunto(adj.id_adjunto)"><i class="fa-solid fa-trash-can"></i></button>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <div x-show="attachments.length === 0" class="text-center py-2">
-                                            <span class="text-dim extra-small italic">Sin archivos vinculados...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-4">
-                            <div class="col-12 d-flex justify-content-end">
-                                <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">ABORTAR</button>
-                                <button type="submit" class="btn btn-primary neon-border" :disabled="saving || (editTx.es_dividida && Math.abs(getSplitSum() - parseFloat(editTx.monto_transaccion || 0)) > 0.001)">
-                                    <span x-show="!saving">EJECUTAR_ACCION</span>
-                                    <span x-show="saving" class="spinner-border spinner-border-sm"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- Modal de Transacción (HUD Neon v2.0) -->
+    {% include 'transactions/main_form.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -528,7 +303,7 @@
                     attempts++;
                 }
                 if (typeof bootstrap !== 'undefined') {
-                    const modalEl = document.getElementById('modalEdicion');
+                    const modalEl = document.getElementById('modalNuevo');
                     if (modalEl) this.bsModal = new bootstrap.Modal(modalEl);
                 }
 
@@ -789,6 +564,54 @@
                 }
             },
 
+            async procesarOCR(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    this.saving = true;
+                    // Trigger OCR endpoint
+                    const response = await api.post('/ia/ocr', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    
+                    const data = response.data;
+                    if (data && data.transaction_prefill) {
+                        const prefill = data.transaction_prefill;
+                        // Auto-fill values
+                        if (prefill.monto_transaccion) {
+                            this.editTx.monto_transaccion = prefill.monto_transaccion;
+                            this.editTx.codigo_transaccion = 'Withdrawal'; // Assume expense by default for tickets
+                        }
+                        if (prefill.fecha_transaccion) {
+                            // Extract just the day, to keep hours neutral or respect ISO format up to minutes
+                            this.editTx.fecha_transaccion = prefill.fecha_transaccion.slice(0, 16);
+                        }
+                        if (prefill.descripcion) {
+                            this.editTx.notas = prefill.descripcion + (data.engine ? ` [OCR: ${data.engine}]` : '');
+                        }
+                        
+                        // Handle splits if any
+                        if (prefill.splits_sugeridos && prefill.splits_sugeridos.length > 0) {
+                            this.editTx.es_dividida = true;
+                            this.editTx.divisiones = prefill.splits_sugeridos.map(s => ({
+                                id_categoria: null,
+                                monto_division: s.monto,
+                                notas: s.descripcion
+                            }));
+                        }
+                    }
+                } catch (e) {
+                    alert('Error OCR: ' + (e.response?.data?.detail || e.message || 'Fallo desconocido'));
+                } finally {
+                    this.saving = false;
+                    e.target.value = '';
+                }
+            },
+
             async eliminarAdjunto(adjId) {
                 if (!confirm('¿Seguro que desea eliminar este comprobante?')) return;
                 try {
@@ -816,25 +639,74 @@
             async guardarCambios() {
                 this.saving = true;
                 try {
-                    let response;
-                    // Limpieza previa si no es dividida
-                    if (!this.editTx.es_dividida) {
-                        this.editTx.divisiones = [];
+                    let baseAmount = parseFloat(this.editTx.monto_transaccion || 0);
+                    // Generate payload compatible with TransactionCreate
+                    let txPayload = {
+                        date: this.editTx.fecha_transaccion ? new Date(this.editTx.fecha_transaccion).toISOString() : new Date().toISOString(),
+                        description: this.editTx.notas || null,
+                        payee_id: this.editTx.id_beneficiario || null,
+                        notes: this.editTx.notas || null,
+                        splits: []
+                    };
+
+                    if (this.editTx.codigo_transaccion === 'Transfer') {
+                        if (!this.editTx.id_cuenta_destino) throw new Error("Debe seleccionar cuenta destino.");
+                        txPayload.description = txPayload.description || `Transferencia de cuenta #${this.editTx.id_cuenta} a #${this.editTx.id_cuenta_destino}`;
+                        txPayload.splits.push({
+                            account_id: this.editTx.id_cuenta,
+                            amount: -baseAmount,
+                            currency_code: 'ARS'
+                        });
+                        txPayload.splits.push({
+                            account_id: this.editTx.id_cuenta_destino,
+                            amount: baseAmount,
+                            currency_code: 'ARS'
+                        });
+                    } else {
+                        // Withdrawal or Deposit
+                        if (this.editTx.codigo_transaccion === 'Withdrawal') {
+                            baseAmount = -Math.abs(baseAmount);
+                        } else {
+                            baseAmount = Math.abs(baseAmount);
+                        }
+
+                        if (this.editTx.es_dividida && this.editTx.divisiones && this.editTx.divisiones.length > 0) {
+                            this.editTx.divisiones.forEach(d => {
+                                let pAmt = parseFloat(d.monto_division || 0);
+                                if (this.editTx.codigo_transaccion === 'Withdrawal') pAmt = -Math.abs(pAmt);
+                                else pAmt = Math.abs(pAmt);
+                                
+                                txPayload.splits.push({
+                                    account_id: this.editTx.id_cuenta,
+                                    category_id: d.id_categoria || null,
+                                    amount: pAmt,
+                                    currency_code: 'ARS',
+                                    memo: d.notas || null
+                                });
+                            });
+                        } else {
+                            txPayload.splits.push({
+                                account_id: this.editTx.id_cuenta,
+                                category_id: this.editTx.id_categoria || null,
+                                amount: baseAmount,
+                                currency_code: 'ARS'
+                            });
+                        }
                     }
 
+                    let response;
+                    
                     if (this.editTx.id_transaccion === 'NEW') {
-                        response = await api.post('/transacciones/', this.editTx);
-                        this.transacciones.unshift(response.data);
+                        response = await api.post('/transacciones/', txPayload);
+                        // Refresh data from server to get standard format (retro.py returns a specific shape)
+                        await this.cargarTransacciones();
                     } else {
-                        response = await api.put(`/transacciones/${this.editTx.id_transaccion}`, this.editTx);
-                        const index = this.transacciones.findIndex(t => t.id_transaccion === this.editTx.id_transaccion);
-                        if (index !== -1) {
-                            this.transacciones.splice(index, 1, response.data);
-                        }
+                        response = await api.put(`/transacciones/${this.editTx.id_transaccion}`, txPayload);
+                        await this.cargarTransacciones();
                     }
                     if (this.bsModal) this.bsModal.hide();
                 } catch (error) {
-                    const msg = error.response?.data?.detail;
+                    const msg = error.response?.data?.detail || error.message;
                     alert('ERROR_TRANSACCION: ' + (typeof msg === 'object' ? JSON.stringify(msg) : (msg || 'Fallas en enlace neuronal')));
                 } finally {
                     this.saving = false;

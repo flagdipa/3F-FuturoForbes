@@ -69,13 +69,25 @@ class IAEngine:
             }
             """
             
-            # TODO: Convertir bytes a formato legible por Gemini (base64 o PIL image)
-            # contents = [ prompt, {"mime_type": "image/jpeg", "data": image_bytes} ]
-            # response = self.vision_model.generate_content(contents)
-            # result = json.loads(response.text)
-            # return result
+            # Determine MIME type heuristically (basic support)
+            mime_type = "image/jpeg"
+            if image_bytes.startswith(b'\x89PNG\r\n\x1a\n'):
+                mime_type = "image/png"
+            elif image_bytes.startswith(b'%PDF'):
+                mime_type = "application/pdf"
             
-            return {"error": "Implementación de OCR pendiente de parseo de imagen."}
+            contents = [ prompt, {"mime_type": mime_type, "data": image_bytes} ]
+            response = self.vision_model.generate_content(contents)
+            
+            # Clean up response to ensure valid JSON (remove markdown blocks if present)
+            import re
+            json_str = response.text
+            match = re.search(r'```(?:json)?\n(.*?)\n```', json_str, re.DOTALL)
+            if match:
+                json_str = match.group(1)
+                
+            result = json.loads(json_str)
+            return result
             
         except Exception as e:
             logger.error(f"Error en OCR: {e}")

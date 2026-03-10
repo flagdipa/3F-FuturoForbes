@@ -125,9 +125,10 @@ class OcrResult:
 
 
 class OcrService:
-    """Servicio de OCR. Usa Gemini como motor primario y PyTesseract como fallback."""
+    """Servicio de OCR. Usa PaddleOCR como motor primario, Gemini como backup, y PyTesseract como fallback."""
 
     def __init__(self):
+        self._paddle_engine = None
         self._gemini_model = None
         self._tesseract_available = False
         self._initialized = False
@@ -137,7 +138,15 @@ class OcrService:
             return
         self._initialized = True
 
-        # Intentar inicializar Gemini
+        # 1. Intentar inicializar PaddleOCR (prioridad local)
+        try:
+            from backend.plugins.ia_ocr.paddle_engine import PaddleOcrEngine
+            self._paddle_engine = PaddleOcrEngine()
+            self._paddle_engine._ensure_init()
+        except ImportError:
+            logger.info("ℹ️ PaddleOcrEngine no pudo ser importado")
+
+        # 2. Intentar inicializar Gemini (cloud fallback)
         try:
             import os
             import google.generativeai as genai
@@ -152,7 +161,7 @@ class OcrService:
         except ImportError:
             logger.warning("⚠️  google-generativeai no instalado")
 
-        # Intentar inicializar Tesseract (fallback)
+        # 3. Intentar inicializar Tesseract (último fallback)
         try:
             import pytesseract  # noqa: F401
 
@@ -179,15 +188,23 @@ class OcrService:
         engine_used = "none"
         raw_result = {}
 
-        # ── Gemini (motor primario) ───────────────────────────────────────────
-        if self._gemini_model:
+        # ── 1. PaddleOCR (motor prioritario local) ───────────────────────────
+        if self._paddle_engine and getattr(self._paddle_engine, '_available', False):
+            try:
+                raw_result = await self._paddle_engine.process(file_content, mime_type)
+                engine_used = "paddleocr"
+            except Exception as e:
+                logger.error(f"PaddleOCR falló: {e}. Intentando fallback Gemini.")
+
+        # ── 2. Gemini (motor cloud) ──────────────────────────────────────────
+        if not raw_result and self._gemini_model:
             try:
                 raw_result = await self._process_with_gemini(file_content, mime_type)
                 engine_used = "gemini-1.5-flash"
             except Exception as e:
-                logger.error(f"Gemini falló: {e}. Intentando fallback.")
+                logger.error(f"Gemini falló: {e}. Intentando fallback Tesseract.")
 
-        # ── Tesseract (fallback) ──────────────────────────────────────────────
+        # ── 3. Tesseract (fallback local básico) ─────────────────────────────
         if not raw_result and self._tesseract_available:
             try:
                 raw_result = await self._process_with_tesseract(file_content, mime_type)

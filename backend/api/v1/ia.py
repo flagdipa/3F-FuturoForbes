@@ -14,15 +14,21 @@ ia_service = IAEngine()  # Assume key load logic is configured via environment l
 @router.post("/ocr", summary="Analiza un ticket subido por el usuario")
 async def analyze_receipt(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
-    Subida de imagen de un ticket/factura para procesarlo vía Google Gemini 1.5 Flash
+    Subida de imagen de un ticket/factura para procesarlo vía PaddleOCR, Gemini o Tesseract
     y sugerir los items a cargar como Transacción.
     """
-    if not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen.")
+    if not (file.content_type.startswith('image/') or file.content_type == 'application/pdf'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen o PDF.")
         
     try:
         contents = await file.read()
-        analysis_result = await ia_service.analyze_receipt(contents)
+        
+        # Import the plugin service directly to utilize the fallback chain
+        from ...plugins.ia_ocr.services import ocr_service
+        analysis_result = await ocr_service.process_image(contents, file.content_type)
+        
+        if analysis_result.get("engine") == "none" and "error" in analysis_result:
+             raise HTTPException(status_code=500, detail=analysis_result["error"])
         return analysis_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

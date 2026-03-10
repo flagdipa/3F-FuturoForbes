@@ -21,9 +21,16 @@ class IaOcrPlugin(BasePlugin):
     async def initialize(self):
         # Pre-inicializar el motor de OCR
         ocr_service._ensure_init()
-        engine = "Gemini" if ocr_service._gemini_model else (
-            "Tesseract" if ocr_service._tesseract_available else "ninguno"
-        )
+        
+        # Determine which engine actually initialized
+        engine = "Ninguno"
+        if getattr(ocr_service, '_paddle_engine', None) and getattr(ocr_service._paddle_engine, '_available', False):
+            engine = "PaddleOCR (Local)"
+        elif ocr_service._gemini_model:
+            engine = "Gemini 1.5 Flash (Cloud)"
+        elif ocr_service._tesseract_available:
+            engine = "PyTesseract (Local)"
+            
         self.logger.info(
             f"IA OCR Plugin inicializado. Motor disponible: {engine}"
         )
