@@ -45,9 +45,9 @@ document.addEventListener('alpine:init', () => {
             try {
                 const res = await api.get('/config/plugins/argentina_datos/datos');
                 const data = res.data;
-                const blue = data['/v1/cotizaciones/dolares/blue']?.datos ||
-                    data['/v1/cotizaciones']?.datos?.find(d => d.casa === 'blue');
-                const riesgo = data['/v1/finanzas/indices/riesgo-pais/ultimo']?.datos;
+                const blue = data['/api/cotizaciones/dolares/blue']?.datos ||
+                    data['/api/cotizaciones']?.datos?.find(d => d.casa === 'blue');
+                const riesgo = data['/api/finanzas/indices/riesgo-pais/ultimo']?.datos;
 
                 if (blue) this.argDatos.blue = blue.venta;
                 if (riesgo) this.argDatos.riesgo = riesgo.valor;

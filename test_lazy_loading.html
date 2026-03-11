@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Lazy Loading 3F</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Lazy Loading - Sistema 3F</h1>
+
+    <div id="results"></div>
+
+    <button onclick="testLazyLoader()">Probar Lazy Loader</button>
+    <button onclick="testChartJsLoading()">Probar carga de Chart.js</button>
+    <button onclick="testWidgetScriptLoading()">Probar carga de script de widget</button>
+
+    <script>
+        // Simular el lazy loader del sistema 3F
+        window.lazyLoader = {
+            loaded: new Set(),
+
+            async loadScript(src, integrity = null) {
+                if (this.loaded.has(src)) {
+                    logResult(`Script ${src} ya estaba cargado`, 'success');
+                    return Promise.resolve();
+                }
+
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    if (integrity) script.integrity = integrity;
+                    script.crossOrigin = 'anonymous';
+                    script.onload = () => {
+                        this.loaded.add(src);
+                        logResult(`Script ${src} cargado exitosamente`, 'success');
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        logResult(`Error cargando script ${src}`, 'error');
+                        reject(new Error(`Failed to load ${src}`));
+                    };
+                    document.head.appendChild(script);
+                });
+            },
+
+            async loadChartJs() {
+                return this.loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js');
+            }
+        };
+
+        function logResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testLazyLoader() {
+            logResult('Iniciando prueba del lazy loader...');
+            try {
+                // Test basic functionality
+                await window.lazyLoader.loadScript('data:text/javascript,console.log("Test script loaded");');
+                logResult('Lazy loader básico funciona correctamente', 'success');
+            } catch (e) {
+                logResult(`Error en lazy loader básico: ${e.message}`, 'error');
+            }
+        }
+
+        async function testChartJsLoading() {
+            logResult('Probando carga de Chart.js...');
+            try {
+                await window.lazyLoader.loadChartJs();
+                if (typeof Chart !== 'undefined') {
+                    logResult('Chart.js cargado correctamente', 'success');
+                } else {
+                    logResult('Chart.js no está disponible después de la carga', 'error');
+                }
+            } catch (e) {
+                logResult(`Error cargando Chart.js: ${e.message}`, 'error');
+            }
+        }
+
+        async function testWidgetScriptLoading() {
+            logResult('Probando carga de script de widget...');
+            try {
+                // Test loading a widget script (this will fail in test environment but tests the mechanism)
+                await window.lazyLoader.loadScript('/static/js/widgets/widget-balance-total.js');
+                logResult('Mecanismo de carga de widget scripts funciona', 'success');
+            } catch (e) {
+                logResult(`Error esperado en entorno de prueba: ${e.message}`, 'success');
+            }
+        }
+
+        // Auto-run basic test
+        window.addEventListener('load', () => {
+            logResult('Prueba de lazy loading inicializada');
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 from sqlmodel import create_engine, SQLModel, Session
 from sqlalchemy.pool import QueuePool
 from .config import settings
+from .. import models # Force model registration in metadata
 import logging
 
 logger = logging.getLogger(__name__)

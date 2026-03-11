@@ -9,7 +9,7 @@
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="neon-card p-3">
-                <label class="text-dim extra-small fw-bold mb-2" x-text="$store.lang.t('reports.cashflow.time_terminal')">TERMINAL_DE_TIEMPO</label>
+                <label class="text-dim extra-small fw-bold mb-2" x-text="$store.lang.t('reports.cashflow.time_terminal')">Filtro Temporal</label>
                 <div class="input-group">
                     <select x-model="selectedYear" @change="fetchData()" class="form-select bg-transparent border-secondary text-white fw-bold" aria-label="Seleccionar año">
                         <template x-for="y in availableYears" :key="y">
@@ -73,7 +73,7 @@
         <div class="col-12">
             <div class="neon-card">
                 <div class="card-header bg-transparent border-secondary border-opacity-10 d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-chart-column me-2"></i><span x-text="$store.lang.t('reports.cashflow.monthly_flow_metrics')">MÉTRICAS_DE_FLUJO_MENSUAL</span></h5>
+                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-chart-column me-2"></i><span x-text="$store.lang.t('reports.cashflow.monthly_flow_metrics')">Métricas de Flujo Mensual</span></h5>
                 </div>
                 <div class="chart-container" style="position: relative; height: 400px;">
                     <canvas id="cashflowChart"></canvas>
@@ -87,7 +87,7 @@
         <div class="col-12">
             <div class="neon-card">
                 <div class="card-header bg-transparent border-secondary border-opacity-10 mb-3">
-                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i><span x-text="$store.lang.t('reports.cashflow.deviation_log')">LOG_DE_DESVIACIONES_FINANCIERAS</span></h5>
+                    <h5 class="text-primary mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i><span x-text="$store.lang.t('reports.cashflow.deviation_log')">Registro de Desviaciones Financieras</span></h5>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-dark table-hover mb-0 bg-transparent">

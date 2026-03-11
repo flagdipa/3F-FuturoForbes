@@ -1,5 +1,5 @@
 from backend.core.database import Session, engine
-from backend.models.models_plugins import Plugin
+from backend.models import Plugin
 from sqlmodel import select
 
 with Session(engine) as session:

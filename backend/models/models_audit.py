@@ -1,18 +1,16 @@
-from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
-from pydantic import ConfigDict
+# models_audit.py — Re-export del modelo AuditLog centralizado en models_v2.
+#
+# IMPORTANTE: Este archivo solo re-exporta la clase AuditLog definida en models_v2.py.
+# NO redefine la clase para evitar el error:
+#   sqlalchemy.exc.InvalidRequestError: Table 'audit_logs' is already defined
+#
+# Los atributos del schema LEGACY que usaban los tests antiguos eran:
+#   accion, entidad, id_usuario, id_entidad, ip_address, detalles
+# El schema ACTUAL en models_v2 usa:
+#   action, entity_type, user_id, entity_id, ip_address, old_values, new_values
+#
+# Los tests en test_base_crud.py deben actualizarse para usar los nombres actuales.
 
-class AuditLog(SQLModel, table=True):
-    __tablename__ = "audit_logs"
-    
-    id_log: Optional[int] = Field(default=None, primary_key=True)
-    fecha: datetime = Field(default_factory=datetime.utcnow, index=True)
-    id_usuario: int = Field(index=True)
-    accion: str = Field(index=True) # CREATE, UPDATE, DELETE, LOGIN, EXPORT, etc.
-    entidad: str = Field(index=True) # Transaccion, Cuenta, Activo, etc.
-    id_entidad: Optional[int] = None
-    detalles: str = Field(default="{}") # JSON string with changes or extra info
-    ip_address: Optional[str] = None
-    
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+from .models_v2 import AuditLog
+
+__all__ = ["AuditLog"]

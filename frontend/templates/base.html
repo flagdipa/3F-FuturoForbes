@@ -23,6 +23,44 @@
         :root.theme-transitioning * {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
         }
+        
+        /* Global responsive improvements */
+        @media (max-width: 768px) {
+            .app-wrapper {
+                font-size: 13px;
+            }
+            
+            .hud-title {
+                font-size: 1.4rem !important;
+            }
+            
+            .neon-card .card-body {
+                padding: 1rem !important;
+            }
+            
+            .modal-lg {
+                max-width: 95vw !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .app-wrapper {
+                font-size: 12px;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .brand-text {
+                font-size: 1rem !important;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
     </style>
     
     {% block extra_css %}
@@ -30,6 +68,10 @@
     {% endblock %}
 </head>
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+    <!-- Skip Links para accesibilidad -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    <a href="#sidebar" class="skip-link">Saltar a la navegación</a>
+    
     <div class="app-wrapper">
         
         <!-- Navbar -->
@@ -93,12 +135,12 @@
                         </a>
                     </li>
                 </ul>
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto d-flex flex-row">
                     <!-- Language Selector -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-label="Seleccionar idioma">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown" aria-label="Seleccionar idioma">
                             <i class="fa-solid fa-language me-1"></i>
-                            <span x-text="$store.lang.current.toUpperCase()"></span>
+                            <span class="d-none d-sm-inline" x-text="$store.lang.current.toUpperCase()"></span>
                         </a>
                         <ul class="dropdown-menu border-secondary">
                             <li><a class="dropdown-item" href="#" @click="$store.lang.loadLanguage('es')">Español</a></li>
@@ -161,7 +203,7 @@
         </nav>
         
         <!-- Sidebar -->
-        <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark" id="sidebar" role="navigation" aria-label="Navegación principal">
             <div class="sidebar-wrapper" x-data="sidebarManager">
                 <nav class="mt-2">
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
@@ -428,7 +470,7 @@
                 </div>
             </div>
             <div class="app-content">
-                <div class="container-fluid">
+                <div class="container-fluid" id="main-content" role="main">
                     {% block content %}{% endblock %}
                 </div>
             </div>

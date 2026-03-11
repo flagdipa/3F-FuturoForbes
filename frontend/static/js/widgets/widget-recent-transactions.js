@@ -1,8 +1,9 @@
 /**
  * Widget: Recent Transactions
+ * Compatible con carga dinámica (Alpine ya inicializado) y carga normal.
  */
-document.addEventListener('alpine:init', () => {
-    Alpine.data('widgetRecentTransactions', () => ({
+(function registerWidgetRecentTransactions() {
+    const def = () => ({
         loading: true,
         transactions: [],
 
@@ -13,20 +14,41 @@ document.addEventListener('alpine:init', () => {
         async fetchData() {
             this.loading = true;
             try {
-                // Mock data
-                setTimeout(() => {
-                    this.transactions = [
-                        { id: 1, date: 'Hoy', desc: 'Súper Vea', amount: -15400.50, cat: 'Comida', type: 'EXPENSE' },
-                        { id: 2, date: 'Ayer', desc: 'Sueldo IT', amount: 850000.00, cat: 'Salario', type: 'INCOME' },
-                        { id: 3, date: '01 Mar', desc: 'Shell S.A.', amount: -22000.00, cat: 'Transporte', type: 'EXPENSE' },
-                        { id: 4, date: '28 Feb', desc: 'Netflix', amount: -6500.00, cat: 'Ocio', type: 'EXPENSE' },
-                        { id: 5, date: '27 Feb', desc: 'Transferencia InvertirOnline', amount: -50000.00, cat: 'Ahorro', type: 'TRANSFER' }
-                    ];
-                    this.loading = false;
-                }, 600);
+                const response = await api.get('/transactions/?limit=5&sort_by=date&order=desc');
+                const rawList = Array.isArray(response.data) ? response.data : (response.data.data || []);
+
+                this.transactions = rawList.map(tx => {
+                    let amount = 0;
+                    let type = "UNKNOWN";
+                    if (tx.splits && tx.splits.length > 0) {
+                        amount = parseFloat(tx.splits[0].amount);
+                        type = amount > 0 ? "INCOME" : "EXPENSE";
+                        if (tx.splits.length === 2 && parseFloat(tx.splits[0].amount) === -parseFloat(tx.splits[1].amount)) {
+                            type = "TRANSFER";
+                            amount = Math.abs(amount);
+                        }
+                    }
+
+                    return {
+                        id: tx.id,
+                        date: new Date(tx.date).toLocaleDateString('es-AR'),
+                        desc: tx.description || tx.notes || 'Transacción',
+                        amount: amount,
+                        type: type
+                    };
+                });
+
+                this.loading = false;
             } catch (e) {
                 console.error("Recent Transactions Widget Error", e);
+                this.loading = false;
             }
         }
-    }));
-});
+    });
+
+    if (typeof Alpine !== 'undefined' && Alpine.data) {
+        Alpine.data('widgetRecentTransactions', def);
+    } else {
+        document.addEventListener('alpine:init', () => Alpine.data('widgetRecentTransactions', def));
+    }
+})();

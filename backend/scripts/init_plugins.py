@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 
 from sqlmodel import Session, select
 from backend.core.database import engine, init_db
-from backend.models.models_plugins import Plugin
+from backend.models import Plugin
 from backend.models import * # Ensure all models are loaded
 
 def init_plugins():

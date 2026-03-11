@@ -30,10 +30,12 @@ class LedgerEngine:
         splits: List[Dict[str, Any]],
         payee_id: Optional[int] = None,
         reference_number: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        status: Optional[TransactionStatus] = None,
+        tag_ids: Optional[List[int]] = None
     ) -> Transaction:
         """
-        Creates a new transaction with its associated splits.
+        Creates a new transaction with its associated splits and tags.
         Atomically updates account balances.
         """
         if not self.validate_balanced(splits):
@@ -47,10 +49,17 @@ class LedgerEngine:
             payee_id=payee_id,
             reference_number=reference_number,
             notes=notes,
-            status=TransactionStatus.PENDING
+            status=status or TransactionStatus.PENDING
         )
         self.db.add(transaction)
         self.db.flush() # Get transaction ID
+
+        # Link Tags
+        if tag_ids:
+            from ..models import TransactionTagLink
+            for tid in tag_ids:
+                link = TransactionTagLink(transaction_id=transaction.id, tag_id=tid)
+                self.db.add(link)
 
         # Process Splits and update balances
         for split_data in splits:
@@ -60,7 +69,7 @@ class LedgerEngine:
                 category_id=split_data.get('category_id'),
                 amount=Decimal(str(split_data['amount'])),
                 currency_code=split_data['currency_code'],
-                currency_amount=Decimal(str(split_data.get('currency_amount', split_data['amount']))),
+                currency_amount=Decimal(str(split_data['currency_amount'] if split_data.get('currency_amount') is not None else split_data['amount'])),
                 memo=split_data.get('memo')
             )
             self.db.add(split)

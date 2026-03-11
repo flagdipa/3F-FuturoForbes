@@ -13,6 +13,7 @@
         "reset_filters": "Resetear Filtros",
         "all": "TODAS",
         "none": "NINGUNA",
+        "duplicate": "Duplicar",
         "income": "Ingreso / Depósito",
         "expense": "Gasto / Retiro",
         "transfer": "Transferencia",

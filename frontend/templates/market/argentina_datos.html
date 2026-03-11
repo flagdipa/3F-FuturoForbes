@@ -61,7 +61,7 @@
         <!-- Riesgo País -->
         <div class="col-md-4" x-show="riesgo_pais">
             <div class="arg-card p-3 h-100 position-relative">
-                <template x-if="isStale('/v1/finanzas/indices/riesgo-pais/ultimo')">
+                <template x-if="isStale('/api/finanzas/indices/riesgo-pais/ultimo')">
                     <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
                 </template>
                 <small class="text-dim text-uppercase opacity-75">Riesgo País (EMBI+)</small>
@@ -74,7 +74,7 @@
         <!-- UVA -->
         <div class="col-md-4" x-show="uva_actual">
             <div class="arg-card p-3 h-100 position-relative">
-                <template x-if="isStale('/v1/finanzas/indices/uva')">
+                <template x-if="isStale('/api/finanzas/indices/uva')">
                     <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
                 </template>
                 <small class="text-dim text-uppercase opacity-75">Valor UVA Diario</small>
@@ -87,7 +87,7 @@
         <!-- Inflación -->
         <div class="col-md-4" x-show="inflacion_actual">
             <div class="arg-card p-3 h-100 position-relative">
-                <template x-if="isStale('/v1/finanzas/inflacion')">
+                <template x-if="isStale('/api/finanzas/inflacion')">
                     <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
                 </template>
                 <small class="text-dim text-uppercase opacity-75">Última Inflación Mensual</small>
@@ -114,7 +114,7 @@
         <!-- Tipos de Cambio -->
         <div class="col-lg-4">
             <div class="arg-card p-4 h-100 position-relative">
-                <template x-if="isStale('/v1/cotizaciones')">
+                <template x-if="isStale('/api/cotizaciones')">
                     <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 extra-small">DATO ANTIGUO</span>
                 </template>
                 <h6 class="font-orbitron text-uppercase mb-3">Cotizaciones ARS/USD</h6>
@@ -165,25 +165,25 @@
                     this.allData = res.data;
 
                     // 1. Cotizaciones
-                    const cotizaciones = this.allData['/v1/cotizaciones']?.datos || [];
+                    const cotizaciones = this.allData['/api/cotizaciones']?.datos || [];
                     this.dolares = cotizaciones.filter(d => ['oficial', 'blue', 'mep', 'ccl'].includes(d.casa));
 
                     // 2. Inflación
-                    const inflacion = this.allData['/v1/finanzas/inflacion']?.datos || [];
+                    const inflacion = this.allData['/api/finanzas/inflacion']?.datos || [];
                     if (inflacion.length > 0) {
                         this.inflacion_actual = inflacion[inflacion.length - 1];
                         this.renderChart('inflationChart', inflacion.slice(-12), 'Inflación %', '#00f2ff');
                     }
 
                     // 3. UVA
-                    const uvaData = this.allData['/v1/finanzas/indices/uva']?.datos || [];
+                    const uvaData = this.allData['/api/finanzas/indices/uva']?.datos || [];
                     if (uvaData.length > 0) {
                         this.uva_actual = uvaData[uvaData.length - 1];
                         this.renderChart('uvaChart', uvaData.slice(-90), 'Valor UVA', '#ffaa00');
                     }
 
                     // 4. Riesgo País
-                    this.riesgo_pais = this.allData['/v1/finanzas/indices/riesgo-pais/ultimo']?.datos || null;
+                    this.riesgo_pais = this.allData['/api/finanzas/indices/riesgo-pais/ultimo']?.datos || null;
 
                 } catch (e) {
                     console.error('Error loading Argentina Datos:', e);

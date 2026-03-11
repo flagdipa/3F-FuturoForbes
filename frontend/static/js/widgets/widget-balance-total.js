@@ -1,8 +1,9 @@
 /**
  * Widget: Balance Total
+ * Compatible con carga dinámica (Alpine ya inicializado) y carga normal.
  */
-document.addEventListener('alpine:init', () => {
-    Alpine.data('widgetBalanceTotal', () => ({
+(function registerWidgetBalanceTotal() {
+    const def = () => ({
         loading: true,
         total: 0,
         currency: 'ARS',
@@ -10,25 +11,28 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.fetchData();
-            // Refresh every 5 minutes
             setInterval(() => this.fetchData(), 300000);
         },
 
         async fetchData() {
             this.loading = true;
             try {
-                // Mocking API call
-                // const res = await fetch('/api/v1/accounts/summary');
-                // const data = await res.json();
-
-                // Demo data
-                setTimeout(() => {
-                    this.total = 1250450.75;
-                    this.loading = false;
-                }, 500);
+                const res = await api.get('/accounts/');
+                const accounts = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                this.total = accounts
+                    .filter(a => a.type === 'ASSET' || a.type === 'asset')
+                    .reduce((sum, a) => sum + parseFloat(a.current_balance || 0), 0);
+                this.loading = false;
             } catch (e) {
                 console.error("Balance Widget Error", e);
+                this.loading = false;
             }
         }
-    }));
-});
+    });
+
+    if (typeof Alpine !== 'undefined' && Alpine.data) {
+        Alpine.data('widgetBalanceTotal', def);
+    } else {
+        document.addEventListener('alpine:init', () => Alpine.data('widgetBalanceTotal', def));
+    }
+})();

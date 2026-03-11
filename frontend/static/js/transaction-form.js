@@ -52,28 +52,36 @@ document.addEventListener('alpine:init', () => {
         },
 
         async loadAccounts() {
-            // Mocking API
-            this.accounts = [
-                { id: 1, name: 'Bf-Galicia' },
-                { id: 2, name: 'Mercado Pago' },
-                { id: 3, name: 'Efectivo ARS' }
-            ];
+            try {
+                const res = await api.get('/cuentas/');
+                const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                this.accounts = raw.map(a => ({ id: a.id_cuenta, name: a.nombre_cuenta }));
+            } catch (e) {
+                console.warn('Error loading accounts for form:', e);
+                this.accounts = [];
+            }
         },
 
         async loadCategories() {
-            this.categories = [
-                { id: 1, name: 'Comida' },
-                { id: 2, name: 'Transporte' },
-                { id: 3, name: 'Alquiler' }
-            ];
+            try {
+                const res = await api.get('/categorias/');
+                const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                this.categories = raw.map(c => ({ id: c.id_categoria, name: c.nombre_categoria }));
+            } catch (e) {
+                console.warn('Error loading categories for form:', e);
+                this.categories = [];
+            }
         },
 
         async loadPayees() {
-            this.payees = [
-                { id: 1, name: 'Coto' },
-                { id: 2, name: 'Netflix' },
-                { id: 3, name: 'Shell' }
-            ];
+            try {
+                const res = await api.get('/beneficiarios/');
+                const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                this.payees = raw.map(p => ({ id: p.id_beneficiario, name: p.nombre_beneficiario }));
+            } catch (e) {
+                console.warn('Error loading payees for form:', e);
+                this.payees = [];
+            }
         },
 
         resetForm() {

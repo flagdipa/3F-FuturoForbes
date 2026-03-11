@@ -90,7 +90,7 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 const res = await api.get('categorias/');
-                const raw = res.data.data || [];
+                const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
                 // Pre-calculate full paths for dropdowns
                 Alpine.store('catForm').categories = raw.map(c => ({

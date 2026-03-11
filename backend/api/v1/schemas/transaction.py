@@ -4,6 +4,27 @@ from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
 from ....models import TransactionStatus
 
+class PayeeSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+class AccountSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+class CategorySimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+class TagSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    color: Optional[str] = None
+
 class SplitBase(BaseModel):
     account_id: int
     category_id: Optional[int] = None
@@ -18,6 +39,8 @@ class SplitCreate(SplitBase):
 class SplitResponse(SplitBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    account: Optional[AccountSimple] = None
+    category: Optional[CategorySimple] = None
 
 class TransactionBase(BaseModel):
     date: datetime
@@ -28,6 +51,8 @@ class TransactionBase(BaseModel):
 
 class TransactionCreate(TransactionBase):
     splits: List[SplitCreate]
+    status: Optional[TransactionStatus] = None  # Optional; defaults to PENDING on create
+    tag_ids: Optional[List[int]] = None
 
 class TransactionUpdate(BaseModel):
     date: Optional[datetime] = None
@@ -41,7 +66,9 @@ class TransactionResponse(TransactionBase):
     id: int
     user_id: int
     status: TransactionStatus
+    payee: Optional[PayeeSimple] = None
     splits: List[SplitResponse]
+    tags: List[TagSimple] = []
     created_at: datetime
     updated_at: datetime
 

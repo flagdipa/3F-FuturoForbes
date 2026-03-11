@@ -247,8 +247,8 @@
             async fetchData() {
                 this.loading = true;
                 try {
-                    // LLamar a GET /api/v1/budgets/current/status (Usaremos id=1 mockeado)
-                    const res = await fetch(`/api/v1/budgets/1/status`);
+                    // LLamar a GET /api/budgets/current/status (Usaremos id=1 mockeado)
+                    const res = await fetch(`/api/budgets/1/status`);
                     if(res.ok) {
                         this.lines = await res.json();
                     } else {

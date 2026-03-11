@@ -60,7 +60,7 @@ class PluginManager:
                 manifest_path = os.path.join(entry.path, "plugin.json")
                 if os.path.exists(manifest_path):
                     try:
-                        with open(manifest_path, 'r') as f:
+                        with open(manifest_path, 'r', encoding='utf-8') as f:
                             manifest = json.load(f)
                             manifest['id'] = entry.name
 
@@ -77,15 +77,63 @@ class PluginManager:
                         logger.error(f"Error reading plugin manifest {entry.name}: {e}")
         return found
 
+    def _find_plugin_class(self, plugin_id: str):
+        """
+        Encuentra la clase del plugin buscando en este orden:
+        1. Atributo 'Plugin' en el módulo plugin.py (nombre legacy)
+        2. Primera clase exportada en __all__ del __init__.py del paquete
+        3. Cualquier clase que herede de BasePlugin en plugin.py
+        """
+        BasePlugin = _get_base_plugin()
+
+        # 1. Intentar cargar desde plugin.py buscando el atributo 'Plugin'
+        try:
+            module_path = f"backend.plugins.{plugin_id}.plugin"
+            module = importlib.import_module(module_path)
+            if hasattr(module, "Plugin"):
+                return getattr(module, "Plugin")
+        except ImportError:
+            pass
+
+        # 2. Buscar en __init__.py del paquete via __all__
+        try:
+            pkg_path = f"backend.plugins.{plugin_id}"
+            pkg = importlib.import_module(pkg_path)
+            all_exports = getattr(pkg, "__all__", [])
+            for name in all_exports:
+                obj = getattr(pkg, name, None)
+                if obj and isinstance(obj, type) and issubclass(obj, BasePlugin):
+                    return obj
+        except ImportError:
+            pass
+
+        # 3. Buscar cualquier subclase de BasePlugin en plugin.py
+        try:
+            module_path = f"backend.plugins.{plugin_id}.plugin"
+            module = importlib.import_module(module_path)
+            for attr_name in dir(module):
+                obj = getattr(module, attr_name)
+                if (
+                    isinstance(obj, type)
+                    and issubclass(obj, BasePlugin)
+                    and obj is not BasePlugin
+                ):
+                    return obj
+        except (ImportError, Exception):
+            pass
+
+        return None
+
     def get_plugin_instance(self, plugin_id: str) -> Optional[Any]:
         """Dynamic load and instantiate a plugin class."""
         if plugin_id in self.loaded_plugins:
             return self.loaded_plugins[plugin_id]
 
         try:
-            module_path = f"backend.plugins.{plugin_id}.plugin"
-            module = importlib.import_module(module_path)
-            plugin_class = getattr(module, "Plugin")
+            plugin_class = self._find_plugin_class(plugin_id)
+            if plugin_class is None:
+                logger.error(f"No plugin class found for plugin '{plugin_id}'")
+                return None
 
             default_config = {}
             if self.db:
@@ -173,9 +221,14 @@ class PluginManager:
             self.db.commit()
 
             self.loaded_plugins[plugin_id] = instance
+            # Registrar hooks con prefijo 'hook_' (legacy) y 'on_' (nuevo)
             for attr_name in dir(instance):
                 if attr_name.startswith("hook_"):
-                    hook_name = attr_name.replace("hook_", "")
+                    hook_name = attr_name[len("hook_"):]
+                    callback = getattr(instance, attr_name)
+                    register_hook(hook_name, callback, plugin_id=plugin_id)
+                elif attr_name.startswith("on_"):
+                    hook_name = attr_name[len("on_"):]
                     callback = getattr(instance, attr_name)
                     register_hook(hook_name, callback, plugin_id=plugin_id)
             return True

@@ -39,6 +39,12 @@
     --3f-border: rgba(37, 150, 190, 0.2);
     --3f-shadow: 0 0 20px rgba(37, 150, 190, 0.15);
     --3f-gradient-card: linear-gradient(145deg, rgba(7, 30, 38, 0.9) 0%, rgba(4, 15, 19, 0.95) 100%);
+
+    /* Accesibilidad - Colores de alto contraste */
+    --3f-focus-ring: 0 0 0 3px rgba(37, 150, 190, 0.5);
+    --3f-text-high-contrast: #ffffff;
+    --3f-text-muted: #adb5bd;
+    --3f-link-hover: #4dabf7;
 }
 
 html,
@@ -126,6 +132,19 @@ body {
 /* Kill generic AdminLTE scrollbars if any */
 .layout-fixed .app-main {
     overflow-y: auto !important;
+}
+
+/* Strip AdminLTE app-content padding/overflow */
+.app-content {
+    padding: 0 !important;
+    overflow-x: hidden !important;
+}
+
+.app-content .container-fluid {
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: hidden !important;
 }
 
 /* Tipografía HUD - Tech */
@@ -656,4 +675,137 @@ th {
 #categoryFormModal,
 #beneficiaryFormModal {
     z-index: 1065;
+}
+
+/* === ACCESIBILIDAD Y USABILIDAD === */
+
+/* Focus indicators mejorados */
+.btn:focus,
+.form-control:focus,
+.nav-link:focus,
+.dropdown-item:focus {
+    outline: none !important;
+    box-shadow: var(--3f-focus-ring) !important;
+    border-color: var(--3f-primary) !important;
+}
+
+/* Skip links para navegación por teclado */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--3f-primary);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    font-weight: bold;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* Alto contraste para texto */
+.text-high-contrast {
+    color: var(--3f-text-high-contrast) !important;
+}
+
+.text-muted-accessible {
+    color: var(--3f-text-muted) !important;
+}
+
+/* Enlaces con mejor contraste */
+a:not(.btn) {
+    color: var(--3f-primary);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+a:not(.btn):hover,
+a:not(.btn):focus {
+    color: var(--3f-link-hover);
+}
+
+/* Tabla de datos accesible */
+.table-accessible th,
+.table-accessible td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table-accessible th {
+    background-color: rgba(37, 150, 190, 0.1);
+    border-bottom: 2px solid var(--3f-primary);
+}
+
+/* Iconos con texto alternativo */
+.icon-with-text::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Tooltips accesibles */
+.tooltip-accessible {
+    position: relative;
+}
+
+.tooltip-accessible:hover::after,
+.tooltip-accessible:focus::after {
+    content: attr(aria-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--3f-bg-darker);
+    color: var(--3f-text);
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--3f-border);
+    white-space: nowrap;
+    z-index: 1000;
+    font-size: 0.875rem;
+}
+
+/* Estados de carga accesibles */
+.loading-accessible::before {
+    content: "Cargando...";
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Animaciones reducidas para usuarios con vestibular disorders */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Modo alto contraste */
+@media (prefers-contrast: high) {
+    :root {
+        --3f-text: #ffffff;
+        --3f-text-dim: #ffffff;
+        --3f-bg: #000000;
+        --3f-border: #ffffff;
+    }
+    
+    .neon-card {
+        border: 2px solid #ffffff !important;
+    }
 }

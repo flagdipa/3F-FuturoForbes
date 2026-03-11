@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from sqlmodel import Session, select
 from backend.core.database import engine
-from backend.models.models_plugins import Plugin
+from backend.models import Plugin
 
 
 def register_backup_plugin():

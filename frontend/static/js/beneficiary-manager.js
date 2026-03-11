@@ -29,7 +29,7 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 const res = await api.get('beneficiarios/');
-                this.beneficiaries = res.data.data || [];
+                this.beneficiaries = Array.isArray(res.data) ? res.data : (res.data?.data || []);
             } catch (e) {
                 console.error('Error loading beneficiaries:', e);
             } finally {
@@ -53,13 +53,33 @@ document.addEventListener('alpine:init', () => {
             }
 
             try {
-                const res = await api.get('transacciones/', {
+                const res = await api.get('transactions/', {
                     params: {
                         id_beneficiario: item.id_beneficiario,
                         limit: 50
                     }
                 });
-                const txList = res.data?.data || [];
+
+                let txList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+
+                // Map to what the template expects
+                txList = txList.map(tx => {
+                    let amount = 0;
+                    let type = "Unknown";
+                    if (tx.splits && tx.splits.length > 0) {
+                        amount = Math.abs(parseFloat(tx.splits[0].amount));
+                        type = parseFloat(tx.splits[0].amount) > 0 ? "Ingreso" : "Gasto";
+                    }
+                    return {
+                        id_transaccion: tx.id,
+                        fecha_transaccion: tx.date,
+                        monto_transaccion: amount,
+                        descripcion: tx.description || tx.notes || '',
+                        estado: (tx.status === 'RECONCILED' || tx.status === 1) ? 'Conciled' : 'None',
+                        tipo_transaccion: type
+                    };
+                });
+
                 console.log(`Transactions loaded for beneficiary ${item.id_beneficiario}:`, txList.length, 'items');
                 if (txList.length === 0) {
                     console.warn('Returned 0 transactions. Check that id_beneficiario is stored correctly in libro_transacciones.');

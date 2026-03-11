@@ -2,6 +2,7 @@
 Transactions API - V2 Double-Entry Ledger
 Routes: /transactions/
 """
+from datetime import datetime
 from typing import List, Optional
 from decimal import Decimal
 
@@ -12,7 +13,7 @@ from sqlmodel import Session, select
 
 from ...core.ledger_engine import LedgerEngine, LedgerError
 from ...dependencies import get_db
-from ...models import Account, Transaction, TransactionSplit
+from ...models import Account, Transaction, TransactionSplit, TransactionStatus, TransactionTagLink
 from .schemas.transaction import (
     TransactionCreate,
     TransactionResponse,
@@ -45,17 +46,26 @@ def _bypass_balance_if_single_entry(engine: LedgerEngine, splits_data: list) -> 
 
 def _build_transaction_stmt(
     *,
-    id_cuenta: Optional[int],
-    id_beneficiario: Optional[int],
-    id_categoria: Optional[int],
-    fecha_inicio: Optional[str],
-    fecha_fin: Optional[str],
-    order: str,
-    skip: int,
-    limit: int,
+    id_cuenta: Optional[int] = None,
+    id_beneficiario: Optional[int] = None,
+    id_categoria: Optional[int] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    sort_by: str = "date",
+    order: str = "desc",
+    skip: int = 0,
+    limit: int = 100,
 ):
     """Construct the filtered, sorted, paginated SELECT statement for transactions."""
-    stmt = select(Transaction).options(selectinload(Transaction.splits))
+    stmt = select(Transaction).options(
+        selectinload(Transaction.payee),
+        selectinload(Transaction.tags),
+        selectinload(Transaction.splits).selectinload(TransactionSplit.account),
+        selectinload(Transaction.splits).selectinload(TransactionSplit.category)
+    )
+    
+    # Soft Delete Filter
+    stmt = stmt.where(Transaction.deleted_at == None)
 
     if fecha_inicio:
         stmt = stmt.where(Transaction.date >= fecha_inicio)
@@ -73,7 +83,18 @@ def _build_transaction_stmt(
         stmt = stmt.distinct()
 
     order_fn = asc if order == "asc" else desc
-    stmt = stmt.order_by(order_fn(Transaction.date))
+    
+    # Sorting logic
+    if sort_by == "date":
+        stmt = stmt.order_by(order_fn(Transaction.date))
+    elif sort_by == "description":
+        stmt = stmt.order_by(order_fn(Transaction.description))
+    elif sort_by == "payee":
+        stmt = stmt.order_by(order_fn(Transaction.payee_id))
+    else:
+        # Default to date desc if unrecognized
+        stmt = stmt.order_by(desc(Transaction.date))
+
     stmt = stmt.offset(skip).limit(limit)
     return stmt
 
@@ -101,6 +122,7 @@ def list_transactions(
         id_categoria=id_categoria,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
+        sort_by=sort_by,
         order=order,
         skip=skip,
         limit=limit,
@@ -113,7 +135,12 @@ def get_transaction(id: int, db: Session = Depends(get_db)):
     stmt = (
         select(Transaction)
         .where(Transaction.id == id)
-        .options(selectinload(Transaction.splits))
+        .options(
+            selectinload(Transaction.payee),
+            selectinload(Transaction.tags),
+            selectinload(Transaction.splits).selectinload(TransactionSplit.account),
+            selectinload(Transaction.splits).selectinload(TransactionSplit.category)
+        )
     )
     transaction = db.exec(stmt).first()
     if not transaction:
@@ -136,6 +163,8 @@ async def create_transaction(tx_in: TransactionCreate, db: Session = Depends(get
             payee_id=tx_in.payee_id,
             reference_number=tx_in.reference_number,
             notes=tx_in.notes,
+            status=tx_in.status,
+            tag_ids=tx_in.tag_ids,
         )
         return transaction
     except LedgerError as e:
@@ -169,6 +198,19 @@ async def update_transaction(id: int, tx_in: TransactionCreate, db: Session = De
         transaction.payee_id = tx_in.payee_id
         transaction.notes = tx_in.notes
         transaction.reference_number = tx_in.reference_number
+        if tx_in.status is not None:
+            transaction.status = tx_in.status
+
+        # Update Tags
+        stmt_tags = select(TransactionTagLink).where(TransactionTagLink.transaction_id == id)
+        old_tags = db.exec(stmt_tags).all()
+        for ot in old_tags:
+            db.delete(ot)
+        
+        if tx_in.tag_ids:
+            for tid in tx_in.tag_ids:
+                link = TransactionTagLink(transaction_id=id, tag_id=tid)
+                db.add(link)
 
         # Re-insert splits
         splits_data = [s.model_dump() for s in tx_in.splits]
@@ -237,3 +279,24 @@ async def create_transfer(transfer_in: TransferCreate, db: Session = Depends(get
         )
     except LedgerError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{id}", status_code=204)
+async def delete_transaction(id: int, db: Session = Depends(get_db)):
+    """Soft delete a transaction after voiding it to revert balance impact."""
+    transaction = db.get(Transaction, id)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    engine = LedgerEngine(db)
+    # Ensure it's voided first to revert account balances
+    if transaction.status != TransactionStatus.VOID:
+        try:
+            await engine.void_transaction(id, "LOGICAL_DELETE")
+        except LedgerError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    transaction.deleted_at = datetime.utcnow()
+    db.add(transaction)
+    db.commit()
+    return None

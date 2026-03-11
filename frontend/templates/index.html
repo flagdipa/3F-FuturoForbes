@@ -15,8 +15,10 @@
     }
 
     .dashboard-container {
-        padding: 20px;
+        padding: 15px;
         min-height: calc(100vh - 60px);
+        overflow-x: hidden;
+        width: 100%;
     }
 
     .grid-stack-item-content {
@@ -162,6 +164,57 @@
     #chart-monthly-summary {
         max-height: 180px;
     }
+
+    /* Fix: Kill AdminLTE container padding that pushes the grid sideways */
+    .app-content .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Fix: Hide empty page title header bar for dashboard */
+    .app-content-header {
+        display: none !important;
+    }
+
+    /* Fix: GridStack must not overflow its parent */
+    .grid-stack {
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Fix: Responsive grid - full width on mobile */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 8px !important;
+        }
+        .hud-title {
+            font-size: 1.2rem !important;
+        }
+        .widget-toolbox {
+            width: 280px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .dashboard-container {
+            padding: 5px !important;
+        }
+        .hud-title {
+            font-size: 1rem !important;
+        }
+        .widget-toolbox {
+            width: 100vw;
+            right: -100vw;
+        }
+        .widget-toolbox.active {
+            right: 0;
+        }
+        .d-flex.gap-2 {
+            gap: 0.4rem !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -169,29 +222,37 @@
 <div x-data="dashboardManager" class="dashboard-container">
     
     <!-- Header de Dashboard -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3" role="banner">
         <div>
-            <h2 class="hud-title mb-0">MISSION CONTROL</h2>
+            <h1 class="hud-title mb-0">MISSION CONTROL</h1>
             <p class="text-dim small mb-0">SISTEMA 3F OPERACIONAL // USER: <span class="text-primary">ADMIN</span></p>
         </div>
         
-        <div class="d-flex gap-3">
+        <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto" role="toolbar" aria-label="Controles del dashboard">
             <button @click="setEditMode(!isEditing)" 
                     class="btn btn-sm neon-border" 
-                    :class="isEditing ? 'btn-success' : 'btn-outline-primary'">
+                    :class="isEditing ? 'btn-success' : 'btn-outline-primary'"
+                    :aria-label="isEditing ? 'Guardar cambios en el diseño del dashboard' : 'Activar modo de edición del dashboard'">
                 <i class="fa-solid" :class="isEditing ? 'fa-save' : 'fa-th-large'"></i>
                 <span x-text="isEditing ? 'GUARDAR DISEÑO' : 'EDITAR DASHBOARD'"></span>
             </button>
             <button @click="$dispatch('open-toolbox')" 
                     x-show="isEditing"
-                    class="btn btn-sm btn-outline-info neon-border">
+                    class="btn btn-sm btn-outline-info neon-border"
+                    aria-label="Abrir panel de herramientas para agregar widgets">
                 <i class="fa-solid fa-plus-circle"></i> AGREGAR WIDGET
+            </button>
+            <button @click="resetLayout()" 
+                    x-show="isEditing"
+                    class="btn btn-sm btn-outline-warning neon-border"
+                    aria-label="Restaurar diseño original del dashboard">
+                <i class="fa-solid fa-undo-alt"></i> RESET LAYOUT
             </button>
         </div>
     </div>
 
     <!-- Grid de Widgets -->
-    <div class="grid-stack">
+    <div class="grid-stack" role="main" aria-label="Dashboard de widgets personalizable">
         <!-- Renderizado dinámico vía loadLayout -->
     </div>
 
@@ -220,7 +281,7 @@
     </div>
 
     <!-- Templates de Contenido de Widgets -->
-    <div style="display: none;">
+    <div style="display: none;" x-ignore>
         
         <!-- Template: Balance Total -->
         <div id="tpl-widget-balance-total">
@@ -339,26 +400,28 @@
                     <template x-if="!loading">
                         <div class="row align-items-center h-100">
                             <div class="col-6 position-relative">
-                                <canvas id="chart-monthly-summary"></canvas>
+                                <canvas class="chart-monthly-summary-canvas" style="max-height: 180px;"></canvas>
                                 <div class="position-absolute top-50 start-50 translate-middle text-center">
                                     <small class="text-dim d-block" style="font-size: 0.5rem;">NETO</small>
-                                    <span class="fw-bold" style="font-size: 0.8rem;" x-text="'$' + (summary.income - summary.expense).toLocaleString()"></span>
+                                    <span class="fw-bold" style="font-size: 0.8rem;" x-text="'$' + (summary.income - summary.expense).toLocaleString('es-AR')"></span>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="mb-2">
                                     <small class="text-success d-block">INGRESOS</small>
-                                    <span class="fw-bold" x-text="'$' + summary.income.toLocaleString()"></span>
+                                    <span class="fw-bold" x-text="'$' + summary.income.toLocaleString('es-AR')"></span>
                                 </div>
                                 <div>
                                     <small class="text-danger d-block">GASTOS</small>
-                                    <span class="fw-bold" x-text="'$' + summary.expense.toLocaleString()"></span>
+                                    <span class="fw-bold" x-text="'$' + summary.expense.toLocaleString('es-AR')"></span>
                                 </div>
                             </div>
                         </div>
                     </template>
                 </div>
             </div>
+        </div>
+
         <!-- Template: IA Insights -->
         <div id="tpl-widget-ia-insights">
             <div x-data="widgetIaInsights" class="h-100 d-flex flex-column">
@@ -416,17 +479,75 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Dependencies -->
+<!-- Core Dependencies - Always loaded -->
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-<!-- Widgets Logic -->
+<!-- ==========================================
+     WIDGET SCRIPTS - Cargados ANTES de Alpine
+     para garantizar que los componentes estén
+     registrados cuando Alpine inicializa.
+     ========================================== -->
 <script src="/static/js/widgets/widget-balance-total.js"></script>
-<script src="/static/js/widgets/widget-dolar-hoy.js"></script>
-<script src="/static/js/widgets/widget-recent-transactions.js"></script>
 <script src="/static/js/widgets/widget-monthly-summary.js"></script>
-<script src="/static/js/widgets/widget-quick-add.js"></script>
+<script src="/static/js/widgets/widget-recent-transactions.js"></script>
+<script src="/static/js/widgets/widget-dolar-hoy.js"></script>
 <script src="/static/js/widgets/widget-ia-insights.js"></script>
+<script src="/static/js/widgets/widget-quick-add.js"></script>
+
+<script>
+    // Lazy loading manager for performance
+    window.lazyLoader = {
+        loaded: new Set(),
+        
+        async loadScript(src) {
+            if (this.loaded.has(src)) return Promise.resolve();
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    this.loaded.add(src);
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.warn(`Widget script not found: ${src}`);
+                    resolve(); // Resolve anyway to not block the grid
+                };
+                document.head.appendChild(script);
+            });
+        },
+        
+        async loadChartJs() {
+            return this.loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js');
+        }
+    };
+
+    // Helper: inject widget HTML from hidden template into a grid item
+    window.injectWidgetContent = function(item) {
+        console.log("Injecting widget for item:", item);
+        const widgetId = item.gridstackNode?.id || item.getAttribute('gs-id');
+        console.log("Widget ID found:", widgetId);
+        if (!widgetId) return;
+        const tpl = document.getElementById('tpl-' + widgetId);
+        console.log("Template Node:", tpl);
+        if (!tpl) return;
+        let content = item.querySelector('.grid-stack-item-content');
+        if (!content) {
+            console.log("No .grid-stack-item-content found, creating it.");
+            content = document.createElement('div');
+            content.className = 'grid-stack-item-content';
+            item.appendChild(content);
+        }
+        if (content && !content.querySelector('[x-data]')) {
+            console.log("Populating content for", widgetId);
+            content.innerHTML = tpl.innerHTML;
+            // Alpine v3 automatically handles DOM mutations via MutationObserver,
+            // so we don't need to manually call initTree (which doesn't exist in v3).
+        } else {
+            console.log("Already populated or no content div for", widgetId);
+        }
+    };
+</script>
 
 <!-- Transaction Form Logic & Template -->
 {% include "transactions/main_form.html" %}
@@ -436,50 +557,71 @@
 <script src="/static/js/dashboard.js"></script>
 
 <script>
-    // Integration logic to inject widget content from templates
-    document.addEventListener('alpine:initialized', () => {
-        setTimeout(() => {
-            const el = document.querySelector('[x-data="dashboardManager"]');
-            if (el && Alpine.$data(el)) {
-                const mgr = Alpine.$data(el);
-                
-                // Wrap original loadLayout to handle template injection
-                const originalLoad = mgr.loadLayout;
-                mgr.loadLayout = async function() {
-            await originalLoad.call(this);
-            this.refreshWidgetContents();
-        };
+    /**
+     * Override de addWidget y loadLayout para inyectar templates HTML
+     * y re-inicializar Alpine en los widgets cargados dinámicamente.
+     * Funciona tanto en carga inicial como al agregar widgets nuevos.
+     */
+    
+    // Limpiar layout viejo si es de una versión anterior (sin IDs de widget o con HTML)
+    (function checkLayoutVersion() {
+        try {
+            const saved = localStorage.getItem('3f_dashboard_layout');
+            if (saved) {
+                const layout = JSON.parse(saved);
+                if (Array.isArray(layout) && layout.length > 0) {
+                    const firstItem = layout[0];
+                    // Limpiar si: no tiene id, o si tiene contenido HTML guardado
+                    const hasNoId = !firstItem.id;
+                    const hasHtmlContent = firstItem.content && firstItem.content.length > 20;
+                    if (hasNoId || hasHtmlContent) {
+                        console.info('Dashboard: resetting stale layout (old format detected)');
+                        localStorage.removeItem('3f_dashboard_layout');
+                    }
+                }
+            }
+        } catch(e) {
+            localStorage.removeItem('3f_dashboard_layout');
+        }
+    })();
 
+    document.addEventListener('alpine:initialized', () => {
+        const el = document.querySelector('[x-data="dashboardManager"]');
+        if (!el) return;
+        const mgr = Alpine.$data(el);
+        if (!mgr) return;
+
+        // Override addWidget
         const originalAdd = mgr.addWidget;
-        mgr.addWidget = function(widgetId) {
-            const html = document.getElementById('tpl-' + widgetId)?.innerHTML || 'Widget Template Not Found';
-            this.grid.addWidget({ 
-                w: 4, h: 2, 
+        mgr.addWidget = async function(widgetId) {
+            await this.loadWidgetScript(widgetId);
+            const tpl = document.getElementById('tpl-' + widgetId);
+            const html = tpl ? tpl.innerHTML : `<div class="widget-header"><h5 class="widget-title">${widgetId}</h5></div><div class="widget-body"><p class="text-dim">Template no encontrado</p></div>`;
+            const newItem = this.grid.addWidget({ 
+                w: 4, h: 3, 
                 id: widgetId, 
                 content: `<div class="grid-stack-item-content">${html}</div>` 
             });
             this.saveLayout();
-            // Re-initialize Alpine on the new widget
-            this.$nextTick(() => Alpine.discoverUninitializedComponents());
+            // Automatically handled by Alpine 3 MutationObserver
         };
 
+        // Override refreshWidgetContents / loadLayout para inyectar templates
         mgr.refreshWidgetContents = function() {
             this.grid.getGridItems().forEach(item => {
-                const widgetId = item.gridstackNode.id;
-                const html = document.getElementById('tpl-' + widgetId)?.innerHTML;
-                if (html) {
-                    this.grid.update(item, { content: `<div class="grid-stack-item-content">${html}</div>` });
-                }
+                window.injectWidgetContent(item);
             });
-            // Final Alpine refresh
-            this.$nextTick(() => Alpine.discoverUninitializedComponents());
         };
-        
-        // Forzar pintado ahora mismo de los widgets que Alpine cargó inicialmente!
-        mgr.refreshWidgetContents();
-        
-        } // End of if
-    }, 100); // Small timeout to ensure Alpine fully boots
+
+        const originalLoad = mgr.loadLayout;
+        mgr.loadLayout = async function() {
+            await originalLoad.call(this);
+            // Pequeño delay para que GridStack renderice los items
+            setTimeout(() => this.refreshWidgetContents(), 80);
+        };
+
+        // Ejecutar inmediatamente ya que loadLayout ya se llamó en init()
+        setTimeout(() => mgr.refreshWidgetContents(), 150);
     });
 </script>
 {% endblock %}

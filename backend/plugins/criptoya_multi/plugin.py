@@ -75,6 +75,11 @@ class CriptoYaMultiPlugin(BasePlugin):
             timeout=aiohttp.ClientTimeout(total=30)
         )
         
+        # Ensure tables are created
+        from sqlmodel import SQLModel
+        from backend.core.database import engine
+        SQLModel.metadata.create_all(engine)
+        
         # Inicializar datos base en la BD
         await self._inicializar_datos_base()
         

@@ -308,7 +308,7 @@
             async fetchData() {
                 this.loading = true;
                 try {
-                    const res = await fetch(`/api/v1/goals/`);
+                    const res = await fetch(`/api/goals/`);
                     if(res.ok) {
                         this.goals = await res.json();
                     }
@@ -340,7 +340,7 @@
             async addFunds(id, amount) {
                 try {
                     const payload = { amount: amount };
-                    const res = await fetch(`/api/v1/goals/${id}/contribute`, {
+                    const res = await fetch(`/api/goals/${id}/contribute`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(payload)
@@ -357,7 +357,7 @@
 
             async createGoal(data) {
                 try {
-                    const res = await fetch(`/api/v1/goals/`, {
+                    const res = await fetch(`/api/goals/`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(data)
@@ -375,7 +375,7 @@
             async deleteGoal(goal) {
                 if(confirm("¿Estás seguro de eliminar la meta " + goal.name + "?")) {
                     try {
-                        const res = await fetch(`/api/v1/goals/${goal.id}`, { method: 'DELETE' });
+                        const res = await fetch(`/api/goals/${goal.id}`, { method: 'DELETE' });
                         if(res.ok) {
                             this.goals = this.goals.filter(g => g.id !== goal.id);
                         }

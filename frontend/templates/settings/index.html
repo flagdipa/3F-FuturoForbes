@@ -343,7 +343,7 @@
             async saveSettings() {
                 this.saving = true;
                 try {
-                    // Aca iria el POST /api/v1/config/ 
+                    // Aca iria el POST /api/config/ 
                     await new Promise(r => setTimeout(r, 800)); // mock network
                     localStorage.setItem('3f_global_config', JSON.stringify(this.config));
                     

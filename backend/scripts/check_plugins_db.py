@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from sqlmodel import Session, select, create_engine
-from backend.models.models_plugins import Plugin
+from backend.models import Plugin
 from backend.core.config import settings
 
 # Adjust connection string if needed, assuming default from config

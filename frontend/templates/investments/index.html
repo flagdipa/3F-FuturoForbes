@@ -256,8 +256,8 @@
                 this.loading = true;
                 try {
                     // API Calls
-                    const resPerf = await fetch('/api/v1/investments/performance').then(r => r.json());
-                    // Mock positions for now, in reality call /api/v1/investments/positions
+                    const resPerf = await fetch('/api/investments/performance').then(r => r.json());
+                    // Mock positions for now, in reality call /api/investments/positions
                     await new Promise(r => setTimeout(r, 600)); 
                     const mockPositions = [
                         { symbol: 'AAPL', name: 'Apple Inc.', type: 'STOCK', quantity: 50, avg_price: 150.00, current_price: 185.20, pnl: 1760.00, pnl_pct: 23.4 },

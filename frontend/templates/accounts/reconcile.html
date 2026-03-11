@@ -213,7 +213,7 @@
             async fetchAccountDetails() {
                 try {
                     // Mock
-                    const res = await fetch(`/api/v1/accounts/${this.accountId}`);
+                    const res = await fetch(`/api/accounts/${this.accountId}`);
                     if(res.ok) {
                         const acc = await res.json();
                         this.accountName = acc.name;
@@ -297,13 +297,13 @@
                 
                 this.saving = true;
                 try {
-                    // Aca hariamos POST /api/v1/accounts/{id}/reconcile enviando el bank balance y lista de IDs si es necesario
+                    // Aca hariamos POST /api/accounts/{id}/reconcile enviando el bank balance y lista de IDs si es necesario
                     const payload = {
                         statement_balance: parseFloat(this.statementBalance),
                         statement_date: this.statementDate + "T00:00:00Z"
                     };
                     
-                    const res = await fetch(`/api/v1/accounts/${this.accountId}/reconcile`, {
+                    const res = await fetch(`/api/accounts/${this.accountId}/reconcile`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(payload)

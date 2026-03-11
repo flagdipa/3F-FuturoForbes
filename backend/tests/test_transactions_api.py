@@ -1,137 +1,175 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-from backend.models.models import LibroTransacciones, ListaCuentas, Divisa, Usuario, Beneficiario
+from decimal import Decimal
+from datetime import datetime
+from backend.models import Transaction, TransactionSplit, Account, User, Currency, Payee, TransactionStatus
 from backend.api.auth.deps import get_current_user
+from backend.main import app
 
 def test_create_transaction_integration(client: TestClient, session: Session):
     # 1. Prerrequisites: User, Currency, Account, Beneficiary
-    user = Usuario(email="test@example.com", password="hash")
+    # Note: Using V2 models
+    user = User(email="test@example.com", hashed_password="hash", is_active=True, is_admin=False)
     session.add(user)
-    divisa = Divisa(nombre_divisa="Peso", codigo_iso="ARS", tipo_divisa="Fiat")
-    session.add(divisa)
+    currency = Currency(code="ARS", name="Peso")
+    session.add(currency)
     session.commit()
     session.refresh(user)
-    session.refresh(divisa)
+    session.refresh(currency)
     
-    cuenta = ListaCuentas(nombre_cuenta="Test Account", tipo_cuenta="Efectivo", id_divisa=divisa.id_divisa)
-    session.add(cuenta)
+    account = Account(user_id=user.id, name="Test Account", type="ASSET", currency_code=currency.code)
+    session.add(account)
     
-    benef = Beneficiario(nombre_beneficiario="Test Payee")
-    session.add(benef)
+    payee = Payee(user_id=user.id, name="Test Payee")
+    session.add(payee)
     session.commit()
-    session.refresh(cuenta)
-    session.refresh(benef)
+    session.refresh(account)
+    session.refresh(payee)
 
     # Mock authentication
     def get_current_user_override():
         return user
-    from backend.main import app
     app.dependency_overrides[get_current_user] = get_current_user_override
 
-    # 2. POST Request
+    # 2. POST Request (New schema)
     tx_data = {
-        "id_cuenta": cuenta.id_cuenta,
-        "fecha_transaccion": "2024-02-05T00:00:00",
-        "monto_transaccion": 1500.50,
-        "id_beneficiario": benef.id_beneficiario,
-        "id_categoria": None,
-        "notas": "Integration Test TX",
-        "codigo_transaccion": "Withdrawal",
-        "es_dividida": False,
-        "etiquetas": []
+        "date": "2024-02-05T00:00:00",
+        "description": "Integration Test TX",
+        "payee_id": payee.id,
+        "notes": "Integration Test Notes",
+        "splits": [
+            {
+                "account_id": account.id,
+                "amount": "1500.50",
+                "currency_code": "ARS"
+            }
+        ]
     }
     
     response = client.post("/api/transacciones/", json=tx_data)
     
     # 3. Assertions
-    assert response.status_code == 200
+    assert response.status_code == 201, response.text
     data = response.json()
-    assert float(data["monto_transaccion"]) == 1500.50
-    assert data["notas"] == "Integration Test TX"
+    assert data["notes"] == "Integration Test Notes"
+    assert data["description"] == "Integration Test TX"
+    assert len(data["splits"]) == 1
+    assert float(data["splits"][0]["amount"]) == 1500.50
     
     # Verify in DB
-    db_tx = session.exec(select(LibroTransacciones)).first()
+    db_tx = session.exec(select(Transaction)).first()
     assert db_tx is not None
-    assert db_tx.monto_transaccion == 1500.50
+    assert db_tx.notes == "Integration Test Notes"
+    assert len(db_tx.splits) == 1
+    assert float(db_tx.splits[0].amount) == 1500.50
+    
+    # Clean up override
+    app.dependency_overrides.pop(get_current_user, None)
 
 def test_list_transactions_paginated(client: TestClient, session: Session):
-    # Setup multiple transactions
-    divisa = Divisa(nombre_divisa="Peso", codigo_iso="ARS", tipo_divisa="Fiat")
-    session.add(divisa)
-    session.commit()
-    session.refresh(divisa)
-    
-    cuenta = ListaCuentas(nombre_cuenta="List Account", tipo_cuenta="Efectivo", id_divisa=divisa.id_divisa)
-    session.add(cuenta)
-    
-    benef = Beneficiario(nombre_beneficiario="List Payee")
-    session.add(benef)
-    session.commit()
-    session.refresh(cuenta)
-    session.refresh(benef)
-    
-    for i in range(10):
-        tx = LibroTransacciones(
-            id_cuenta=cuenta.id_cuenta,
-            id_beneficiario=benef.id_beneficiario,
-            monto_transaccion=100 * i,
-            fecha_transaccion="2024-01-01",
-            notas=f"TX {i}",
-            codigo_transaccion="Withdrawal",
-            es_dividida=False
-        )
-        session.add(tx)
-    session.commit()
-    
-    # Test GET
-    response = client.get("/api/transacciones/?limit=5&offset=0")
-    assert response.status_code == 200
-    res_data = response.json()
-    
-    assert len(res_data["data"]) == 5
-    assert res_data["pagination"]["total"] == 10
-    assert res_data["pagination"]["has_more"] is True
-
-def test_delete_transaction(client: TestClient, session: Session):
-    # Setup user and tx
-    user = Usuario(email="del@example.com", password="hash")
+    user = User(email="list@example.com", hashed_password="hash", is_active=True, is_admin=False)
     session.add(user)
-    divisa = Divisa(nombre_divisa="Peso", codigo_iso="ARS", tipo_divisa="Fiat")
-    session.add(divisa)
+    currency = Currency(code="ARS", name="Peso")
+    session.add(currency)
     session.commit()
     session.refresh(user)
-    session.refresh(divisa)
+    session.refresh(currency)
     
-    cuenta = ListaCuentas(id_divisa=divisa.id_divisa, nombre_cuenta="Del Account", tipo_cuenta="Efectivo")
-    session.add(cuenta)
-    benef = Beneficiario(nombre_beneficiario="Del Payee")
-    session.add(benef)
+    account = Account(user_id=user.id, name="List Account", type="ASSET", currency_code=currency.code)
+    session.add(account)
+    
+    payee = Payee(user_id=user.id, name="List Payee")
+    session.add(payee)
     session.commit()
-    session.refresh(cuenta)
-    session.refresh(benef)
+    session.refresh(account)
+    session.refresh(payee)
     
-    tx = LibroTransacciones(
-        id_cuenta=cuenta.id_cuenta, 
-        id_beneficiario=benef.id_beneficiario,
-        monto_transaccion=50, 
-        fecha_transaccion="2024-01-01",
-        codigo_transaccion="Withdrawal",
-        es_dividida=False
+    for i in range(10):
+        tx = Transaction(
+            user_id=user.id,
+            payee_id=payee.id,
+            date=datetime(2024, 1, 1),
+            notes=f"TX {i}",
+            status=TransactionStatus.PENDING
+        )
+        session.add(tx)
+        session.commit()
+        session.refresh(tx)
+        
+        split = TransactionSplit(
+            transaction_id=tx.id,
+            account_id=account.id,
+            amount=Decimal(100 * i),
+            currency_code="ARS"
+        )
+        session.add(split)
+        session.commit()
+        
+    def get_current_user_override():
+        return user
+    app.dependency_overrides[get_current_user] = get_current_user_override
+    
+    # Test GET
+    response = client.get("/api/transacciones/?limit=5&skip=0")
+    assert response.status_code == 200, response.text
+    res_data = response.json()
+    
+    # New endpoint returns a list directly
+    assert isinstance(res_data, list)
+    assert len(res_data) == 5
+    
+    app.dependency_overrides.pop(get_current_user, None)
+
+def test_void_transaction(client: TestClient, session: Session):
+    user = User(email="void@example.com", hashed_password="hash", is_active=True, is_admin=False)
+    session.add(user)
+    currency = Currency(code="ARS", name="Peso")
+    session.add(currency)
+    session.commit()
+    session.refresh(user)
+    session.refresh(currency)
+    
+    account = Account(user_id=user.id, name="Void Account", type="ASSET", currency_code=currency.code)
+    session.add(account)
+    payee = Payee(user_id=user.id, name="Void Payee")
+    session.add(payee)
+    session.commit()
+    session.refresh(account)
+    session.refresh(payee)
+    
+    tx = Transaction(
+        user_id=user.id,
+        payee_id=payee.id,
+        date=datetime(2024, 1, 1),
+        status=TransactionStatus.PENDING
     )
     session.add(tx)
     session.commit()
     session.refresh(tx)
     
-    tx_id = tx.id_transaccion
-
-    # Mock auth
-    from backend.api.auth.deps import get_current_user
-    from backend.main import app
-    app.dependency_overrides[get_current_user] = lambda: user
-
-    response = client.delete(f"/api/transacciones/{tx_id}")
-    assert response.status_code == 200
+    split = TransactionSplit(
+        transaction_id=tx.id,
+        account_id=account.id,
+        amount=Decimal("50.00"),
+        currency_code="ARS"
+    )
+    session.add(split)
+    session.commit()
+    session.refresh(tx)
     
-    # Verify deletion
-    assert session.get(LibroTransacciones, tx_id) is None
+    tx_id = tx.id
+
+    def get_current_user_override():
+        return user
+    app.dependency_overrides[get_current_user] = get_current_user_override
+
+    # Test VOID instead of DELETE (V2 uses void)
+    response = client.post(f"/api/transacciones/{tx_id}/void?reason=Test Void")
+    assert response.status_code == 200, response.text
+    
+    # Verify voided status
+    db_tx = session.get(Transaction, tx_id)
+    assert db_tx.status == TransactionStatus.VOID
+    
+    app.dependency_overrides.pop(get_current_user, None)

@@ -104,7 +104,26 @@ class Payee(SoftDeleteMixin, table=True):
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # Relationships
+    transactions: List["Transaction"] = Relationship(back_populates="payee")
+
 # --- TRANSACCIONES (Double-Entry) ---
+
+class TransactionTagLink(SQLModel, table=True):
+    __tablename__ = "transaction_tag_link"
+    transaction_id: int = Field(foreign_key="transactions.id", primary_key=True)
+    tag_id: int = Field(foreign_key="tags.id", primary_key=True)
+
+class Tag(SQLModel, table=True):
+    __tablename__ = "tags"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    name: str
+    color: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    transactions: List["Transaction"] = Relationship(back_populates="tags", link_model=TransactionTagLink)
 
 class TransactionStatus(str, Enum):
     PENDING = "PENDING"
@@ -125,8 +144,8 @@ class Transaction(AuditMixin, SoftDeleteMixin, table=True):
     # Relationships
     user: User = Relationship(back_populates="transactions")
     splits: List["TransactionSplit"] = Relationship(back_populates="transaction")
-    # tags logic simplified to avoid circular reference for now
-    # tags: List["Tag"] = Relationship(link_model=TransactionTagLink)
+    payee: Optional["Payee"] = Relationship(back_populates="transactions")
+    tags: List["Tag"] = Relationship(back_populates="transactions", link_model=TransactionTagLink)
 
 class TransactionSplit(SQLModel, table=True):
     __tablename__ = "transaction_splits"
@@ -148,14 +167,6 @@ class TransactionSplit(SQLModel, table=True):
 
 # --- MÓDULOS ADICIONALES ---
 
-class Tag(SQLModel, table=True):
-    __tablename__ = "tags"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id")
-    name: str
-    color: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
 class Budget(SoftDeleteMixin, table=True):
     __tablename__ = "budgets"
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -163,6 +174,8 @@ class Budget(SoftDeleteMixin, table=True):
     category_id: int = Field(foreign_key="categories.id")
     amount: Decimal = Field(max_digits=20, decimal_places=8)
     period: str = Field(default="MONTHLY")
+    year: int = Field(index=True)
+    month: int = Field(index=True)
     start_date: date
     end_date: Optional[date] = None
     notes: Optional[str] = None

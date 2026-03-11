@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 
 from sqlmodel import Session, select
 from backend.core.database import engine
-from backend.models.models_plugins import Plugin
+from backend.models import Plugin
 
 def verify():
     with Session(engine) as session:

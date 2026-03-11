@@ -1,5 +1,43 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    /* Responsive improvements for heatmap */
+    @media (max-width: 768px) {
+        .heatmap-container {
+            min-width: unset !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .heatmap-cell {
+            min-width: 8px !important;
+            height: 20px !important;
+        }
+        
+        .d-flex.align-items-center.mb-1 > div:first-child {
+            min-width: 60px;
+            font-size: 0.7rem !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .hud-title {
+            font-size: 1.2rem !important;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        
+        .d-flex.gap-2 select {
+            width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block title %}<span x-text="$store.lang.t('reports.heatmap.title')">Mapa de Calor - Hábitos de Gasto</span>{% endblock %}
 {% block header %}<span x-text="$store.lang.t('reports.heatmap.operational_intensity')">Frecuencia de Gastos (Día vs Hora)</span>{% endblock %}
 
@@ -9,7 +47,7 @@
         <div class="col-12 d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h1 class="hud-title mb-0" x-text="$store.lang.t('reports.heatmap.title') || 'Mapa de Calor de Gastos'"></h1>
-                <p class="text-dim small mb-0" x-text="$store.lang.t('reports.heatmap.analysis_terminal')">TERMINAL DE ANÁLISIS TEMPORAL | STATUS: ONLINE</p>
+                <p class="text-dim small mb-0" x-text="$store.lang.t('reports.heatmap.analysis_terminal')">Módulo de Análisis Temporal | STATUS: ONLINE</p>
             </div>
             <div class="d-flex gap-2">
                 <select class="form-select neon-input form-select-sm" x-model.number="filtros.year" @change="cargarDatos()" aria-label="Filtrar por año">
@@ -18,7 +56,7 @@
                     </template>
                 </select>
                 <select class="form-select neon-input form-select-sm" x-model.number="filtros.month" @change="cargarDatos()" aria-label="Filtrar por mes">
-                    <option value="0" x-text="$store.lang.t('reports.heatmap.all_months')">TODOS LOS MESES</option>
+                    <option value="0" x-text="$store.lang.t('reports.heatmap.all_months')">Todos los Meses</option>
                     <template x-for="(name, index) in monthNames" :key="index">
                         <option :value="index + 1" x-text="name"></option>
                     </template>
@@ -29,7 +67,7 @@
         <div class="col-12">
             <div class="card neon-card">
                 <div class="card-body p-4 text-center">
-                    <h5 class="text-primary mb-3 fw-bold"><i class="fa-solid fa-fire-flame-curved me-2"></i><span x-text="$store.lang.t('reports.heatmap.operational_intensity')">INTENSIDAD_OPERATIVA_HUB</span></h5>
+                    <h5 class="text-primary mb-3 fw-bold"><i class="fa-solid fa-fire-flame-curved me-2"></i><span x-text="$store.lang.t('reports.heatmap.operational_intensity')">Intensidad Operativa</span></h5>
                     <p class="text-dim small mb-4" x-text="$store.lang.t('reports.heatmap.intensity_desc') + (filtros.month == 0 ? filtros.year : monthNames[filtros.month-1] + ' ' + filtros.year)"></p>
                     
                     <div class="d-flex justify-content-center gap-4 mb-4">
@@ -53,11 +91,16 @@
 
                     <div class="table-responsive">
                         <div class="heatmap-container" style="min-width: 800px;">
+                            <!-- Mobile Warning -->
+                            <div class="d-md-none alert alert-warning small mb-3">
+                                <i class="fa-solid fa-mobile-screen-button me-2"></i>
+                                Para mejor visualización, gira tu dispositivo horizontalmente o usa una pantalla más grande.
+                            </div>
                             <div class="d-flex mb-2">
                                 <div style="width: 80px;"></div>
                                 <div class="d-flex flex-grow-1">
                                     <template x-for="h in 24">
-                                        <div class="text-dim extra-small flex-grow-1" x-text="(h-1).toString().padStart(2, '0') + 'h'"></div>
+                                        <div class="text-dim extra-small flex-grow-1 text-center" x-text="(h-1).toString().padStart(2, '0') + 'h'"></div>
                                     </template>
                                 </div>
                             </div>
@@ -87,7 +130,7 @@
         <div class="col-md-6 mb-3">
             <div class="card neon-card h-100">
                 <div class="card-body">
-                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.ai_tip')">CONSEJO_IA_PROACTIVO</h6>
+                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.ai_tip')">Consejo Proactivo</h6>
                     <div class="p-3 bg-dark bg-opacity-50 rounded border border-warning border-opacity-25">
                         <p class="small text-warning mb-0" x-text="insight"></p>
                     </div>
@@ -97,7 +140,7 @@
         <div class="col-md-6 mb-3">
             <div class="card neon-card h-100">
                 <div class="card-body">
-                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.pattern_metrics')">MÉTRICAS_DE_PATRÓN</h6>
+                    <h6 class="text-primary smaller fw-bold mb-3" x-text="$store.lang.t('reports.heatmap.pattern_metrics')">Métricas de Patrón</h6>
                     <div class="row text-center">
                         <div class="col-6 border-end border-secondary border-opacity-25">
                             <small class="text-dim d-block mb-1" x-text="$store.lang.t('reports.heatmap.peak_hour')">HORA PICO</small>

@@ -104,8 +104,8 @@ Arquitectura inspirada en plataformas como PrestaShop, que permite instalar y ac
 2. ~~**Plugin CriptoYa Multi-País**: Cotizaciones de 11 países~~ ✅
 
 ### 🚧 En Desarrollo
-3. **Limpieza i18n**: Reemplazar strings restantes por traducciones dinámicas.
-4. **Auditoría de Accesibilidad**: Mejora de ARIA labels y contrastes remanentes.
+3. ~~**Limpieza i18n**: Reemplazar strings restantes por traducciones dinámicas.~~ ✅ **COMPLETADO**
+4. ~~**Auditoría de Accesibilidad**: Mejora de ARIA labels y contrastes remanentes.~~ ✅ **COMPLETADO**
 5. **Optimización de Rendimiento**: Implementar *Lazy Loading* para dashboards pesados.
 6. **Importación MMEX**: Finalizar el conector para migración legacy automática.
 

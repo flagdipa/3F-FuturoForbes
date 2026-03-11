@@ -40,12 +40,12 @@ class AuditService:
                     detalles_json = json.dumps({k: str(v) for k, v in detalles.items()})
 
             log_entry = AuditLog(
-                fecha=datetime.utcnow(),
-                id_usuario=user_id,
-                accion=accion,
-                entidad=entidad,
-                id_entidad=id_entidad,
-                detalles=detalles_json,
+                timestamp=datetime.utcnow(),
+                user_id=user_id,
+                action=accion,
+                entity_type=entidad,
+                entity_id=id_entidad,
+                new_values=detalles_json,
                 ip_address=ip_address
             )
             session.add(log_entry)

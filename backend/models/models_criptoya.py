@@ -16,7 +16,7 @@ class CriptoYaConfig(SQLModel, table=True):
     __tablename__ = "criptoya_config"
     
     id_config: Optional[int] = Field(default=None, primary_key=True)
-    id_usuario: int = Field(foreign_key="usuarios.id_usuario", index=True)
+    id_usuario: int = Field(foreign_key="users.id", index=True)
     
     # Países habilitados para monitoreo
     paises_habilitados: List[str] = Field(default=[], sa_column=Column(JSON))
@@ -226,7 +226,7 @@ class CriptoYaAlerta(SQLModel, table=True):
     __tablename__ = "criptoya_alertas"
     
     id_alerta: Optional[int] = Field(default=None, primary_key=True)
-    id_usuario: int = Field(foreign_key="usuarios.id_usuario", index=True)
+    id_usuario: int = Field(foreign_key="users.id", index=True)
     
     # Configuración de la alerta
     id_coin: int = Field(foreign_key="criptoya_coins.id_coin")
@@ -263,7 +263,7 @@ class CriptoYaFavorito(SQLModel, table=True):
     __tablename__ = "criptoya_favoritos"
     
     id_favorito: Optional[int] = Field(default=None, primary_key=True)
-    id_usuario: int = Field(foreign_key="usuarios.id_usuario", index=True)
+    id_usuario: int = Field(foreign_key="users.id", index=True)
     
     # Par favorito
     id_coin: int = Field(foreign_key="criptoya_coins.id_coin")

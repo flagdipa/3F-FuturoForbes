@@ -172,8 +172,8 @@
                                         </template>
                                         <template x-if="col.key === 'monto'">
                                             <div class="text-end">
-                                                <span class="fs-6 fw-bold" :class="tx.monto_transaccion >= 0 ? 'text-success' : 'text-danger'" 
-                                                      x-text="formatCurrency(tx.monto_transaccion)">
+                                                <span class="fs-6 fw-bold" :class="tx.codigo_transaccion === 'Withdrawal' ? 'text-danger' : (tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-info')" 
+                                                      x-text="(tx.codigo_transaccion === 'Withdrawal' ? '-' : '') + formatCurrency(tx.monto_transaccion)">
                                                 </span>
                                             </div>
                                         </template>
@@ -185,8 +185,12 @@
                                         </template>
                                         <template x-if="col.key === 'estado'">
                                             <span class="badge rounded-pill" 
-                                                  :class="tx.estado === 'Conciled' ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'"
-                                                  x-text="tx.estado"></span>
+                                                  :class="tx.estado === 'RECONCILED' 
+                                                      ? 'bg-success bg-opacity-25 text-success border border-success' 
+                                                      : tx.estado === 'VOID' 
+                                                          ? 'bg-danger bg-opacity-25 text-danger border border-danger'
+                                                          : 'bg-warning bg-opacity-25 text-warning border border-warning'"
+                                                  x-text="tx.estado === 'RECONCILED' ? 'Conciliado' : (tx.estado === 'VOID' ? 'Anulado' : 'Pendiente')"></span>
                                         </template>
                                         <template x-if="col.key === 'etiquetas'">
                                             <div class="d-flex flex-wrap gap-1">
@@ -425,7 +429,12 @@
                         api.get('/categorias/')
                     ]);
                     this.allTags = unwrap(tags);
-                    this.colecciones.cuentas = unwrap(cuentas);
+                    // /api/cuentas/ usa 'id' y 'name' (esquema V2) — normalizar al formato esperado
+                    this.colecciones.cuentas = unwrap(cuentas).map(c => ({
+                        ...c,
+                        id_cuenta: c.id_cuenta ?? c.id,
+                        nombre_cuenta: c.nombre_cuenta ?? c.name
+                    }));
                     this.colecciones.beneficiarios = unwrap(benfs);
                     this.colecciones.categorias = unwrap(cats);
                 } catch (e) { console.error('Error cargando iniciales:', e); }
@@ -435,23 +444,47 @@
                 if (this.loading || !this.hasMore) return;
                 this.loading = true;
                 try {
+                    // Only send params accepted by the backend API
+                    const apiFilterMap = {
+                        id_cuenta: 'id_cuenta',
+                        id_beneficiario: 'id_beneficiario',
+                        id_categoria: 'id_categoria',
+                        fecha_inicio: 'fecha_inicio',
+                        fecha_fin: 'fecha_fin'
+                    };
                     let url = `/transactions/?skip=${this.offset}&limit=${this.limit}`;
-                    Object.keys(this.filtros).forEach(key => {
+                    Object.keys(apiFilterMap).forEach(key => {
                         if (this.filtros[key]) {
-                            url += `&${key}=${encodeURIComponent(this.filtros[key])}`;
+                            url += `&${apiFilterMap[key]}=${encodeURIComponent(this.filtros[key])}`;
                         }
                     });
                     
-                    url += `&sort_by=${this.sortCol}&order=${this.sortAsc ? 'asc' : 'desc'}`;
+                    // Map frontend column keys to backend sort fields
+                    const sortMap = {
+                        'fecha': 'date',
+                        'beneficiario': 'payee'
+                    };
+                    const apiSortCol = sortMap[this.sortCol] || 'date';
+                    url += `&sort_by=${apiSortCol}&order=${this.sortAsc ? 'asc' : 'desc'}`;
 
                     const response = await api.get(url);
-                    // The v1 API returns a list directly
                     const payload = response.data;
                     const resultList = Array.isArray(payload) ? payload : (payload.data || []);
                     
-                    const nuevas = resultList.map(tx => this.formatDataFromV2(tx));
+                    let nuevas = resultList.map(tx => this.formatDataFromV2(tx));
                     
-                    // No pagination metadata yet, assume has_more if we get full limit
+                    // Client-side filter: busqueda text search
+                    if (this.filtros.busqueda) {
+                        const q = this.filtros.busqueda.toLowerCase();
+                        nuevas = nuevas.filter(tx =>
+                            (tx.nombre_beneficiario || '').toLowerCase().includes(q) ||
+                            (tx.notas || '').toLowerCase().includes(q) ||
+                            (tx.nombre_cuenta || '').toLowerCase().includes(q) ||
+                            (tx.nombre_categoria || '').toLowerCase().includes(q)
+                        );
+                    }
+
+                    // No pagination metadata yet — assume more if full limit returned
                     this.hasMore = (resultList.length >= this.limit);
                     this.transacciones = [...this.transacciones, ...nuevas];
                     this.offset += this.limit;
@@ -512,62 +545,77 @@
                 let mainRow = {
                     id_transaccion: tx.id,
                     fecha_transaccion: tx.date,
-                    estado: tx.status === 1 ? 'Conciled' : (tx.status === 2 ? 'Void' : 'None'), // mapping enum
+                    // status from API: "PENDING", "RECONCILED", "VOID"
+                    estado: tx.status || 'PENDING',
                     notas: tx.notes || tx.description || '',
                     id_beneficiario: tx.payee_id,
                     nombre_beneficiario: this.getNombreBeneficiario(tx.payee_id),
-                    etiquetas: [], 
+                    etiquetas: (tx.tags || []).map(t => t.id), 
                     es_dividida: false
                 };
 
                 let splits = tx.splits || [];
                 let isTransfer = false;
                 
-                if (splits.length === 2 && parseFloat(splits[0].amount) === -parseFloat(splits[1].amount)) {
-                    isTransfer = true; // simplifying transfer logic
+                // Transfer detection: 2 splits, different accounts, sum zero
+                if (splits.length === 2) {
+                    const s1 = splits[0], s2 = splits[1];
+                    const sum = parseFloat(s1.amount) + parseFloat(s2.amount);
+                    if (Math.abs(sum) < 0.001 && s1.account_id !== s2.account_id) isTransfer = true;
                 }
 
                 if (isTransfer) {
                     mainRow.codigo_transaccion = 'Transfer';
-                    mainRow.monto_transaccion = Math.abs(parseFloat(splits[0].amount));
-                    let fromAcc = splits.find(s => parseFloat(s.amount) < 0)?.account_id;
-                    let toAcc = splits.find(s => parseFloat(s.amount) > 0)?.account_id;
-                    mainRow.id_cuenta = fromAcc;
-                    mainRow.id_cuenta_destino = toAcc;
-                    mainRow.nombre_cuenta = `${this.getNombreCuenta(fromAcc)} -> ${this.getNombreCuenta(toAcc)}`;
+                    let fromSplit = splits.find(s => parseFloat(s.amount) < 0);
+                    let toSplit   = splits.find(s => parseFloat(s.amount) > 0);
+                    mainRow.monto_transaccion = Math.abs(parseFloat(fromSplit?.amount || splits[0].amount));
+                    mainRow.id_cuenta = fromSplit?.account_id;
+                    mainRow.id_cuenta_destino = toSplit?.account_id;
+                    mainRow.nombre_cuenta = `${this.getNombreCuenta(fromSplit?.account_id)} → ${this.getNombreCuenta(toSplit?.account_id)}`;
                     mainRow.nombre_categoria = 'Transferencia';
+                    mainRow.saldo = null;
+                } else if (splits.length === 0) {
+                    mainRow.codigo_transaccion = 'Unknown';
+                    mainRow.monto_transaccion = 0;
+                    mainRow.nombre_cuenta = '-';
+                    mainRow.nombre_categoria = '-';
+                    mainRow.saldo = null;
+                } else if (splits.length === 1) {
+                    let amount = parseFloat(splits[0].amount);
+                    mainRow.codigo_transaccion = amount >= 0 ? 'Deposit' : 'Withdrawal';
+                    mainRow.monto_transaccion = Math.abs(amount);
+                    mainRow.id_cuenta = splits[0].account_id;
+                    mainRow.id_categoria = splits[0].category_id;
+                    mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
+                    mainRow.nombre_categoria = this.getNombreCategoria(splits[0].category_id);
+                    mainRow.saldo = null;
                 } else {
-                    if (splits.length === 0) {
-                        mainRow.codigo_transaccion = 'Unknown';
-                        mainRow.monto_transaccion = 0;
-                        mainRow.nombre_cuenta = '-';
-                        mainRow.nombre_categoria = '-';
-                    } else if (splits.length === 1) {
-                        let amount = parseFloat(splits[0].amount);
-                        mainRow.codigo_transaccion = amount > 0 ? 'Deposit' : 'Withdrawal';
-                        mainRow.monto_transaccion = Math.abs(amount);
-                        mainRow.id_cuenta = splits[0].account_id;
-                        mainRow.id_categoria = splits[0].category_id;
-                        mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
+                    // Multiple splits — split transaction or single-entry categorization
+                    mainRow.es_dividida = splits.length > 1;
+                    
+                    // The total transaction amount for a non-transfer is the absolute sum of all splits 
+                    // (since they all point to the same account in single-entry mode)
+                    const totalAmt = splits.reduce((sum, s) => sum + parseFloat(s.amount), 0);
+                    mainRow.codigo_transaccion = totalAmt >= 0 ? 'Deposit' : 'Withdrawal';
+                    mainRow.monto_transaccion = Math.abs(totalAmt);
+                    
+                    mainRow.id_cuenta = splits[0].account_id;
+                    mainRow.id_categoria = splits[0].category_id;
+                    mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
+                    
+                    if (splits.length === 1) {
                         mainRow.nombre_categoria = this.getNombreCategoria(splits[0].category_id);
-                        mainRow.saldo = null; // Can't resolve real time here easily
                     } else {
-                        mainRow.es_dividida = true;
-                        let absTotal = splits.reduce((acc, val) => acc + Math.abs(parseFloat(val.amount)), 0);
-                        let amount = parseFloat(splits[0].amount);
-                        mainRow.codigo_transaccion = amount > 0 ? 'Deposit' : 'Withdrawal';
-                        mainRow.monto_transaccion = absTotal / 2; // Approximating base amount visually
-                        mainRow.id_cuenta = splits[0].account_id;
-                        mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
                         mainRow.nombre_categoria = 'Dividida (' + splits.length + ' divs)';
-                        
-                        // Parse divisions for editing mapping
-                        mainRow.divisiones = splits.map(s => ({
-                            id_categoria: s.category_id,
-                            monto_division: Math.abs(parseFloat(s.amount)),
-                            notas: s.memo || ''
-                        }));
                     }
+                    mainRow.saldo = null;
+                    
+                    // Store divisiones for editing
+                    mainRow.divisiones = splits.map(s => ({
+                        id_categoria: s.category_id,
+                        monto_division: Math.abs(parseFloat(s.amount)),
+                        notas: s.memo || ''
+                    }));
                 }
                 return mainRow;
             },
@@ -576,17 +624,19 @@
                 this.editTx = {
                     id_transaccion: 'NEW',
                     fecha_transaccion: new Date().toISOString().slice(0, 16),
-                    monto_transaccion: 0,
-                    id_cuenta: this.colecciones.cuentas[0]?.id_cuenta || 1,
-                    id_beneficiario: this.colecciones.beneficiarios[0]?.id_beneficiario || 1,
+                    monto_transaccion: null,
+                    id_cuenta: this.colecciones.cuentas[0]?.id_cuenta || null,
+                    id_beneficiario: this.colecciones.beneficiarios[0]?.id_beneficiario || null,
                     id_categoria: null,
+                    id_cuenta_destino: null,
                     codigo_transaccion: 'Withdrawal',
                     etiquetas: [],
                     divisiones: [],
                     es_dividida: false,
                     notas: '',
-                    estado: 'None'
+                    estado: 'PENDING'
                 };
+                this.attachments = [];
                 if (this.bsModal) this.bsModal.show();
             },
 
@@ -598,16 +648,22 @@
                 this.attachments = [];
                 
                 if (this.editTx.fecha_transaccion) {
-                    this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
+                    try {
+                        this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
+                    } catch(e) {}
                 }
 
-                // Cargar divisiones si es una TX dividida (en V2 las divisiones ya vienen en el tx, mapeadas por formatDataFromV2)
+                // Cargar divisiones si es una TX dividida
                 if (this.editTx.es_dividida) {
-                    // Las divisiones ya deberían estar pobladas si usó formatDataFromV2
                     if (!this.editTx.divisiones || this.editTx.divisiones.length === 0) {
                         try {
                             const res = await api.get(`/transactions/${tx.id_transaccion}`);
-                            this.editTx.divisiones = res.data.splits || [];
+                            // Map V2 splits format to form divisiones format
+                            this.editTx.divisiones = (res.data.splits || []).map(s => ({
+                                id_categoria: s.category_id,
+                                monto_division: Math.abs(parseFloat(s.amount)),
+                                notas: s.memo || ''
+                            }));
                         } catch (e) {
                             console.error('Error cargando divisiones:', e);
                         }
@@ -624,9 +680,13 @@
                 if (this.editTx.id_transaccion === 'NEW') return;
                 try {
                     const res = await api.get(`/attachments/Transaccion/${this.editTx.id_transaccion}`);
-                    this.attachments = res.data;
+                    this.attachments = res.data || [];
                 } catch (e) {
-                    console.error('Error cargando adjuntos:', e);
+                    // El endpoint de adjuntos puede no existir aún — ignorar silenciosamente
+                    if (e.response?.status !== 404) {
+                        console.warn('Error cargando adjuntos:', e.message);
+                    }
+                    this.attachments = [];
                 }
             },
 
@@ -733,6 +793,8 @@
                         description: this.editTx.notas || null,
                         payee_id: this.editTx.id_beneficiario || null,
                         notes: this.editTx.notas || null,
+                        status: this.editTx.estado || 'PENDING',
+                        tag_ids: this.editTx.etiquetas || [],
                         splits: []
                     };
 
@@ -801,7 +863,7 @@
 
             async eliminarTransaccion(id) {
                 try {
-                    await api.post(`/transactions/${id}/void`);
+                    await api.delete(`/transactions/${id}`);
                     this.transacciones = this.transacciones.filter(t => t.id_transaccion !== id);
                     if (this.selectedTxId === id) this.selectedTxId = null;
                 } catch (error) {

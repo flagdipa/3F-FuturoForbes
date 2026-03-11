@@ -2,11 +2,9 @@ import sqlite3
 import os
 import sys
 
-# Agregamos la raíz del backend al path para poder importar
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from core.database import engine
+from backend.core.database import engine
 from sqlmodel import Session
-from models import User, Account, Category, Transaction, TransactionSplit, Currency
+from backend.models import User, Account, Category, Transaction, TransactionSplit, Currency
 from datetime import datetime
 
 def migrate():
