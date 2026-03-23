@@ -325,3 +325,39 @@ const manager = new NotificationManager();
 window.notificationManager = manager;
 window.notifications = manager; // Alias for shorter calls in templates
 
+// Add helper methods to the manager instance for compatibility with 'notifications.show()' and 'NotificationManager.success()'
+manager.show = function(message, type = 'info', title = '') {
+    this.displayToast({ message: message, type: type, title: title });
+};
+manager.success = function(msg, title = '') { this.show(msg, 'success', title); };
+manager.error = function(msg, title = '') { this.show(msg, 'error', title); };
+manager.warning = function(msg, title = '') { this.show(msg, 'warning', title); };
+manager.info = function(msg, title = '') { this.show(msg, 'info', title); };
+manager.confirm = async function(msg, title = 'Confirmar') {
+    if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+            title: title,
+            text: msg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#00f0ff',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar',
+            background: 'rgba(7, 30, 38, 0.95)',
+            color: '#fff'
+        });
+        return result.isConfirmed;
+    }
+    return confirm(msg);
+};
+
+// Also map them as static methods on the class for compatibility with 'NotificationManager.success()'
+NotificationManager.show = manager.show.bind(manager);
+NotificationManager.success = manager.success.bind(manager);
+NotificationManager.error = manager.error.bind(manager);
+NotificationManager.warning = manager.warning.bind(manager);
+NotificationManager.info = manager.info.bind(manager);
+NotificationManager.confirm = manager.confirm.bind(manager);
+
+window.NotificationManager = NotificationManager; // Ensure the global object refers to this class

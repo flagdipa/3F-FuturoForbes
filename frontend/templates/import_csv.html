@@ -31,8 +31,8 @@
                                     <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('import.select_acc')">CUENTA_DESTINO</label>
                                     <select x-model="selectedAccount" class="form-select neon-input">
                                         <option value="" x-text="$store.lang.t('common.loading')">Seleccione una cuenta...</option>
-                                        <template x-for="acc in accounts" :key="acc.id_cuenta">
-                                            <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
+                                        <template x-for="acc in accounts" :key="acc.id">
+                                            <option :value="acc.id" x-text="acc.name"></option>
                                         </template>
                                     </select>
                                 </div>
@@ -82,9 +82,9 @@
                                                     <span class="badge extra-small border border-success border-opacity-25 text-success" x-text="$store.lang.t('import.new_tx')">NUEVA</span>
                                                 </template>
                                             </td>
-                                            <td x-text="tx.fecha" class="align-middle fw-bold"></td>
+                                            <td x-text="tx.date" class="align-middle fw-bold"></td>
                                             <td class="align-middle">
-                                                <div x-text="tx.descripcion" class="text-truncate" style="max-width: 250px;"></div>
+                                                <div x-text="tx.description" class="text-truncate" style="max-width: 250px;"></div>
                                                 <template x-if="tx.match_id">
                                                     <small class="text-dim">ID Matched: <span x-text="tx.match_id"></span></small>
                                                 </template>
@@ -99,14 +99,14 @@
                                                  <template x-if="!tx.match_id">
                                                      <div class="d-flex flex-column gap-1">
                                                          <!-- Category Selector -->
-                                                         <select x-model="tx.id_categoria" class="form-select form-select-sm neon-input extra-small">
+                                                         <select x-model="tx.category_id" class="form-select form-select-sm neon-input extra-small">
                                                              <option :value="null" x-text="'(' + $store.lang.t('common.none') + ')'">(Auto: Sin Categ.)</option>
-                                                             <template x-for="cat in categories" :key="cat.id_categoria">
-                                                                 <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                                                             <template x-for="cat in categories" :key="cat.id">
+                                                                 <option :value="cat.id" x-text="cat.name"></option>
                                                              </template>
                                                          </select>
                                                          <!-- Payee name override (optional) -->
-                                                         <input type="text" x-model="tx.new_payee" class="form-control form-control-sm neon-input extra-small" :placeholder="tx.descripcion">
+                                                         <input type="text" x-model="tx.new_payee" class="form-control form-control-sm neon-input extra-small" :placeholder="tx.description">
                                                          
                                                          <!-- Rule Applied Indicator -->
                                                          <template x-if="tx.rule_applied">
@@ -117,7 +117,7 @@
                                                      </div>
                                                  </template>
                                             </td>
-                                            <td x-text="formatAmount(tx.monto)" class="text-end align-middle fw-bold" :class="tx.monto > 0 ? 'text-success' : 'text-danger'"></td>
+                                            <td x-text="formatAmount(tx.amount)" class="text-end align-middle fw-bold" :class="tx.amount > 0 ? 'text-success' : 'text-danger'"></td>
                                             <td class="align-middle">
                                                 <input type="checkbox" x-model="tx.is_new" :disabled="tx.match_id" class="form-check-input">
                                                 <span class="ms-2 small text-dim" x-text="tx.is_new ? 'Importar' : 'Ignorar'"></span>
@@ -134,8 +134,10 @@
                                 <span x-text="$store.lang.t('import.new_tx')">Total a crear</span>: <span class="text-success fw-bold" x-text="previewData.filter(t => t.is_new).length"></span> | 
                                 <span x-text="$store.lang.t('import.match')">Matcheadas</span>: <span class="text-info fw-bold" x-text="previewData.filter(t => !t.is_new).length"></span>
                             </div>
-                            <button @click="processReconciliation" class="btn neon-btn px-4 shadow-sm">
-                                <span x-text="$store.lang.t('import.finalize')">FINALIZAR_CONCILIACION</span> <i class="fa-solid fa-check-double ms-2"></i>
+                            <button @click="processReconciliation" class="btn neon-btn px-4 shadow-sm" :disabled="loading">
+                                <span x-show="!loading" x-text="$store.lang.t('import.finalize')">FINALIZAR_CONCILIACION</span>
+                                <span x-show="loading"><i class="fa-solid fa-spinner fa-spin me-2"></i>PROCESANDO...</span>
+                                <i x-show="!loading" class="fa-solid fa-check-double ms-2"></i>
                             </button>
                         </div>
                     </div>
@@ -189,14 +191,26 @@ document.addEventListener('alpine:init', () => {
         loading: false,
 
         async init() {
-            // Load accounts for dropdown
             try {
-                const res = await api.get('/lista_cuentas/');
-                this.accounts = res.data.data || res.data;
+                // Use standardized English paths
+                const [accRes, catRes] = await Promise.all([
+                    api.get('/accounts/'),
+                    api.get('/categories/')
+                ]);
                 
-                // Load categories for selector
-                const catRes = await api.get('/categorias/');
-                this.categories = catRes.data;
+                const rawAccounts = accRes.data.data || accRes.data || [];
+                this.accounts = rawAccounts.map(a => ({
+                    ...a,
+                    id: a.id ?? a.id_cuenta,
+                    name: a.name ?? a.nombre_cuenta
+                }));
+
+                const rawCategories = catRes.data.data || catRes.data || [];
+                this.categories = rawCategories.map(c => ({
+                    ...c,
+                    id: c.id ?? c.id_categoria,
+                    name: c.name ?? c.nombre_categoria
+                }));
             } catch (e) {
                 console.error("Error loading resources:", e);
             }
@@ -212,21 +226,26 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             const formData = new FormData();
             formData.append('file', this.file);
-            formData.append('id_cuenta', this.selectedAccount);
+            formData.append('account_id', this.selectedAccount);
 
             try {
                 const res = await api.post('/reconciliation/preview', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                 // Initialize values using backend suggestions from Reglas if available
-                 this.previewData = res.data.map(tx => ({
-                     ...tx,
-                     id_categoria: tx.id_categoria || 1, 
-                     new_payee: tx.new_payee || tx.descripcion
-                 }));
+                
+                const rawPreview = res.data;
+                this.previewData = rawPreview.map(tx => ({
+                    ...tx,
+                    date: tx.date ?? tx.fecha,
+                    description: tx.description ?? tx.descripcion,
+                    amount: tx.amount ?? tx.monto,
+                    category_id: tx.category_id ?? tx.id_categoria ?? 1,
+                    new_payee: tx.new_payee ?? tx.description ?? tx.descripcion,
+                    is_new: tx.is_new ?? !tx.match_id
+                }));
                 this.step = 2;
             } catch (e) {
-                alert("Error al procesar el archivo: " + (e.response?.data?.detail || e.message));
+                NotificationManager.error("Error al procesar el archivo: " + (e.response?.data?.detail || e.message));
             } finally {
                 this.loading = false;
             }
@@ -236,20 +255,20 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 const res = await api.post('/reconciliation/process', {
-                    id_cuenta: parseInt(this.selectedAccount),
+                    account_id: parseInt(this.selectedAccount),
                     transactions: this.previewData
                 });
                 this.stats = res.data.stats;
                 this.step = 3;
             } catch (e) {
-                alert("Error al finalizar: " + (e.response?.data?.detail || e.message));
+                NotificationManager.error("Error al finalizar: " + (e.response?.data?.detail || e.message));
             } finally {
                 this.loading = false;
             }
         },
 
         formatAmount(val) {
-            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+            return CurrencyUtils.formatCurrency(val);
         }
     }));
 });

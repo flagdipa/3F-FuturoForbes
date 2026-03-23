@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     
     # AI
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
-    
+    TESSERACT_CMD: str = os.getenv("TESSERACT_CMD", r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+
     # PLUGINS
     PLUGINS_DIR: str = "backend/plugins"
     ENABLE_PLUGINS: bool = True

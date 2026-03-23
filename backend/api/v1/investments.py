@@ -7,7 +7,8 @@ from decimal import Decimal
 import logging
 
 from ...dependencies import get_db
-from ...models import Investment, InvestmentPrice, InvestmentTransaction
+from ...models import Investment, InvestmentPrice, InvestmentTransaction, User
+from ..auth.deps import get_current_user
 
 logger = logging.getLogger("api_investments")
 router = APIRouter()
@@ -37,22 +38,22 @@ class InvestmentTransactionCreate(BaseModel):
     notes: Optional[str] = None
 
 @router.get("/", response_model=List[InvestmentResponse])
-def get_portfolio(db: Session = Depends(get_db)):
-    investments = db.exec(select(Investment).where(Investment.deleted_at == None)).all()
+def get_portfolio(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    investments = db.exec(select(Investment).where(Investment.deleted_at == None, Investment.user_id == current_user.id)).all()
     return investments
 
 @router.post("/", response_model=InvestmentResponse)
-def create_investment(inv_in: InvestmentCreate, db: Session = Depends(get_db)):
-    investment = Investment(**inv_in.model_dump(), user_id=1) # Mock User
+def create_investment(inv_in: InvestmentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    investment = Investment(**inv_in.model_dump(), user_id=current_user.id)
     db.add(investment)
     db.commit()
     db.refresh(investment)
     return investment
 
 @router.post("/{id}/transactions")
-def add_transaction(id: int, tx_in: InvestmentTransactionCreate, db: Session = Depends(get_db)):
+def add_transaction(id: int, tx_in: InvestmentTransactionCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     investment = db.get(Investment, id)
-    if not investment or investment.deleted_at:
+    if not investment or investment.deleted_at or investment.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Inversión no encontrada")
         
     total_amount = (tx_in.quantity * tx_in.price_per_unit) + tx_in.commission + tx_in.taxes
@@ -61,7 +62,7 @@ def add_transaction(id: int, tx_in: InvestmentTransactionCreate, db: Session = D
     transaction = InvestmentTransaction(
         **tx_in.model_dump(),
         investment_id=id,
-        user_id=1,
+        user_id=current_user.id,
         total_amount=total_amount
     )
     db.add(transaction)
@@ -78,7 +79,11 @@ def add_transaction(id: int, tx_in: InvestmentTransactionCreate, db: Session = D
     return {"message": "Transacción registrada con éxito", "total_amount": float(total_amount)}
 
 @router.get("/{id}/history")
-def get_price_history(id: int, db: Session = Depends(get_db)):
+def get_price_history(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    investment = db.get(Investment, id)
+    if not investment or investment.deleted_at or investment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Inversión no encontrada")
+        
     prices = db.exec(
         select(InvestmentPrice)
         .where(InvestmentPrice.investment_id == id)
@@ -88,7 +93,7 @@ def get_price_history(id: int, db: Session = Depends(get_db)):
     return [{"date": p.price_date, "price": float(p.price)} for p in prices]
 
 @router.get("/performance")
-def get_portfolio_performance(db: Session = Depends(get_db)):
+def get_portfolio_performance(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Calcula rendimientos, P&L general, allocation y valuación"""
     # Pseudo-lógica para demostrar el concepto del dashboard:
     # 1. Obtener todas las posiciones de un usuario y sumar compras vs actual valuation

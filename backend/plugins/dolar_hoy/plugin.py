@@ -17,8 +17,8 @@ class DolarHoyPlugin(BasePlugin):
     Soporta: Dólar Blue, MEP (Bolsa), CCL (Contado con Liqui), Cripto.
     """
     
-    nombre_tecnico = "dolar_hoy"
-    nombre_display = "Dólar Hoy Argentina"
+    technical_name = "dolar_hoy"
+    display_name = "Dólar Hoy Argentina"
     version = "1.0.0"
     autor = "3F Team"
     descripcion = "Actualiza automáticamente las cotizaciones del dólar (Blue, MEP, CCL, Cripto)"
@@ -34,7 +34,7 @@ class DolarHoyPlugin(BasePlugin):
     
     async def initialize(self):
         """Inicializar el plugin"""
-        self.logger.info(f"Inicializando {self.nombre_display}")
+        self.logger.info(f"Inicializando {self.display_name}")
         
         # Configurar defaults
         if "sources" not in self.config:
@@ -46,12 +46,12 @@ class DolarHoyPlugin(BasePlugin):
         if "create_divisas_if_missing" not in self.config:
             self.config["create_divisas_if_missing"] = True
         
-        self.logger.info(f"✅ {self.nombre_display} inicializado")
+        self.logger.info(f"✅ {self.display_name} inicializado")
         self.logger.info(f"Fuentes configuradas: {self.config['sources']}")
     
     async def shutdown(self):
         """Cerrar el plugin"""
-        self.logger.info(f"Apagando {self.nombre_display}")
+        self.logger.info(f"Apagando {self.display_name}")
     
     async def on_daily_summary(self, user, summary):
         """

@@ -11,8 +11,8 @@ logger = logging.getLogger("cuentas_wallet")
 
 
 class CuentasWalletPlugin(BasePlugin):
-    nombre_tecnico = "cuentas_wallet"
-    nombre_display = "Cuentas / Billetera"
+    technical_name = "cuentas_wallet"
+    display_name = "Cuentas / Billetera"
     version = "1.1.0"
     autor = "3F Labs"
     descripcion = (
@@ -30,7 +30,7 @@ class CuentasWalletPlugin(BasePlugin):
             CuentasWalletHistorial,
         )
         SQLModel.metadata.create_all(engine)
-        self.logger.info(f"✅ {self.nombre_display} inicializado — tablas creadas")
+        self.logger.info(f"✅ {self.display_name} inicializado — tablas creadas")
 
         # Cargar entidades de ejemplo si la tabla está vacía
         try:
@@ -45,7 +45,7 @@ class CuentasWalletPlugin(BasePlugin):
             self.logger.warning(f"No se pudo hacer seed inicial: {e}")
 
     async def shutdown(self):
-        self.logger.info(f"{self.nombre_display} desactivado")
+        self.logger.info(f"{self.display_name} desactivado")
 
     async def on_daily_summary(self, **kwargs):
         """Sincronización diaria de tasas desde APIs públicas."""

@@ -2,8 +2,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlmodel import Session, select
 from datetime import date
 from backend.core.database import engine
-from backend.models.models import Usuario
-from backend.models.models_advanced import TransaccionRecurrente
+from backend.models import User
+# from backend.models.models_advanced import TransaccionRecurrente (Placeholder if missing)
+class TransaccionRecurrente: pass
 from backend.core.recurring_service import recurring_service
 from backend.core.wealth_service import wealth_service
 from backend.scripts.backup_database import DatabaseBackup

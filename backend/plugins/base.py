@@ -18,8 +18,8 @@ class BasePlugin:
     """
 
     # Atributos que los plugins deben definir en su clase
-    nombre_tecnico: str = ""
-    nombre_display: str = ""
+    technical_name: str = ""
+    display_name: str = ""
     name: str = ""           # alias inglés (retrocompatibilidad)
     version: str = "1.0.0"
     autor: str = ""
@@ -31,7 +31,7 @@ class BasePlugin:
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
         plugin_name = (
-            self.nombre_tecnico
+            self.technical_name
             or self.name
             or self.__class__.__name__
         )

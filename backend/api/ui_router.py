@@ -75,4 +75,56 @@ async def programadas_view(request: Request):
 async def settings_view(request: Request):
     return templates.TemplateResponse("settings.html", {"request": request})
 
+@router.get("/activos", response_class=HTMLResponse)
+async def assets_view(request: Request):
+    return templates.TemplateResponse("assets.html", {"request": request})
 
+@router.get("/vault", response_class=HTMLResponse)
+async def vault_view(request: Request):
+    return templates.TemplateResponse("vault.html", {"request": request})
+
+@router.get("/forecasting", response_class=HTMLResponse)
+async def forecasting_view(request: Request):
+    return templates.TemplateResponse("forecasting.html", {"request": request})
+
+@router.get("/audit", response_class=HTMLResponse)
+async def audit_view(request: Request):
+    return templates.TemplateResponse("audit.html", {"request": request})
+
+# ── Aliases en español (sincronización con base.html) ──
+
+@router.get("/configuracion", response_class=HTMLResponse)
+async def configuracion_view(request: Request):
+    return templates.TemplateResponse("settings.html", {"request": request})
+
+@router.get("/cuentas", response_class=HTMLResponse)
+async def cuentas_view(request: Request):
+    return templates.TemplateResponse("accounts/index.html", {"request": request})
+
+@router.get("/presupuestos", response_class=HTMLResponse)
+async def presupuestos_view(request: Request):
+    return templates.TemplateResponse("budgets/index.html", {"request": request})
+
+@router.get("/inversiones", response_class=HTMLResponse)
+async def inversiones_view(request: Request):
+    return templates.TemplateResponse("investments/index.html", {"request": request})
+
+@router.get("/cuentas/reconciliar", response_class=HTMLResponse)
+async def cuentas_reconciliar_view(request: Request):
+    return templates.TemplateResponse("accounts/reconcile.html", {"request": request, "account_id": None})
+
+@router.get("/reportes/cashflow", response_class=HTMLResponse)
+async def reportes_cashflow_view(request: Request):
+    return templates.TemplateResponse("reports/cashflow.html", {"request": request})
+
+@router.get("/reportes/heatmap", response_class=HTMLResponse)
+async def reportes_heatmap_view(request: Request):
+    return templates.TemplateResponse("reports/heatmap.html", {"request": request})
+
+@router.get("/mercado/dolar", response_class=HTMLResponse)
+async def mercado_dolar_view(request: Request):
+    return templates.TemplateResponse("market/dolar_hoy.html", {"request": request})
+
+@router.get("/mercado/crypto", response_class=HTMLResponse)
+async def mercado_crypto_view(request: Request):
+    return templates.TemplateResponse("market/crypto_live.html", {"request": request})

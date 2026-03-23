@@ -60,10 +60,10 @@ def create_app() -> FastAPI:
     from .api.v1.transactions import router as v1_transactions
     from .api.retro import router as retro_router
     
+    app.include_router(retro_router, prefix="/api", tags=["retro-dummies"])
     app.include_router(v1_accounts, prefix="/api/cuentas", tags=["retro-accounts"])
     app.include_router(v1_transactions, prefix="/api/transactions", tags=["retro-transactions"])
     app.include_router(v1_transactions, prefix="/api/transacciones", tags=["retro-transacciones"])
-    app.include_router(retro_router, prefix="/api", tags=["retro-dummies"])
 
     app.include_router(ui_router)
 

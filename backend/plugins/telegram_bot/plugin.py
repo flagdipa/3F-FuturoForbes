@@ -12,8 +12,8 @@ class TelegramBotPlugin(BasePlugin):
     Requiere un bot token y chat_id configurados.
     """
     
-    nombre_tecnico = "telegram_bot"
-    nombre_display = "Bot de Telegram"
+    technical_name = "telegram_bot"
+    display_name = "Bot de Telegram"
     version = "1.0.0"
     autor = "3F Team"
     descripcion = "Envía notificaciones por Telegram cuando ocurren eventos importantes"
@@ -21,7 +21,7 @@ class TelegramBotPlugin(BasePlugin):
     
     async def initialize(self):
         """Inicializar el plugin y validar configuración"""
-        self.logger.info(f"Inicializando {self.nombre_display}")
+        self.logger.info(f"Inicializando {self.display_name}")
         
         # Validar configuración requerida
         self.validate_config(["bot_token", "chat_id"])
@@ -36,11 +36,11 @@ class TelegramBotPlugin(BasePlugin):
                 "daily_summary": False
             }
         
-        self.logger.info(f"✅ {self.nombre_display} inicializado correctamente")
+        self.logger.info(f"✅ {self.display_name} inicializado correctamente")
     
     async def shutdown(self):
         """Cerrar el plugin"""
-        self.logger.info(f"Apagando {self.nombre_display}")
+        self.logger.info(f"Apagando {self.display_name}")
     
     async def on_transaction_created(self, transaction, user):
         """

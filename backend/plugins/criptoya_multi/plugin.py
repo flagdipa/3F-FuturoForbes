@@ -23,8 +23,8 @@ class CriptoYaMultiPlugin(BasePlugin):
     Soporta múltiples países latinoamericanos y exchanges locales.
     """
     
-    nombre_tecnico = "criptoya_multi"
-    nombre_display = "CriptoYa Multi-País"
+    technical_name = "criptoya_multi"
+    display_name = "CriptoYa Multi-País"
     version = "1.0.0"
     autor = "3F Team"
     descripcion = "Obtiene cotizaciones de criptomonedas de múltiples exchanges en Latinoamérica"
@@ -35,17 +35,17 @@ class CriptoYaMultiPlugin(BasePlugin):
     
     # Países soportados
     PAISES_SOPORTADOS = {
-        "AR": {"nombre": "Argentina", "moneda": "ARS", "nombre_display": "🇦🇷 Argentina"},
-        "BO": {"nombre": "Bolivia", "moneda": "BOB", "nombre_display": "🇧🇴 Bolivia"},
-        "BR": {"nombre": "Brazil", "moneda": "BRL", "nombre_display": "🇧🇷 Brazil"},
-        "CL": {"nombre": "Chile", "moneda": "CLP", "nombre_display": "🇨🇱 Chile"},
-        "CO": {"nombre": "Colombia", "moneda": "COP", "nombre_display": "🇨🇴 Colombia"},
-        "DO": {"nombre": "República Dominicana", "moneda": "DOP", "nombre_display": "🇩🇴 República Dominicana"},
-        "MX": {"nombre": "Mexico", "moneda": "MXN", "nombre_display": "🇲🇽 Mexico"},
-        "PE": {"nombre": "Peru", "moneda": "PEN", "nombre_display": "🇵🇪 Peru"},
-        "PY": {"nombre": "Paraguay", "moneda": "PYG", "nombre_display": "🇵🇾 Paraguay"},
-        "UY": {"nombre": "Uruguay", "moneda": "UYU", "nombre_display": "🇺🇾 Uruguay"},
-        "VE": {"nombre": "Venezuela", "moneda": "VES", "nombre_display": "🇻🇪 Venezuela"},
+        "AR": {"nombre": "Argentina", "moneda": "ARS", "display_name": "🇦🇷 Argentina"},
+        "BO": {"nombre": "Bolivia", "moneda": "BOB", "display_name": "🇧🇴 Bolivia"},
+        "BR": {"nombre": "Brazil", "moneda": "BRL", "display_name": "🇧🇷 Brazil"},
+        "CL": {"nombre": "Chile", "moneda": "CLP", "display_name": "🇨🇱 Chile"},
+        "CO": {"nombre": "Colombia", "moneda": "COP", "display_name": "🇨🇴 Colombia"},
+        "DO": {"nombre": "República Dominicana", "moneda": "DOP", "display_name": "🇩🇴 República Dominicana"},
+        "MX": {"nombre": "Mexico", "moneda": "MXN", "display_name": "🇲🇽 Mexico"},
+        "PE": {"nombre": "Peru", "moneda": "PEN", "display_name": "🇵🇪 Peru"},
+        "PY": {"nombre": "Paraguay", "moneda": "PYG", "display_name": "🇵🇾 Paraguay"},
+        "UY": {"nombre": "Uruguay", "moneda": "UYU", "display_name": "🇺🇾 Uruguay"},
+        "VE": {"nombre": "Venezuela", "moneda": "VES", "display_name": "🇻🇪 Venezuela"},
     }
     
     # Criptomonedas principales
@@ -67,7 +67,7 @@ class CriptoYaMultiPlugin(BasePlugin):
     
     async def initialize(self):
         """Inicializar el plugin y preparar datos base"""
-        self.logger.info(f"Inicializando {self.nombre_display}")
+        self.logger.info(f"Inicializando {self.display_name}")
         
         # Crear sesión HTTP
         self.session = aiohttp.ClientSession(
@@ -83,13 +83,13 @@ class CriptoYaMultiPlugin(BasePlugin):
         # Inicializar datos base en la BD
         await self._inicializar_datos_base()
         
-        self.logger.info(f"✅ {self.nombre_display} inicializado correctamente")
+        self.logger.info(f"✅ {self.display_name} inicializado correctamente")
         self.logger.info(f"   Países soportados: {len(self.PAISES_SOPORTADOS)}")
         self.logger.info(f"   Coins principales: {len(self.COINS_PRINCIPALES)}")
     
     async def shutdown(self):
         """Cerrar el plugin"""
-        self.logger.info(f"Apagando {self.nombre_display}")
+        self.logger.info(f"Apagando {self.display_name}")
         if self.session:
             await self.session.close()
             self.session = None
@@ -135,7 +135,7 @@ class CriptoYaMultiPlugin(BasePlugin):
                     pais = CriptoYaPais(
                         codigo_iso=codigo,
                         nombre=datos["nombre"],
-                        nombre_display=datos["nombre_display"],
+                        display_name=datos["display_name"],
                         moneda_local=datos["moneda"],
                         disponible=True,
                         requiere_volumen=True
@@ -155,7 +155,7 @@ class CriptoYaMultiPlugin(BasePlugin):
                         nombre=coin_data["nombre"],
                         tipo=coin_data["tipo"],
                         popular=coin_data["popular"],
-                        activo=True
+                        is_active=True
                     )
                     session.add(coin)
                     self.logger.debug(f"Coin agregado: {coin_data['symbol']}")
@@ -272,7 +272,7 @@ class CriptoYaMultiPlugin(BasePlugin):
                         id_pais=pais.id_pais,
                         slug=exchange_slug,
                         nombre=exchange_slug.replace("_", " ").title(),
-                        activo=True
+                        is_active=True
                     )
                     session.add(exchange)
                     session.flush()
@@ -387,7 +387,7 @@ class CriptoYaMultiPlugin(BasePlugin):
                         if existing:
                             # Actualizar
                             existing.comision = Decimal(str(fee_data.get("fee", 0)))
-                            existing.activo = True
+                            existing.is_active = True
                             existing.actualizado_el = datetime.now()
                         else:
                             # Crear nuevo
@@ -396,7 +396,7 @@ class CriptoYaMultiPlugin(BasePlugin):
                                 id_coin=coin.id_coin,
                                 red=red,
                                 comision=Decimal(str(fee_data.get("fee", 0))),
-                                activo=True
+                                is_active=True
                             )
                             session.add(fee)
             

@@ -12,38 +12,8 @@ from datetime import datetime, date
 
 logger = logging.getLogger("ia_ocr.services")
 
-# ─── Prompt estructurado para Gemini ─────────────────────────────────────────
-OCR_PROMPT = """Eres un asistente especializado en extraer datos financieros de tickets y facturas.
-Analiza la imagen y extrae EXACTAMENTE la siguiente información en JSON válido.
-No incluyas markdown, backticks ni texto adicional. Solo el JSON.
-
-{
-  "fecha": "YYYY-MM-DD o null",
-  "hora": "HH:MM o null",
-  "establecimiento": "nombre del negocio o null",
-  "monto_total": número_decimal o null,
-  "moneda": "ARS|USD|EUR|BRL|otro o null",
-  "metodo_pago": "efectivo|tarjeta_debito|tarjeta_credito|transferencia|otro o null",
-  "categoria_sugerida": "Alimentación|Transporte|Entretenimiento|Salud|Servicios|Hogar|Ropa|Educación|Otro",
-  "notas": "descripción breve opcional o null",
-  "items": [
-    {
-      "descripcion": "nombre del producto/servicio",
-      "cantidad": número o null,
-      "precio_unitario": número_decimal o null,
-      "subtotal": número_decimal o null
-    }
-  ]
-}
-
-Reglas:
-- Si no puedes leer un campo claramente, usa null.
-- Nunca inventes datos.
-- monto_total debe ser un número (sin símbolos de moneda).
-- fecha en formato ISO 8601: YYYY-MM-DD.
-- Si hay múltiples ítems, inclúyelos todos en el array items.
-- Si no hay ítems detallados, devuelve items como array vacío [].
-"""
+import os
+from ...config import settings
 
 
 class OcrResult:
@@ -129,7 +99,6 @@ class OcrService:
 
     def __init__(self):
         self._paddle_engine = None
-        self._gemini_model = None
         self._tesseract_available = False
         self._initialized = False
 
@@ -138,37 +107,35 @@ class OcrService:
             return
         self._initialized = True
 
-        # 1. Intentar inicializar PaddleOCR (prioridad local)
+        # 1. Intentar inicializar PaddleOCR (prioridad local pesado)
         try:
             from backend.plugins.ia_ocr.paddle_engine import PaddleOcrEngine
             self._paddle_engine = PaddleOcrEngine()
             self._paddle_engine._ensure_init()
-        except ImportError:
-            logger.info("ℹ️ PaddleOcrEngine no pudo ser importado")
+        except Exception as e:
+            logger.info(f"ℹ️ PaddleOcrEngine no disponible: {e}")
 
-        # 2. Intentar inicializar Gemini (cloud fallback)
+        # 2. Intentar inicializar Tesseract (motor local ligero)
         try:
-            import os
-            import google.generativeai as genai
-
-            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_AI_API_KEY")
-            if api_key:
-                genai.configure(api_key=api_key)
-                self._gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-                logger.info("✅ Gemini 1.5 Flash disponible para OCR")
+            import pytesseract
+            
+            # Configurar el comando de Tesseract desde settings
+            tess_cmd = settings.TESSERACT_CMD
+            if os.path.exists(tess_cmd):
+                pytesseract.pytesseract.tesseract_cmd = tess_cmd
+                self._tesseract_available = True
+                logger.info(f"✅ PyTesseract configurado en: {tess_cmd}")
             else:
-                logger.warning("⚠️  GEMINI_API_KEY no configurada — Gemini deshabilitado")
+                # Intentar si está en el PATH
+                try:
+                    import subprocess
+                    subprocess.run(["tesseract", "--version"], capture_output=True, check=True)
+                    self._tesseract_available = True
+                    logger.info("✅ PyTesseract detectado en el PATH")
+                except:
+                    logger.warning(f"⚠️ Tesseract no encontrado en {tess_cmd} ni en PATH")
         except ImportError:
-            logger.warning("⚠️  google-generativeai no instalado")
-
-        # 3. Intentar inicializar Tesseract (último fallback)
-        try:
-            import pytesseract  # noqa: F401
-
-            self._tesseract_available = True
-            logger.info("✅ PyTesseract disponible como fallback de OCR")
-        except ImportError:
-            logger.info("ℹ️  PyTesseract no disponible (opcional)")
+            logger.warning("⚠️ pytesseract no instalado")
 
     async def process_image(
         self, file_content: bytes, mime_type: str
@@ -194,17 +161,9 @@ class OcrService:
                 raw_result = await self._paddle_engine.process(file_content, mime_type)
                 engine_used = "paddleocr"
             except Exception as e:
-                logger.error(f"PaddleOCR falló: {e}. Intentando fallback Gemini.")
+                logger.error(f"PaddleOCR falló: {e}. Intentando fallback Tesseract.")
 
-        # ── 2. Gemini (motor cloud) ──────────────────────────────────────────
-        if not raw_result and self._gemini_model:
-            try:
-                raw_result = await self._process_with_gemini(file_content, mime_type)
-                engine_used = "gemini-1.5-flash"
-            except Exception as e:
-                logger.error(f"Gemini falló: {e}. Intentando fallback Tesseract.")
-
-        # ── 3. Tesseract (fallback local básico) ─────────────────────────────
+        # ── 2. Tesseract (motor local ligero) ─────────────────────────────
         if not raw_result and self._tesseract_available:
             try:
                 raw_result = await self._process_with_tesseract(file_content, mime_type)
@@ -214,7 +173,7 @@ class OcrService:
 
         if not raw_result:
             return {
-                "error": "No hay motor de OCR disponible. Configura GEMINI_API_KEY.",
+                "error": "Ningún motor de OCR disponible. Configure TESSERACT_CMD o instale PaddleOCR.",
                 "engine": "none",
             }
 
@@ -224,20 +183,6 @@ class OcrService:
         result["confidence"] = self._estimate_confidence(ocr)
         return result
 
-    async def _process_with_gemini(self, file_content: bytes, mime_type: str) -> dict:
-        """Procesar imagen con Google Gemini."""
-        response = self._gemini_model.generate_content(
-            [
-                OCR_PROMPT,
-                {"mime_type": mime_type, "data": file_content},
-            ]
-        )
-        text = response.text.strip()
-        # Limpiar posibles bloques de código markdown
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-        return json.loads(text)
-
     async def _process_with_tesseract(self, file_content: bytes, mime_type: str) -> dict:
         """Fallback con PyTesseract: extracción básica sin estructura."""
         import pytesseract
@@ -246,34 +191,66 @@ class OcrService:
 
         image = Image.open(io.BytesIO(file_content))
         text = pytesseract.image_to_string(image, lang="spa+eng")
+        
+        # Limpiar texto
+        clean_lines = [line.strip() for line in text.split('\n') if line.strip()]
 
         # Extracción básica por regex
         monto = self._extract_amount_from_text(text)
         fecha = self._extract_date_from_text(text)
+        
+        # Heurística para establecimiento: primera línea alfanumérica
+        establecimiento = None
+        for line in clean_lines:
+            if re.search(r'[A-Za-z0-9]', line) and len(line) > 3:
+                # Evitar líneas que parezcan solo números (posible CUIT o fecha)
+                if not re.match(r'^[\d\s\-\/:]+$', line):
+                    establecimiento = line
+                    break
 
         return {
             "fecha": fecha,
-            "establecimiento": None,
+            "establecimiento": establecimiento,
             "monto_total": monto,
             "moneda": "ARS",
             "categoria_sugerida": "Otro",
-            "notas": f"Texto extraído (Tesseract): {text[:200]}",
+            "notas": f"Procesado con Tesseract local.",
             "items": [],
         }
 
     @staticmethod
     def _extract_amount_from_text(text: str) -> Optional[str]:
-        """Extrae el monto más probable del texto crudo."""
-        patterns = [
-            r"total[:\s]+\$?\s*([\d.,]+)",
-            r"importe[:\s]+\$?\s*([\d.,]+)",
-            r"a pagar[:\s]+\$?\s*([\d.,]+)",
-            r"\$\s*([\d.,]+)",
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                return match.group(1).replace(",", ".")
+        """Extrae el monto más probable del texto crudo (Heurística LATAM)."""
+        # 1. Buscar palabras clave primero
+        keywords = ["total", "importe", "pagar", "final", "total a pagar", "monto"]
+        lines = text.split('\n')
+        
+        for kw in keywords:
+            for line in lines:
+                if kw in line.lower():
+                    # Buscar patrones de moneda/número en esa línea
+                    match = re.search(r"([\d\.\,]{2,})", line)
+                    if match:
+                        val = match.group(1).replace(".", "").replace(",", ".")
+                        try:
+                            if float(val) > 0:
+                                return val
+                        except: pass
+
+        # 2. Si no hay keywords, buscar el número decimal más alto (típico en tickets)
+        # Excluyendo números sospechosos de ser CUIT (ej: 30-12345678-9) o teléfonos
+        potential_amounts = []
+        # Buscamos algo que parezca un decimal (XX.XX o XX,XX)
+        matches = re.findall(r"(\d+[\.\,]\d{2})(?!\d)", text)
+        for m in matches:
+            val = m.replace(".", "").replace(",", ".")
+            try:
+                potential_amounts.append(float(val))
+            except: pass
+            
+        if potential_amounts:
+            return str(max(potential_amounts))
+            
         return None
 
     @staticmethod

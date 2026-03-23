@@ -31,7 +31,7 @@
                 <thead class="bg-black bg-opacity-40">
                     <tr class="extra-small tracking-wider fw-bold">
                         <th class="text-primary py-3" x-text="$store.lang.t('accounts.col_account')">CUENTA</th>
-                        <th class="text-primary py-3">CÓDIGO</th>
+                        <th class="text-primary py-3" x-text="$store.lang.t('accounts.col_code')">CÓDIGO</th>
                         <th class="text-primary py-3" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD / BANCO</th>
                         <th class="text-primary py-3 text-center" x-text="$store.lang.t('accounts.col_type')">TIPO</th>
                         <th class="text-primary py-3 text-end" x-text="$store.lang.t('accounts.col_balance')">SALDO INICIAL</th>
@@ -39,28 +39,29 @@
                     </tr>
                 </thead>
                 <tbody class="align-middle">
-                    <template x-for="account in accounts" :key="account.id_cuenta">
+                    <template x-for="account in accounts" :key="account.id">
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <i class="fa-solid fa-microchip text-dim me-2"></i>
-                                    <span x-text="account.nombre_cuenta" class="fw-bold"></span>
+                                    <span x-text="account.name" class="fw-bold"></span>
                                 </div>
                             </td>
                             <td>
-                                <span class="text-dim font-monospace small" x-text="account.codigo_cuenta || '-'"></span>
+                                <span class="text-dim font-monospace small" x-text="account.code || '-'"></span>
                             </td>
-                                <div class="d-flex align-items-center" x-show="account.identidad_financiera">
-                                    <i class="fa-solid me-2 text-dim extra-small" :class="account.identidad_financiera?.tipo_icono || 'fa-building'"></i>
-                                    <span x-text="account.identidad_financiera?.nombre || '-'"></span>
+                            <td>
+                                <div class="d-flex align-items-center" x-show="account.institution">
+                                    <i class="fa-solid me-2 text-dim extra-small" :class="account.institution?.icon_type || 'fa-building'"></i>
+                                    <span x-text="account.institution?.name || '-'"></span>
                                 </div>
-                                <span x-show="!account.identidad_financiera" class="text-dim extra-small italic" x-text="$store.lang.t('common.none')">Efectivo / Ninguno</span>
+                                <span x-show="!account.institution" class="text-dim extra-small italic" x-text="$store.lang.t('accounts.type_cash')">Efectivo / Ninguno</span>
                             </td>
                             <td class="text-center">
-                                <span class="badge extra-small border border-secondary border-opacity-20 text-dim" x-text="account.tipo_cuenta"></span>
+                                <span class="badge extra-small border border-secondary border-opacity-20 text-dim" x-text="$store.lang.t('accounts.type_' + (account.type || '').toLowerCase().replace(' ', '_'))"></span>
                             </td>
                             <td class="text-end">
-                                <span class="neon-glow" x-text="formatCurrency(account.saldo_inicial, account.divisa?.codigo_iso)"></span>
+                                <span class="neon-glow" x-text="formatCurrency(account.initial_balance, account.currency?.iso_code)"></span>
                             </td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-info me-1" @click="editAccount(account)">
@@ -84,16 +85,16 @@
                 </div>
                 <div class="modal-body custom-scrollbar" style="max-height: 80vh; overflow-y: auto;">
                     <form @submit.prevent="saveAccount">
-                        <!-- Pestañas internas para organizar campos si son muchos -->
+                        <!-- Pestañas internas -->
                         <ul class="nav nav-tabs nav-justified mb-3 border-secondary border-opacity-10" id="accountTabs" role="tablist">
                             <li class="nav-item">
-                                <button type="button" class="nav-link active extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#basic">Básico</button>
+                                <button type="button" class="nav-link active extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#basic" x-text="$store.lang.t('accounts.tab_basic')">Básico</button>
                             </li>
                             <li class="nav-item">
-                                <button type="button" class="nav-link extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#details">Detalles</button>
+                                <button type="button" class="nav-link extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#details" x-text="$store.lang.t('accounts.tab_details')">Detalles</button>
                             </li>
                             <li class="nav-item">
-                                <button type="button" class="nav-link extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#advanced">Avanzado</button>
+                                <button type="button" class="nav-link extra-small fw-bold text-uppercase py-2" data-bs-toggle="tab" data-bs-target="#advanced" x-text="$store.lang.t('accounts.tab_advanced')">Avanzado</button>
                             </li>
                         </ul>
 
@@ -103,44 +104,47 @@
                                 <div class="row">
                                     <div class="col-md-7 mb-3">
                                         <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.name')">NOMBRE_CUENTA</label>
-                                        <input type="text" class="form-control neon-input" x-model="formData.nombre_cuenta" required>
+                                        <input type="text" class="form-control neon-input" x-model="formData.name" required>
                                     </div>
                                     <div class="col-md-5 mb-3">
                                         <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.type')">TIPO_CUENTA</label>
-                                        <select class="form-select neon-input" x-model="formData.tipo_cuenta" required>
-                                            <option value="Cash">Efectivo / Billetera</option>
-                                            <option value="Checking">Cuenta Bancaria</option>
-                                            <option value="Credit Card">Tarjeta de Crédito</option>
-                                            <option value="Term">Plazo Fijo / Ahorro</option>
-                                            <option value="Investment">Broker / Inversión</option>
-                                            <option value="Crypto">Exchange / Wallet Crypto</option>
+                                        <select class="form-select neon-input" x-model="formData.type" required>
+                                            <option value="Cash" x-text="$store.lang.t('accounts.type_cash')">Efectivo / Billetera</option>
+                                            <option value="Checking" x-text="$store.lang.t('accounts.type_checking')">Cuenta Bancaria</option>
+                                            <option value="Credit Card" x-text="$store.lang.t('accounts.type_credit_card')">Tarjeta de Crédito</option>
+                                            <option value="Term" x-text="$store.lang.t('accounts.type_term')">Plazo Fijo / Ahorro</option>
+                                            <option value="Investment" x-text="$store.lang.t('accounts.type_investment')">Broker / Inversión</option>
+                                            <option value="Crypto" x-text="$store.lang.t('accounts.type_crypto')">Exchange / Wallet Crypto</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.col_entity')">ENTIDAD / BANCO</label>
-                                    <select class="form-select neon-input" x-model="formData.id_identidad_financiera">
+                                    <select class="form-select neon-input" x-model="formData.institution_id">
                                         <option value="" x-text="$store.lang.t('common.none')">Ninguna / Efectivo</option>
-                                        <template x-for="ent in entities" :key="ent.id_identidad">
-                                            <option :value="ent.id_identidad" x-text="ent.nombre"></option>
+                                        <template x-for="ent in entities" :key="ent.id">
+                                            <option :value="ent.id" x-text="ent.name"></option>
                                         </template>
                                     </select>
                                     <div class="mt-1 text-end">
-                                        <a href="/entidades" class="extra-small text-info text-decoration-none opacity-75 hover-opacity-100" x-text="$store.lang.t('beneficiaries.manage_entities')"><i class="fa-solid fa-external-link me-1 smaller"></i>Gestionar entidades</a>
+                                        <a href="/entidades" class="extra-small text-info text-decoration-none opacity-75 hover-opacity-100">
+                                            <i class="fa-solid fa-external-link me-1 smaller"></i>
+                                            <span x-text="$store.lang.t('beneficiaries.manage_entities')">Gestionar entidades</span>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.divisa_id')">DIVISA</label>
-                                        <select class="form-select neon-input" x-model="formData.id_divisa" required>
-                                            <template x-for="div in currencies" :key="div.id_divisa">
-                                                <option :value="div.id_divisa" x-text="div.nombre_divisa + ' (' + div.codigo_iso + ')'"></option>
+                                        <select class="form-select neon-input" x-model="formData.currency_id" required>
+                                            <template x-for="div in currencies" :key="div.id">
+                                                <option :value="div.id" x-text="div.name + ' (' + div.iso_code + ')'"></option>
                                             </template>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.col_balance')">SALDO_INICIAL</label>
-                                        <input type="number" step="0.01" class="form-control neon-input fw-bold text-primary" x-model="formData.saldo_inicial" required>
+                                        <input type="number" step="0.01" class="form-control neon-input fw-bold text-primary" x-model="formData.initial_balance" required>
                                     </div>
                                 </div>
                             </div>
@@ -149,31 +153,31 @@
                             <div class="tab-pane fade" id="details">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Número de Cuenta</label>
-                                        <input type="text" class="form-control neon-input font-monospace" x-model="formData.numero_cuenta">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.account_number')">Número de Cuenta</label>
+                                        <input type="text" class="form-control neon-input font-monospace" x-model="formData.account_number">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Fecha Inicial</label>
-                                        <input type="date" class="form-control neon-input" x-model="formData.fecha_inicial">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.initial_date')">Fecha Inicial</label>
+                                        <input type="date" class="form-control neon-input" x-model="formData.initial_date">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Sitio Web</label>
-                                        <input type="url" class="form-control neon-input" x-model="formData.sitio_web">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.website')">Sitio Web</label>
+                                        <input type="url" class="form-control neon-input" x-model="formData.website">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Info Contacto</label>
-                                        <input type="text" class="form-control neon-input" x-model="formData.info_contacto">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.contact_info')">Info Contacto</label>
+                                        <input type="text" class="form-control neon-input" x-model="formData.contact_info">
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="text-dim extra-small fw-bold text-uppercase">Información de Acceso</label>
-                                    <textarea class="form-control neon-input" rows="2" x-model="formData.info_acceso" placeholder="Ej: Usuario, Numero de cliente (NO GUARDAR PASSWORDS AQUÍ)"></textarea>
+                                    <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.access_info')">Información de Acceso</label>
+                                    <textarea class="form-control neon-input" rows="2" x-model="formData.access_info" :placeholder="$store.lang.t('accounts.access_info_placeholder')"></textarea>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="text-dim extra-small fw-bold text-uppercase">Notas</label>
-                                    <textarea class="form-control neon-input" rows="2" x-model="formData.notas"></textarea>
+                                    <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.notes')">Notas</label>
+                                    <textarea class="form-control neon-input" rows="2" x-model="formData.notes"></textarea>
                                 </div>
                             </div>
 
@@ -181,39 +185,39 @@
                             <div class="tab-pane fade" id="advanced">
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Saldo Mínimo</label>
-                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.saldo_minimo">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.min_balance')">Saldo Mínimo</label>
+                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.min_balance">
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Límite Crédito</label>
-                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.limite_credito">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.credit_limit')">Límite Crédito</label>
+                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.credit_limit">
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Tasa Interés (%)</label>
-                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.tasa_interes">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.interest_rate')">Tasa Interés (%)</label>
+                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.interest_rate">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Vencimiento Pago</label>
-                                        <input type="date" class="form-control neon-input" x-model="formData.fecha_vencimiento_pago">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.due_date')">Vencimiento Pago</label>
+                                        <input type="date" class="form-control neon-input" x-model="formData.due_date">
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Pago Mínimo</label>
-                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.pago_minimo">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.min_payment')">Pago Mínimo</label>
+                                        <input type="number" step="0.01" class="form-control neon-input" x-model="formData.min_payment">
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="text-dim extra-small fw-bold text-uppercase">Cierre Extracto</label>
-                                        <input type="date" class="form-control neon-input" x-model="formData.fecha_extracto">
+                                        <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('accounts.closing_date')">Cierre Extracto</label>
+                                        <input type="date" class="form-control neon-input" x-model="formData.statement_date">
                                     </div>
                                 </div>
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="favAccount" x-model="formData.cuenta_favorita" :true-value="1" :false-value="0">
-                                    <label class="form-check-label text-dim extra-small fw-bold" for="favAccount">MARCAR COMO FAVORITA</label>
+                                    <input class="form-check-input" type="checkbox" id="favAccount" x-model="formData.is_favorite" :true-value="1" :false-value="0">
+                                    <label class="form-check-label text-dim extra-small fw-bold" for="favAccount" x-text="$store.lang.t('accounts.mark_favourite')">MARCAR COMO FAVORITA</label>
                                 </div>
                                 <div class="form-check form-switch mb-3 text-uppercase">
-                                    <input class="form-check-input" type="checkbox" id="lockAccount" x-model="formData.extracto_bloqueado" :true-value="1" :false-value="0">
-                                    <label class="form-check-label text-dim extra-small fw-bold" for="lockAccount">Bloquear extracto</label>
+                                    <input class="form-check-input" type="checkbox" id="lockAccount" x-model="formData.is_statement_locked" :true-value="1" :false-value="0">
+                                    <label class="form-check-label text-dim extra-small fw-bold" for="lockAccount" x-text="$store.lang.t('accounts.lock_statement')">Bloquear extracto</label>
                                 </div>
                             </div>
                         </div>
@@ -243,25 +247,25 @@
             loading: true,
             saving: false,
             formData: { 
-                nombre_cuenta: '', 
-                tipo_cuenta: 'Cash', 
-                id_divisa: 1, 
-                saldo_inicial: 0, 
-                id_identidad_financiera: null,
-                numero_cuenta: null,
-                notas: null,
-                sitio_web: null,
-                info_contacto: null,
-                info_acceso: null,
-                cuenta_favorita: 0,
-                extracto_bloqueado: 0,
-                fecha_extracto: null,
-                saldo_minimo: 0,
-                limite_credito: 0,
-                tasa_interes: 0,
-                fecha_vencimiento_pago: null,
-                pago_minimo: 0,
-                fecha_inicial: null
+                name: '', 
+                type: 'Cash', 
+                currency_id: 1, 
+                initial_balance: 0, 
+                institution_id: null,
+                account_number: null,
+                notes: null,
+                website: null,
+                contact_info: null,
+                access_info: null,
+                is_favorite: 0,
+                is_statement_locked: 0,
+                statement_date: null,
+                min_balance: 0,
+                credit_limit: 0,
+                interest_rate: 0,
+                due_date: null,
+                min_payment: 0,
+                initial_date: null
             },
             isEdit: false,
             editId: null,
@@ -274,7 +278,7 @@
             async fetchAccounts() {
                 this.loading = true;
                 try {
-                    const res = await api.get('cuentas/');
+                    const res = await api.get('accounts/');
                     this.accounts = res.data.data || [];
                 } catch (e) {
                     console.error('Error fetching accounts:', e);
@@ -285,15 +289,24 @@
             async fetchEntities() {
                 try {
                     const res = await api.get('financial-entities/institutions');
-                    this.entities = res.data;
+                    this.entities = res.data.map(e => ({
+                        ...e,
+                        id: e.id ?? e.id_identidad,
+                        name: e.name ?? e.nombre
+                    }));
                 } catch (e) {
                     console.error('Error fetching entities:', e);
                 }
             },
             async fetchCurrencies() {
                 try {
-                    const res = await api.get('divisas/');
-                    this.currencies = res.data;
+                    const res = await api.get('currencies/');
+                    this.currencies = res.data.map(d => ({
+                        ...d,
+                        id: d.id ?? d.id_divisa,
+                        name: d.name ?? d.nombre_divisa,
+                        iso_code: d.iso_code ?? d.codigo_iso
+                    }));
                 } catch (e) {
                     console.error('Error fetching currencies:', e);
                 }
@@ -304,53 +317,74 @@
             openCreateModal() {
                 this.isEdit = false;
                 this.formData = { 
-                    nombre_cuenta: '', 
-                    tipo_cuenta: 'Cash', 
-                    id_divisa: this.currencies.length > 0 ? this.currencies[0].id_divisa : 1, 
-                    saldo_inicial: 0, 
-                    id_identidad_financiera: '',
-                    numero_cuenta: '',
-                    notas: '',
-                    sitio_web: '',
-                    info_contacto: '',
-                    info_acceso: '',
-                    cuenta_favorita: 0,
-                    extracto_bloqueado: 0,
-                    fecha_extracto: '',
-                    saldo_minimo: 0,
-                    limite_credito: 0,
-                    tasa_interes: 0,
-                    fecha_vencimiento_pago: '',
-                    pago_minimo: 0,
-                    fecha_inicial: ''
+                    name: '', 
+                    type: 'Cash', 
+                    currency_id: this.currencies.length > 0 ? this.currencies[0].id : 1, 
+                    initial_balance: 0, 
+                    institution_id: '',
+                    account_number: '',
+                    notes: '',
+                    website: '',
+                    contact_info: '',
+                    access_info: '',
+                    is_favorite: 0,
+                    is_statement_locked: 0,
+                    statement_date: '',
+                    min_balance: 0,
+                    credit_limit: 0,
+                    interest_rate: 0,
+                    due_date: '',
+                    min_payment: 0,
+                    initial_date: ''
                 };
                 this.bsModal.show();
             },
             editAccount(account) {
                 this.isEdit = true;
-                this.editId = account.id_cuenta;
+                this.editId = account.id || account.id_cuenta;
                 this.formData = { ...account };
-                // Garantizar que nulos sean strings vacíos para binds de Alpine si es necesario
-                if (!this.formData.id_identidad_financiera) this.formData.id_identidad_financiera = '';
+                
+                // Map legacy fields to new ones for the form if necessary
+                this.formData.name = this.formData.name ?? this.formData.nombre_cuenta;
+                this.formData.type = this.formData.type ?? this.formData.tipo_cuenta;
+                this.formData.initial_balance = this.formData.initial_balance ?? this.formData.saldo_inicial;
+                this.formData.currency_id = this.formData.currency_id ?? this.formData.id_divisa;
+                this.formData.institution_id = this.formData.institution_id ?? this.formData.id_identidad_financiera;
+                this.formData.account_number = this.formData.account_number ?? this.formData.numero_cuenta;
+                this.formData.initial_date = this.formData.initial_date ?? this.formData.fecha_inicial;
+                this.formData.is_favorite = this.formData.is_favorite ?? this.formData.cuenta_favorita;
+                this.formData.is_statement_locked = this.formData.is_statement_locked ?? this.formData.extracto_bloqueado;
+                this.formData.statement_date = this.formData.statement_date ?? this.formData.fecha_extracto;
+                this.formData.min_balance = this.formData.min_balance ?? this.formData.saldo_minimo;
+                this.formData.credit_limit = this.formData.credit_limit ?? this.formData.limite_credito;
+                this.formData.interest_rate = this.formData.interest_rate ?? this.formData.tasa_interes;
+                this.formData.due_date = this.formData.due_date ?? this.formData.fecha_vencimiento_pago;
+                this.formData.min_payment = this.formData.min_payment ?? this.formData.pago_minimo;
+                this.formData.website = this.formData.website ?? this.formData.sitio_web;
+                this.formData.contact_info = this.formData.contact_info ?? this.formData.info_contacto;
+                this.formData.access_info = this.formData.access_info ?? this.formData.info_acceso;
+                this.formData.notes = this.formData.notes ?? this.formData.notas;
+
+                if (!this.formData.institution_id) this.formData.institution_id = '';
                 this.bsModal.show();
             },
             async saveAccount() {
                 this.saving = true;
                 try {
                     const data = { ...this.formData };
-                    if (data.id_identidad_financiera === '') data.id_identidad_financiera = null;
-                    
-                    // Limpiar nulos para Pydantic si es necesario, aunque Optional[T]=None funciona
+                    if (data.institution_id === '') data.institution_id = null;
                     
                     if (this.isEdit) {
-                        await api.put(`cuentas/${this.editId}`, data);
+                        await api.put(`accounts/${this.editId}`, data);
+                        NotificationManager.success(this.$store.lang.t('accounts.success_updated'), this.$store.lang.t('common.edit'));
                     } else {
-                        await api.post('cuentas/', data);
+                        await api.post('accounts/', data);
+                        NotificationManager.success(this.$store.lang.t('accounts.success_created'), this.$store.lang.t('accounts.new'));
                     }
                     await this.fetchAccounts();
                     this.bsModal.hide();
                 } catch (e) {
-                    alert('Fallo al registrar cuenta: ' + (e.response?.data?.detail || 'Error de red'));
+                    NotificationManager.error(e.response?.data?.detail || this.$store.lang.t('common.error'), this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }

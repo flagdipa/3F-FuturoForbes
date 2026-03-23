@@ -7,8 +7,8 @@ from backend.plugins.ia_ocr.services import ocr_service
 
 
 class IaOcrPlugin(BasePlugin):
-    nombre_tecnico = "ia_ocr"
-    nombre_display = "IA OCR — Escaneo de Tickets"
+    technical_name = "ia_ocr"
+    display_name = "IA OCR — Escaneo de Tickets"
     version = "1.1.0"
     autor = "3F Core"
     descripcion = (

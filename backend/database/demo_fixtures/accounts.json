@@ -1,0 +1,10 @@
+[
+  { "name": "Banco Galicia ARS", "code": "GAL-ARS", "type": "ASSET", "currency_code": "ARS", "initial_balance": 500000, "color": "#00f3ff", "icon": "fa-building-columns" },
+  { "name": "Efectivo ARS", "code": "CASH-ARS", "type": "ASSET", "currency_code": "ARS", "initial_balance": 50000, "color": "#00ff88", "icon": "fa-money-bill-1" },
+  { "name": "Mercado Pago ARS", "code": "MP-ARS", "type": "ASSET", "currency_code": "ARS", "initial_balance": 120000, "color": "#009ee3", "icon": "fa-wallet" },
+  { "name": "Ahorro USD (Caja Fuerte)", "code": "SAFE-USD", "type": "ASSET", "currency_code": "USD", "initial_balance": 2500, "color": "#ffeb3b", "icon": "fa-vault" },
+  { "name": "Visa Santander ARS", "code": "VISA-ARS", "type": "LIABILITY", "currency_code": "ARS", "initial_balance": 0, "color": "#ff1744", "icon": "fa-credit-card" },
+  { "name": "Plazo Fijo UVA", "code": "PF-UVA", "type": "ASSET", "currency_code": "ARS", "initial_balance": 1000000, "color": "#da00ff", "icon": "fa-clock" },
+  { "name": "Binance USDT", "code": "BINANCE-USDT", "type": "ASSET", "currency_code": "USD", "initial_balance": 1500, "color": "#f3ba2f", "icon": "fa-brands fa-bitcoin" },
+  { "name": "Inversiones Broker ARS", "code": "IOL-ARS", "type": "ASSET", "currency_code": "ARS", "initial_balance": 350000, "color": "#ffea00", "icon": "fa-arrow-trend-up" }
+]

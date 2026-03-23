@@ -50,12 +50,12 @@
                     <i class="fa-solid fa-gears me-2 text-primary"></i>
                     <span x-text="$store.lang.t('settings.title') || 'CONFIGURACIÓN_SISTEMA'"></span>
                 </h1>
-                <p class="text-dim small mb-0">PANEL DE CONTROL CENTRAL - NIVEL ADMINISTRADOR</p>
+                <p class="text-dim small mb-0" x-text="$store.lang.t('settings.subtitle')">PANEL DE CONTROL CENTRAL - NIVEL ADMINISTRADOR</p>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span id="layout-status" class="text-dim small"></span>
                 <button @click="$store.settingsLayout.reset()" class="btn btn-sm btn-outline-secondary">
-                    <i class="fa-solid fa-rotate-left me-1"></i>Restablecer Diseño
+                    <i class="fa-solid fa-rotate-left me-1"></i><span x-text="$store.lang.t('settings.reset_layout')">Restablecer Diseño</span>
                 </button>
             </div>
         </div>
@@ -64,28 +64,28 @@
     <div class="grid-stack">
         
         <!-- Widget: General Settings (Full Width) -->
-        <div class="grid-stack-item" gs-w="12" gs-h="6" gs-x="0" gs-y="0">
+        <div class="grid-stack-item" gs-id="widget-settings-general" gs-w="12" gs-h="6" gs-x="0" gs-y="0">
             <div class="grid-stack-item-content">
                 <div class="widget-header">
-                    <span><i class="fa-solid fa-sliders me-2 text-primary"></i>AJUSTES GENERALES</span>
+                    <span><i class="fa-solid fa-sliders me-2 text-primary"></i><span x-text="$store.lang.t('settings.general_settings')">AJUSTES GENERALES</span></span>
                     <i class="fa-solid fa-grip-lines text-dim"></i>
                 </div>
                 <div class="p-3 h-100 overflow-auto">
                     <!-- ... tabs & form content preserved ... -->
                     <ul class="nav nav-tabs border-0 mb-3" id="settingsTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active text-primary fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">
+                            <button class="nav-link active text-primary fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" x-text="$store.lang.t('settings.tab_general')">
                                 GENERAL
                             </button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link text-accent fw-bold" id="themes-tab" data-bs-toggle="tab" data-bs-target="#themes" type="button">
-                                <i class="fa-solid fa-palette me-1"></i>TEMAS
+                                <i class="fa-solid fa-palette me-1"></i><span x-text="$store.lang.t('settings.tab_themes')">TEMAS</span>
                             </button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link text-warning fw-bold" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">
-                                <i class="fa-solid fa-user-shield me-1"></i>PERFIL
+                                <i class="fa-solid fa-user-shield me-1"></i><span x-text="$store.lang.t('settings.tab_profile')">PERFIL</span>
                             </button>
                         </li>
                         <li class="nav-item">
@@ -104,18 +104,18 @@
                         <div class="tab-pane fade show active" id="general" role="tabpanel">
                             <form @submit.prevent="guardarConfig()">
                                 <div class="mb-4">
-                                    <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2">IDENTIDAD & FORMATO</h6>
+                                    <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2" x-text="$store.lang.t('settings.identity_format')">IDENTIDAD & FORMATO</h6>
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="text-dim small">NOMBRE_SISTEMA</label>
+                                            <label class="text-dim small" x-text="$store.lang.t('settings.system_name')">NOMBRE_SISTEMA</label>
                                             <input type="text" class="form-control neon-input" x-model="config.SISTEMA_nombre">
                                         </div>
                                         <div class="col-md-3">
-                                            <label class="text-dim small">SIMBOLO_MONEDA</label>
+                                            <label class="text-dim small" x-text="$store.lang.t('settings.currency_symbol')">SIMBOLO_MONEDA</label>
                                             <input type="text" class="form-control neon-input text-center" x-model="config.SISTEMA_moneda">
                                         </div>
                                         <div class="col-md-3">
-                                            <label class="text-dim small">IDIOMA_DEFECTO</label>
+                                            <label class="text-dim small" x-text="$store.lang.t('settings.default_lang')">IDIOMA_DEFECTO</label>
                                             <select class="form-select neon-input" x-model="config.SISTEMA_idioma">
                                                 <option value="es">Español</option>
                                                 <option value="en">English</option>
@@ -134,16 +134,16 @@
                                     </div>
                                 </div>
                                 <div class="mb-4">
-                                    <h6 class="text-warning mb-3 border-bottom border-secondary border-opacity-25 pb-2">AVANZADO</h6>
+                                    <h6 class="text-warning mb-3 border-bottom border-secondary border-opacity-25 pb-2" x-text="$store.lang.t('settings.advanced_settings')">AVANZADO</h6>
                                     <div class="form-check form-switch mb-2">
                                         <input class="form-check-input" type="checkbox" id="debugMode" x-model="config.DEBUG_mode">
-                                        <label class="form-check-label text-dim" for="debugMode">MODO_DEPURACION (DEBUG)</label>
+                                        <label class="form-check-label text-dim" for="debugMode" x-text="$store.lang.t('settings.debug_mode')">MODO_DEPURACION (DEBUG)</label>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-end mt-3">
                                     <button type="submit" class="btn btn-primary neon-btn" :disabled="saving">
-                                        <span x-show="!saving">💾 GUARDAR CAMBIOS</span>
-                                        <span x-show="saving">⏳ Guardando...</span>
+                                        <span x-show="!saving" x-text="'💾 ' + $store.lang.t('settings.save_changes')">💾 GUARDAR CAMBIOS</span>
+                                        <span x-show="saving" x-text="'⏳ ' + $store.lang.t('common.saving')">⏳ Guardando...</span>
                                     </button>
                                 </div>
                             </form>
@@ -153,9 +153,9 @@
                         <div class="tab-pane fade" id="themes" role="tabpanel">
                             <div x-data="themeSelector">
                                 <h6 class="text-accent mb-3 border-bottom border-secondary border-opacity-25 pb-2">
-                                    <i class="fa-solid fa-palette me-2"></i>SELECTOR DE TEMAS
+                                    <i class="fa-solid fa-palette me-2"></i><span x-text="$store.lang.t('settings.theme_selector')">SELECTOR DE TEMAS</span>
                                 </h6>
-                                <p class="text-dim small mb-4">Elige tu tema visual preferido. Los cambios se aplican inmediatamente.</p>
+                                <p class="text-dim small mb-4" x-text="$store.lang.t('settings.theme_desc')">Elige tu tema visual preferido. Los cambios se aplican inmediatamente.</p>
                                 
                                 <div class="row g-3">
                                     <template x-for="theme in availableThemes" :key="theme.id">
@@ -173,10 +173,12 @@
                                                         <span 
                                                             class="badge bg-primary" 
                                                             x-show="currentThemeId === theme.id"
+                                                            x-text="$store.lang.t('common.active')"
                                                         >Activo</span>
                                                         <span 
                                                             class="badge bg-secondary" 
                                                             x-show="currentThemeId !== theme.id"
+                                                            x-text="$store.lang.t('common.select')"
                                                         >Seleccionar</span>
                                                     </div>
                                                 </div>
@@ -187,7 +189,7 @@
                                 
                                 <div x-show="loading" class="text-center py-4">
                                     <div class="spinner-border text-primary" role="status"></div>
-                                    <p class="text-dim small mt-2">Cargando temas...</p>
+                                    <p class="text-dim small mt-2" x-text="$store.lang.t('common.loading') + '...'">Cargando temas...</p>
                                 </div>
                             </div>
                         </div>
@@ -196,25 +198,25 @@
                         <div class="tab-pane fade" id="profile" role="tabpanel">
                             <form @submit.prevent="saveProfile">
                                 <h6 class="text-warning mb-3 border-bottom border-secondary border-opacity-25 pb-2">
-                                    <i class="fa-solid fa-id-badge me-2"></i>DATOS DEL OPERADOR
+                                    <i class="fa-solid fa-id-badge me-2"></i><span x-text="$store.lang.t('settings.operator_data')">DATOS DEL OPERADOR</span>
                                 </h6>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="text-dim small">NOMBRE</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('common.name')">NOMBRE</label>
                                         <input type="text" class="form-control neon-input" x-model="userProfile.nombre">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="text-dim small">APELLIDO</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('common.last_name')">APELLIDO</label>
                                         <input type="text" class="form-control neon-input" x-model="userProfile.apellido">
                                     </div>
                                     <div class="col-md-12">
-                                        <label class="text-dim small">EMAIL DE ACCESO</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('common.email')">EMAIL DE ACCESO</label>
                                         <input type="email" class="form-control neon-input" x-model="userProfile.email">
                                     </div>
                                 </div>
                                 <div class="mt-4 text-end">
                                     <button type="submit" class="btn btn-warning neon-btn text-dark fw-bold" :disabled="saving">
-                                        <i class="fa-solid fa-save me-2"></i>ACTUALIZAR PERFIL
+                                        <i class="fa-solid fa-save me-2"></i><span x-text="$store.lang.t('settings.update_profile')">ACTUALIZAR PERFIL</span>
                                     </button>
                                 </div>
                             </form>
@@ -223,19 +225,19 @@
 
                             <form @submit.prevent="changePassword">
                                 <h6 class="text-danger mb-3 border-bottom border-secondary border-opacity-25 pb-2">
-                                    <i class="fa-solid fa-key me-2"></i>CAMBIAR CONTRASEÑA
+                                    <i class="fa-solid fa-key me-2"></i><span x-text="$store.lang.t('settings.change_password')">CAMBIAR CONTRASEÑA</span>
                                 </h6>
                                 <div class="row g-3">
                                     <div class="col-md-12">
-                                        <label class="text-dim small">CONTRASEÑA ACTUAL</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.current_password')">CONTRASEÑA ACTUAL</label>
                                         <input type="password" class="form-control neon-input" x-model="passwordForm.current_password">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="text-dim small">NUEVA CONTRASEÑA</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.new_password')">NUEVA CONTRASEÑA</label>
                                         <input type="password" class="form-control neon-input" x-model="passwordForm.new_password">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="text-dim small">CONFIRMAR NUEVA CONTRASEÑA</label>
+                                        <label class="text-dim small" x-text="$store.lang.t('settings.confirm_password')">CONFIRMAR NUEVA CONTRASEÑA</label>
                                         <input type="password" class="form-control neon-input" x-model="passwordForm.confirm_password">
                                     </div>
                                 </div>
@@ -280,7 +282,7 @@
                                         <i class="fa-solid fa-paper-plane me-2"></i><span x-text="$store.lang.t('settings.smtp_test')">PROBAR ENVÍO</span>
                                     </button>
                                     <button type="submit" class="btn btn-info neon-btn text-dark fw-bold" :disabled="saving">
-                                        <i class="fa-solid fa-save me-2"></i>GUARDAR SMTP
+                                        <i class="fa-solid fa-save me-2"></i><span x-text="$store.lang.t('settings.smtp_save')">GUARDAR SMTP</span>
                                     </button>
                                 </div>
                             </form>
@@ -352,7 +354,7 @@
         </div>
 
         <!-- Widget: System Info (Half Width) -->
-        <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="0" gs-y="6">
+        <div class="grid-stack-item" gs-id="widget-settings-sysinfo" gs-w="6" gs-h="4" gs-x="0" gs-y="6">
             <div class="grid-stack-item-content">
                 <div class="widget-header">
                     <span class="text-success"><i class="fa-solid fa-server me-2"></i>ESTADO DEL SISTEMA</span>
@@ -362,20 +364,20 @@
                     <template x-if="systemInfo">
                         <ul class="list-unstyled mb-0">
                             <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
-                                <span class="text-dim">Versión API</span>
+                                <span class="text-dim" x-text="$store.lang.t('settings.api_version')">Versión API</span>
                                 <span class="text-white fw-bold" x-text="systemInfo.version"></span>
                             </li>
                             <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
-                                <span class="text-dim">Estado</span>
+                                <span class="text-dim" x-text="$store.lang.t('settings.status')">Estado</span>
                                 <span class="badge bg-success text-dark">ONLINE</span>
                             </li>
                             <li class="mb-2 d-flex justify-content-between border-bottom border-secondary border-opacity-10 pb-1">
-                                <span class="text-dim">Base de Datos</span>
-                                <span class="text-white"><i class="fa-solid fa-database text-warning me-1"></i>Conectado</span>
+                                <span class="text-dim" x-text="$store.lang.t('settings.db')">Base de Datos</span>
+                                <span class="text-white"><i class="fa-solid fa-database text-warning me-1"></i><span x-text="$store.lang.t('settings.connected')">Conectado</span></span>
                             </li>
                             <li class="d-flex justify-content-between">
-                                <span class="text-dim">Entorno</span>
-                                <span class="text-info">Producción</span>
+                                <span class="text-dim" x-text="$store.lang.t('settings.environment')">Entorno</span>
+                                <span class="text-info" x-text="$store.lang.t('settings.env_prod')">Producción</span>
                             </li>
                         </ul>
                     </template>
@@ -387,7 +389,7 @@
         </div>
 
         <!-- Widget: Danger Zone (Half Width) -->
-        <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="6" gs-y="6">
+        <div class="grid-stack-item" gs-id="widget-settings-danger" gs-w="6" gs-h="4" gs-x="6" gs-y="6">
             <div class="grid-stack-item-content" style="border-color: var(--bs-danger); border-opacity: 0.3;">
                 <div class="widget-header" style="background: rgba(220, 53, 69, 0.1);">
                     <span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>MANTENIMIENTO</span>
@@ -406,8 +408,122 @@
             </div>
         </div>
 
+        <!-- Widget: Database Management (Full Width) -->
+        <div class="grid-stack-item" gs-id="widget-settings-db" gs-w="12" gs-h="8" gs-x="0" gs-y="10">
+            <div class="grid-stack-item-content" x-data="dbManager">
+                <div class="widget-header">
+                    <span><i class="fa-solid fa-database me-2 text-warning"></i><span x-text="$store.lang.t('settings.db_management') || 'GESTIÓN DE BASES DE DATOS'"></span></span>
+                    <i class="fa-solid fa-grip-lines text-dim"></i>
+                </div>
+                <div class="p-3 h-100 overflow-auto">
+                    <div class="row g-4">
+                        <!-- Local DB -->
+                        <div class="col-md-6 border-end border-secondary border-opacity-25">
+                            <h6 class="text-info mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                <i class="fa-solid fa-hard-drive me-2"></i>BASE DE DATOS LOCAL
+                            </h6>
+                            <form @submit.prevent="saveLocalDb()">
+                                <div class="mb-3">
+                                    <label class="text-dim small">TIPO DE BD</label>
+                                    <input type="text" class="form-control neon-input bg-dark" value="SQLite" readonly>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-12">
+                                        <label class="text-dim small">ARCHIVO / UBICACIÓN</label>
+                                        <input type="text" class="form-control neon-input" x-model="localDb.path" placeholder="ej: database.db">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="text-dim small">NOMBRE DE LA BASE DE DATOS</label>
+                                        <input type="text" class="form-control neon-input" x-model="localDb.name" placeholder="ej: mi_bd_local">
+                                    </div>
+                                </div>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <button type="submit" class="btn btn-sm btn-info neon-btn text-dark fw-bold" :disabled="saving">
+                                        <i class="fa-solid fa-save me-1"></i>Guardar Configuración
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success neon-btn" @click="createLocalDb()" :disabled="processing">
+                                        <i class="fa-solid fa-folder-plus me-1"></i>Crear Nueva BD Local
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary neon-btn" @click="openLocalDb()" :disabled="processing">
+                                        <i class="fa-solid fa-folder-open me-1"></i>Abrir BD Existente
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="mt-4">
+                                <h6 class="text-warning mb-2 small border-bottom border-secondary border-opacity-25 pb-1">HERRAMIENTAS DE DIAGNÓSTICO</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" @click="verifyIntegrity()" :disabled="processing">
+                                        <i class="fa-solid fa-stethoscope me-1"></i>Verificar Integridad
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="backupLocalDb()" :disabled="processing">
+                                        <i class="fa-solid fa-download me-1"></i>Ejecutar Backup
+                                    </button>
+                                </div>
+                                <div x-show="log.local" class="mt-2 small font-monospace text-info p-2 bg-black bg-opacity-25 rounded border border-info border-opacity-25" x-text="log.local"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Online DB -->
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                                <i class="fa-solid fa-cloud me-2"></i>BASE DE DATOS REMOTA (ONLINE)
+                            </h6>
+                            <form @submit.prevent="saveRemoteDb()">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-8">
+                                        <label class="text-dim small">HOST / URL</label>
+                                        <input type="text" class="form-control neon-input" x-model="remoteDb.host" placeholder="ej: aws.mi-bd.com">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="text-dim small">PUERTO</label>
+                                        <input type="number" class="form-control neon-input text-center" x-model="remoteDb.port" placeholder="5432">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-dim small">NOMBRE DE LA BASE DE DATOS</label>
+                                    <input type="text" class="form-control neon-input" x-model="remoteDb.name" placeholder="ej: produccion_db">
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="text-dim small">USUARIO</label>
+                                        <input type="text" class="form-control neon-input" x-model="remoteDb.user" autocomplete="off">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="text-dim small">CONTRASEÑA</label>
+                                        <input type="password" class="form-control neon-input" x-model="remoteDb.password" autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <button type="submit" class="btn btn-sm btn-success neon-btn text-dark fw-bold" :disabled="saving">
+                                        <i class="fa-solid fa-save me-1"></i>Guardar Configuración
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info neon-btn" @click="testRemoteConnection()" :disabled="processing">
+                                        <i class="fa-solid fa-wifi me-1"></i>Probar Conexión
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="mt-4">
+                                <h6 class="text-warning mb-2 small border-bottom border-secondary border-opacity-25 pb-1">HERRAMIENTAS DE DIAGNÓSTICO</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" @click="verifyRemoteIntegrity()" :disabled="processing">
+                                        <i class="fa-solid fa-stethoscope me-1"></i>Verificar Esquema
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" @click="syncData()" :disabled="processing">
+                                        <i class="fa-solid fa-rotate me-1"></i>Sincronizar Datos
+                                    </button>
+                                </div>
+                                <div x-show="log.remote" class="mt-2 small font-monospace text-success p-2 bg-black bg-opacity-25 rounded border border-success border-opacity-25" x-text="log.remote"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Widget: Localization Manager (Full Width) -->
-        <div class="grid-stack-item" gs-w="12" gs-h="10" gs-x="0" gs-y="10">
+        <div class="grid-stack-item" gs-id="widget-settings-lang" gs-w="12" gs-h="10" gs-x="0" gs-y="18">
             <div class="grid-stack-item-content" x-data="localizationManager">
                 <div class="widget-header">
                     <span class="text-info"><i class="fa-solid fa-language me-2"></i>DICCIONARIO & LOCALIZACIÓN</span>
@@ -667,10 +783,10 @@
                     }
                     localStorage.setItem('3f_session_timeout', this.config.SISTEMA_timeout);
                     
-                    alert('Configuración guardada correctamente.');
-                    window.location.reload(); 
+                    NotificationManager.success(this.$store.lang.t('settings.success_saved'), this.$store.lang.t('common.success'));
+                    setTimeout(() => window.location.reload(), 1000);
                 } catch (e) {
-                    alert('Error al guardar: ' + e.message);
+                    NotificationManager.error(this.$store.lang.t('settings.error_saving') + ': ' + e.message, this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }
@@ -683,9 +799,9 @@
                     for (const k of keys) {
                         await api.put(`settings/${k}`, { valor: this.config[k] });
                     }
-                    alert('Configuración SMTP guardada correctamente.');
+                    NotificationManager.success(this.$store.lang.t('settings.smtp_success'), this.$store.lang.t('common.success'));
                 } catch (e) {
-                    alert('Error al guardar SMTP: ' + e.message);
+                    NotificationManager.error(this.$store.lang.t('settings.smtp_error') + ': ' + e.message, this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }
@@ -697,9 +813,9 @@
                     await api.post('health/test-mail', {
                         email: this.userProfile.email
                     });
-                    alert('Correo de prueba enviado. Verifique su bandeja de entrada.');
+                    NotificationManager.success(this.$store.lang.t('settings.smtp_test_sent'), this.$store.lang.t('common.success'));
                 } catch (e) {
-                    alert('Error en prueba SMTP: ' + (e.response?.data?.detail || e.message));
+                    NotificationManager.error(this.$store.lang.t('settings.smtp_test_error') + ': ' + (e.response?.data?.detail || e.message), this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }
@@ -713,10 +829,10 @@
                         apellido: this.userProfile.apellido,
                         email: this.userProfile.email
                     });
-                    alert('Perfil actualizado correctamente.');
+                    NotificationManager.success(this.$store.lang.t('settings.profile_success'), this.$store.lang.t('common.success'));
                 } catch (e) {
-                    const msg = e.response?.data?.detail || 'Error al actualizar perfil';
-                    alert(msg);
+                    const msg = e.response?.data?.detail || this.$store.lang.t('settings.profile_error');
+                    NotificationManager.error(msg, this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }
@@ -724,11 +840,11 @@
 
             async changePassword() {
                 if (this.passwordForm.new_password !== this.passwordForm.confirm_password) {
-                    alert('Las contraseñas nuevas no coinciden');
+                    NotificationManager.warning('Las contraseñas nuevas no coinciden');
                     return;
                 }
                 if (this.passwordForm.new_password.length < 6) {
-                    alert('La nueva contraseña debe tener al menos 6 caracteres');
+                    NotificationManager.warning('La nueva contraseña debe tener al menos 6 caracteres');
                     return;
                 }
                 this.saving = true;
@@ -737,11 +853,11 @@
                         current_password: this.passwordForm.current_password,
                         new_password: this.passwordForm.new_password
                     });
-                    alert('Contraseña actualizada correctamente.');
+                    NotificationManager.success(this.$store.lang.t('settings.password_success'), this.$store.lang.t('common.success'));
                     this.passwordForm = { current_password: '', new_password: '', confirm_password: '' };
                 } catch (e) {
-                    const msg = e.response?.data?.detail || 'Error al cambiar contraseña';
-                    alert(msg);
+                    const msg = e.response?.data?.detail || this.$store.lang.t('settings.password_error');
+                    NotificationManager.error(msg, this.$store.lang.t('common.error'));
                 } finally {
                     this.saving = false;
                 }
@@ -792,6 +908,212 @@
 
             verificarIntegridad() {
                  this.runIntegrity();
+            }
+        }));
+
+        // Database Manager Component
+        Alpine.data('dbManager', () => ({
+            localDb: {
+                path: 'database.db',
+                name: '3F_Local'
+            },
+            remoteDb: {
+                host: '',
+                port: 5432,
+                name: '',
+                user: '',
+                password: ''
+            },
+            saving: false,
+            processing: false,
+            log: {
+                local: '',
+                remote: ''
+            },
+            
+            async init() {
+                await this.loadConfig();
+            },
+            
+            async loadConfig() {
+                try {
+                    const res = await api.get('settings/');
+                    res.data.forEach(item => {
+                        if (item.clave === 'DB_LOCAL_PATH') this.localDb.path = item.valor;
+                        if (item.clave === 'DB_LOCAL_NAME') this.localDb.name = item.valor;
+                        if (item.clave === 'DB_REMOTE_HOST') this.remoteDb.host = item.valor;
+                        if (item.clave === 'DB_REMOTE_PORT') this.remoteDb.port = parseInt(item.valor) || 5432;
+                        if (item.clave === 'DB_REMOTE_NAME') this.remoteDb.name = item.valor;
+                        if (item.clave === 'DB_REMOTE_USER') this.remoteDb.user = item.valor;
+                    });
+                } catch (e) {
+                    console.warn('DB config not fully loaded:', e);
+                }
+            },
+            
+            async saveLocalDb() {
+                this.saving = true;
+                try {
+                    await api.put('settings/DB_LOCAL_PATH', { valor: this.localDb.path });
+                    await api.put('settings/DB_LOCAL_NAME', { valor: this.localDb.name });
+                    NotificationManager.success('Configuración de BD Local guardada');
+                } catch (e) {
+                    NotificationManager.error('Error al guardar BD Local');
+                } finally {
+                    this.saving = false;
+                }
+            },
+            
+            async createLocalDb() {
+                this.processing = true;
+                this.log.local = 'Seleccionando ubicación para nueva base de datos...';
+                try {
+                    // Open save dialog via backend
+                    const dialogRes = await api.post('database/local/dialog/save');
+                    if (!dialogRes.data.path) {
+                        this.log.local = 'Operación cancelada por el usuario.';
+                        this.processing = false;
+                        return;
+                    }
+                    this.localDb.path = dialogRes.data.path;
+                    
+                    this.log.local = 'Inicializando nueva base de datos local en ' + this.localDb.path + '...';
+                    const res = await api.post('database/local/create', {
+                        path: this.localDb.path,
+                        name: this.localDb.name || 'Nueva_BD'
+                    });
+                    this.log.local = res.data.message;
+                    NotificationManager.success(res.data.message);
+                    await this.saveLocalDb();
+                    
+                    this.log.local += ' Redirigiendo al Dashboard...';
+                    setTimeout(() => window.location.href = '/', 4000);
+                } catch (e) {
+                    this.log.local = 'Error al crear la BD: ' + (e.response?.data?.detail || e.message);
+                    this.processing = false;
+                }
+            },
+            
+            async openLocalDb() {
+                this.processing = true;
+                this.log.local = 'Seleccionando archivo de base de datos...';
+                try {
+                    // Open open file dialog via backend
+                    const dialogRes = await api.post('database/local/dialog/open');
+                    if (!dialogRes.data.path) {
+                        this.log.local = 'Operación cancelada por el usuario.';
+                        this.processing = false;
+                        return;
+                    }
+                    this.localDb.path = dialogRes.data.path;
+
+                    this.log.local = 'Vinculando y verificando base de datos existente en ' + this.localDb.path + '...';
+                    const res = await api.post('database/local/open', {
+                        path: this.localDb.path,
+                        name: this.localDb.name || 'BD_Importada'
+                    });
+                    this.log.local = res.data.message;
+                    NotificationManager.success('Base de datos cargada correctamente. Reiniciando servidor...');
+                    await this.saveLocalDb();
+                    
+                    this.log.local += ' Redirigiendo al Dashboard...';
+                    setTimeout(() => window.location.href = '/', 4000);
+                } catch (e) {
+                    this.log.local = 'Error al abrir la BD: ' + (e.response?.data?.detail || e.message);
+                    NotificationManager.error('Error al abrir la BD (Ver log)');
+                    this.processing = false;
+                }
+            },
+            
+            async verifyIntegrity() {
+                this.processing = true;
+                this.log.local = 'Analizando integridad de la BD Local...';
+                try {
+                    const res = await api.post('health/integrity');
+                    this.log.local = 'Resultado: ' + res.data.report;
+                } catch (e) {
+                    this.log.local = 'Error en diagnóstico de integridad';
+                } finally {
+                    this.processing = false;
+                }
+            },
+            
+            async backupLocalDb() {
+                this.processing = true;
+                this.log.local = 'Iniciando proceso de respaldo local...';
+                try {
+                    const res = await api.post('health/backup');
+                    this.log.local = 'Backup exitoso: ' + res.data.message;
+                } catch (e) {
+                    this.log.local = 'Error al ejecutar backup';
+                } finally {
+                    this.processing = false;
+                }
+            },
+            
+            async saveRemoteDb() {
+                this.saving = true;
+                try {
+                    await api.put('settings/DB_REMOTE_HOST', { valor: this.remoteDb.host });
+                    await api.put('settings/DB_REMOTE_PORT', { valor: this.remoteDb.port.toString() });
+                    await api.put('settings/DB_REMOTE_NAME', { valor: this.remoteDb.name });
+                    await api.put('settings/DB_REMOTE_USER', { valor: this.remoteDb.user });
+                    if (this.remoteDb.password) {
+                        await api.put('settings/DB_REMOTE_PASS', { valor: this.remoteDb.password });
+                    }
+                    NotificationManager.success('Configuración de BD Remota guardada');
+                } catch (e) {
+                    NotificationManager.error('Error al guardar BD Remota');
+                } finally {
+                    this.saving = false;
+                }
+            },
+            
+            async testRemoteConnection() {
+                this.processing = true;
+                this.log.remote = 'Probando conexión al servidor remoto...';
+                try {
+                    const res = await api.post('database/remote/test', {
+                        host: this.remoteDb.host,
+                        port: this.remoteDb.port,
+                        name: this.remoteDb.name,
+                        user: this.remoteDb.user,
+                        password: this.remoteDb.password
+                    });
+                    this.log.remote = res.data.message;
+                    NotificationManager.success('Conexión remota exitosa');
+                } catch (e) {
+                    this.log.remote = 'Error al conectar: ' + (e.response?.data?.detail || e.message);
+                } finally {
+                    this.processing = false;
+                }
+            },
+            
+            async verifyRemoteIntegrity() {
+                this.processing = true;
+                this.log.remote = 'Verificando esquema remoto...';
+                try {
+                    const res = await api.post('database/remote/verify');
+                    this.log.remote = res.data.message;
+                } catch (e) {
+                    this.log.remote = 'Error al verificar esquema: ' + (e.response?.data?.detail || e.message);
+                } finally {
+                    this.processing = false;
+                }
+            },
+            
+            async syncData() {
+                this.processing = true;
+                this.log.remote = 'Iniciando sincronización local -> remota...';
+                try {
+                    const res = await api.post('database/sync');
+                    this.log.remote = res.data.message;
+                    NotificationManager.success(res.data.message);
+                } catch (e) {
+                    this.log.remote = 'Error crítico durante la sincronización: ' + (e.response?.data?.detail || e.message);
+                } finally {
+                    this.processing = false;
+                }
             }
         }));
 
@@ -868,12 +1190,12 @@
                 return result;
             },
 
-            addNewKey() {
+            async addNewKey() {
                 if (!this.newKey.key || !this.newKey.value) return;
                 
                 // Si la clave ya existe, avisar
                 if (this.flatTranslations[this.newKey.key]) {
-                    if (!confirm('La clave ya existe. ¿Desea sobrescribirla?')) return;
+                    if (!await NotificationManager.confirm('La clave ya existe. ¿Desea sobrescribirla?')) return;
                 }
                 
                 this.flatTranslations[this.newKey.key] = this.newKey.value;
@@ -881,8 +1203,8 @@
                 notifications.show('Nueva palabra añadida al diccionario temporal. No olvide actualizar para guardar cambios permanentes.', 'info');
             },
 
-            deleteKey(key) {
-                if (confirm(`¿Eliminar la clave "${key}" del diccionario?`)) {
+            async deleteKey(key) {
+                if (await NotificationManager.confirm(`¿Eliminar la clave "${key}" del diccionario?`)) {
                     delete this.flatTranslations[key];
                 }
             },
@@ -896,9 +1218,9 @@
                     // Actualizar el store global de idioma para ver los cambios sin recargar
                     await Alpine.store('lang').loadLanguage(this.selectedLang);
                     
-                    alert(`Diccionario (${this.selectedLang}) actualizado correctamente.`);
+                    NotificationManager.success(`Diccionario (${this.selectedLang}) actualizado correctamente.`);
                 } catch (e) {
-                    alert('Error al guardar: ' + e.message);
+                    NotificationManager.error('Error al guardar: ' + e.message);
                 } finally {
                     this.saving = false;
                 }

@@ -14,8 +14,8 @@ class EmailSmtpPlugin(BasePlugin):
     Compatible con Gmail, Outlook, SendGrid, Mailgun, etc.
     """
     
-    nombre_tecnico = "email_smtp"
-    nombre_display = "Email SMTP"
+    technical_name = "email_smtp"
+    display_name = "Email SMTP"
     version = "1.0.0"
     autor = "3F Team"
     descripcion = "Envía notificaciones por email usando SMTP"
@@ -23,7 +23,7 @@ class EmailSmtpPlugin(BasePlugin):
     
     async def initialize(self):
         """Inicializar el plugin y validar configuración"""
-        self.logger.info(f"Inicializando {self.nombre_display}")
+        self.logger.info(f"Inicializando {self.display_name}")
         
         # Validar configuración requerida
         self.validate_config(["smtp_host", "smtp_port", "username", "password"])
@@ -43,11 +43,11 @@ class EmailSmtpPlugin(BasePlugin):
                 "login_attempt": True
             }
         
-        self.logger.info(f"✅ {self.nombre_display} inicializado correctamente")
+        self.logger.info(f"✅ {self.display_name} inicializado correctamente")
     
     async def shutdown(self):
         """Cerrar el plugin"""
-        self.logger.info(f"Apagando {self.nombre_display}")
+        self.logger.info(f"Apagando {self.display_name}")
     
     async def on_transaction_created(self, transaction, user):
         """Notificar cuando se crea una transacción"""

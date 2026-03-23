@@ -26,7 +26,7 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="categoriasPage" class="content-wrapper bg-transparent">
+<div x-data="categoriesPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
         <div class="col-12 mb-4 d-flex justify-content-between align-items-center">
             <button class="neon-btn px-4 py-2 shadow-sm" @click="openCreateModal">
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <!-- Tabla simple HUD para Categorías (Reemplaza el árbol experimental roto) -->
+    <!-- Tabla simple HUD para Categorías -->
     <div class="card neon-card">
         <div class="card-body p-0 table-responsive">
             <template x-if="loading">
@@ -55,18 +55,18 @@
                     </tr>
                 </thead>
                 <tbody class="align-middle">
-                    <template x-for="cat in categories" :key="cat.id_categoria">
-                        <tr class="cursor-pointer category-row" @click="editar(cat)">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <tr class="cursor-pointer category-row" @click="editCategory(cat)">
                             <td>
                                 <div class="d-flex align-items-center" :style="'padding-left: ' + ((cat.level || 0) * 20) + 'px'">
                                     <i class="fa-solid extra-small text-dim me-2" 
                                        :class="cat.children && cat.children.length > 0 ? 'fa-folder-open text-warning' : 'fa-folder'"></i>
-                                    <span x-text="cat.nombre_categoria" class="fw-bold" 
+                                    <span x-text="cat.name" class="fw-bold" 
                                           :class="cat.level === 0 ? 'text-white' : 'text-dim'"></span>
                                 </div>
                             </td>
                             <td class="text-dim extra-small">
-                                <span x-text="cat.nombre_categoria_padre || '-'"></span>
+                                <span x-text="cat.parent_name || '-'"></span>
                             </td>
                             <td class="text-end text-dim opacity-50 extra-small">
                                 <i class="fa-solid fa-chevron-right"></i>
@@ -90,14 +90,14 @@
                     <form @submit.prevent="saveCategory">
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.col_name')">NOMBRE_CATEGORIA</label>
-                            <input type="text" class="form-control neon-input" x-model="formData.nombre_categoria" required>
+                            <input type="text" class="form-control neon-input" x-model="formData.name" required>
                         </div>
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('categories.parent')">CATEGORIA_PADRE</label>
-                            <select class="form-select neon-input" x-model="formData.id_padre">
+                            <select class="form-select neon-input" x-model="formData.parent_id">
                                 <option value="" x-text="$store.lang.t('common.none')">Ninguna</option>
-                                <template x-for="c in categories" :key="c.id_categoria">
-                                    <option :value="c.id_categoria" x-text="c.nombre_categoria"></option>
+                                <template x-for="c in categories" :key="c.id">
+                                    <option :value="c.id" x-text="c.name"></option>
                                 </template>
                             </select>
                         </div>
@@ -119,11 +119,11 @@
 {% block extra_js %}
 <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('categoriasPage', () => ({
+        Alpine.data('categoriesPage', () => ({
             categories: [],
             loading: true,
             saving: false,
-            formData: { nombre_categoria: '', id_padre: null },
+            formData: { name: '', parent_id: null },
             isEdit: false,
             editId: null,
             bsModal: null,
@@ -136,7 +136,7 @@
             async fetchCategories() {
                 this.loading = true;
                 try {
-                    const res = await api.get('categorias/');
+                    const res = await api.get('categories/');
                     const rawCats = res.data.data || [];
                     this.categories = this.buildCategoryTree(rawCats);
                 } catch (e) {
@@ -147,25 +147,34 @@
             },
 
             buildCategoryTree(cats) {
-                // 1. Map for easy lookup
+                // 1. Map for easy lookup and standardizing fields
                 const map = {};
-                cats.forEach(c => map[c.id_categoria] = { ...c, children: [] });
+                cats.forEach(c => {
+                    const standardized = {
+                        ...c,
+                        id: c.id ?? c.id_categoria,
+                        name: c.name ?? c.nombre_categoria,
+                        parent_id: c.parent_id ?? c.id_categoria_padre,
+                        parent_name: c.parent_name ?? c.nombre_categoria_padre,
+                        children: []
+                    };
+                    map[standardized.id] = standardized;
+                });
                 
                 // 2. Build tree structure
                 const tree = [];
-                cats.forEach(c => {
-                    if (c.id_categoria_padre && map[c.id_categoria_padre]) {
-                        map[c.id_categoria_padre].children.push(map[c.id_categoria]);
+                Object.values(map).forEach(c => {
+                    if (c.parent_id && map[c.parent_id]) {
+                        map[c.parent_id].children.push(c);
                     } else {
-                        tree.push(map[c.id_categoria]);
+                        tree.push(c);
                     }
                 });
 
                 // 3. Flatten for display with levels
                 const flat = [];
                 const traverse = (nodes, level) => {
-                    // Sort locally if needed, or rely on backend sort
-                    nodes.sort((a, b) => a.nombre_categoria.localeCompare(b.nombre_categoria));
+                    nodes.sort((a, b) => a.name.localeCompare(b.name));
                     
                     nodes.forEach(n => {
                         n.level = level;
@@ -179,16 +188,16 @@
 
             openCreateModal() {
                 this.isEdit = false;
-                this.formData = { nombre_categoria: '', id_padre: '' };
+                this.formData = { name: '', parent_id: '' };
                 this.bsModal.show();
             },
 
-            editar(cat) {
+            editCategory(cat) {
                 this.isEdit = true;
-                this.editId = cat.id_categoria;
+                this.editId = cat.id;
                 this.formData = { 
-                    nombre_categoria: cat.nombre_categoria, 
-                    id_padre: cat.id_padre || ''
+                    name: cat.name, 
+                    parent_id: cat.parent_id || ''
                 };
                 this.bsModal.show();
             },
@@ -197,12 +206,12 @@
                 this.saving = true;
                 try {
                     const payload = { ...this.formData };
-                    if (payload.id_padre === '') payload.id_padre = null;
+                    if (payload.parent_id === '') payload.parent_id = null;
                     
                     if (this.isEdit) {
-                        await api.put(`categorias/${this.editId}`, payload);
+                        await api.put(`categories/${this.editId}`, payload);
                     } else {
-                        await api.post('categorias/', payload);
+                        await api.post('categories/', payload);
                     }
                     await this.fetchCategories();
                     this.bsModal.hide();

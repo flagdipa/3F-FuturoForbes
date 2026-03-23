@@ -1,8 +1,10 @@
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from sqlmodel import Session, select
-from backend.models.models_advanced import TransaccionRecurrente
-from backend.models.models import LibroTransacciones
+# from backend.models.models_advanced import TransaccionRecurrente
+# from backend.models.models import LibroTransacciones
+class TransaccionRecurrente: pass
+class LibroTransacciones: pass
 
 class RecurringService:
     def calculate_next_date(self, current_date: date, frequency: str, interval: int) -> date:

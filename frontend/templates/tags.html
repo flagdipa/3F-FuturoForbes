@@ -26,7 +26,7 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
-                <button class="neon-btn px-4 py-2 shadow-sm" @click="nuevaEtiqueta()">
+                <button class="neon-btn px-4 py-2 shadow-sm" @click="newTag()">
                     <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('tags.new')">Nueva Etiqueta</span>
                 </button>
             </div>
@@ -37,22 +37,22 @@
     </div>
 
     <!-- GridStack Layout -->
-    <div class="grid-stack">
-        <template x-for="tag in tags" :key="tag.id_etiqueta">
+    <div class="grid-stack" x-show="!loading">
+        <template x-for="tag in tags" :key="tag.id">
             <div class="grid-stack-item" gs-w="3" gs-h="4">
                 <div class="grid-stack-item-content h-100" :style="'border-left: 4px solid ' + (tag.color || 'var(--3f-primary)')">
                     <div class="p-3 d-flex flex-column h-100">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="text-white mb-0 text-truncate" x-text="tag.nombre_etiqueta"></h5>
+                            <h5 class="text-white mb-0 text-truncate" x-text="tag.name"></h5>
                             <div class="dropdown">
                                 <button class="btn btn-link text-dim p-0" data-bs-toggle="dropdown">
                                     <i class="fa-solid fa-ellipsis-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end neon-border">
-                                    <li><a class="dropdown-item" href="#" @click="editarEtiqueta(tag)">
+                                    <li><a class="dropdown-item" href="#" @click="editTag(tag)">
                                         <i class="fa-solid fa-pen-to-square me-2"></i> <span x-text="$store.lang.t('common.edit')">Editar</span></a></li>
                                     <li><hr class="dropdown-divider border-secondary opacity-25"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" @click="confirmarBorrar(tag)">
+                                    <li><a class="dropdown-item text-danger" href="#" @click="confirmDelete(tag)">
                                         <i class="fa-solid fa-trash-can me-2"></i> <span x-text="$store.lang.t('common.delete')">Eliminar</span></a></li>
                                 </ul>
                             </div>
@@ -60,7 +60,7 @@
                         <div class="mt-auto">
                             <span class="badge bg-dark border border-secondary text-dim small">
                                 <i class="fa-solid fa-link me-1"></i> 
-                                <span x-text="tag.conteo_uso || 0"></span> usos
+                                <span x-text="tag.usage_count || 0"></span> usos
                             </span>
                         </div>
                         <!-- Drag Handle -->
@@ -72,6 +72,13 @@
             </div>
         </template>
     </div>
+
+    <!-- Loading State -->
+    <template x-if="loading">
+        <div class="text-center p-5 opacity-50">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </template>
 
     <!-- Modal Formulario -->
     <div class="modal fade" id="modalTag" tabindex="-1" aria-hidden="true">
@@ -85,10 +92,10 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="guardarTag">
+                    <form @submit.prevent="saveTag">
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('tags.tag_name')">IDENTIFICADOR_VISUAL</label>
-                            <input type="text" class="form-control neon-input" x-model="form.nombre_etiqueta" required :placeholder="$store.lang.t('tags.tag_name')">
+                            <input type="text" class="form-control neon-input" x-model="form.name" required :placeholder="$store.lang.t('tags.tag_name')">
                         </div>
                         <div class="mb-3">
                             <label class="text-dim small">CÓDIGO_COLOR</label>
@@ -121,20 +128,21 @@
         Alpine.data('tagsPage', () => ({
             tags: [],
             grid: null,
-            layoutManager: null,
-            // ... (rest of properties)
             loading: false,
             saving: false,
             editMode: false,
             bsModal: null,
             form: {
-                id_etiqueta: null,
-                nombre_etiqueta: '',
+                id: null,
+                name: '',
                 color: '#4dc9ff'
             },
 
             async init() {
-                this.bsModal = new bootstrap.Modal(document.getElementById('modalTag'));
+                const modalEl = document.getElementById('modalTag');
+                if (modalEl) {
+                    this.bsModal = new bootstrap.Modal(modalEl);
+                }
                 await this.fetchTags();
             },
 
@@ -142,7 +150,12 @@
                 this.loading = true;
                 try {
                     const response = await api.get('/tags/with-counts');
-                    this.tags = response.data;
+                    this.tags = response.data.map(t => ({
+                        ...t,
+                        id: t.id ?? t.id_etiqueta,
+                        name: t.name ?? t.nombre_etiqueta,
+                        usage_count: t.usage_count ?? t.conteo_uso
+                    }));
                     
                     this.$nextTick(() => {
                         if (this.grid) {
@@ -163,49 +176,52 @@
                 }
             },
             
-            // ... (rest of methods)
-            nuevaEtiqueta() {
+            newTag() {
                 this.editMode = false;
-                this.form = { id_etiqueta: null, nombre_etiqueta: '', color: '#4dc9ff' };
+                this.form = { id: null, name: '', color: '#4dc9ff' };
                 this.bsModal.show();
             },
 
-            editarEtiqueta(tag) {
+            editTag(tag) {
                 this.editMode = true;
                 this.form = { ...tag };
                 this.bsModal.show();
             },
 
-            async guardarTag() {
+            async saveTag() {
                 this.saving = true;
                 try {
+                    const payload = { ...this.form };
                     if (this.editMode) {
-                        await api.put(`/tags/${this.form.id_etiqueta}`, this.form);
+                        await api.put(`/tags/${this.form.id}`, payload);
                     } else {
-                        await api.post('/tags/', this.form);
+                        await api.post('/tags/', payload);
                     }
                     await this.fetchTags();
                     this.bsModal.hide();
+                    NotificationManager.success('Etiqueta sincronizada');
                 } catch (error) {
-                    alert('ERROR_ENLACE: ' + (error.response?.data?.detail || 'Fallo de guardado'));
+                    NotificationManager.error(error.response?.data?.detail || 'Fallo de guardado');
                 } finally {
                     this.saving = false;
                 }
             },
 
-            async confirmarBorrar(tag) {
-                if (tag.conteo_uso > 0) {
-                    if (!confirm(`La etiqueta "${tag.nombre_etiqueta}" está asignada a ${tag.conteo_uso} transacciones. ¿Confirmar purga?`)) return;
-                } else {
-                    if (!confirm(`¿Eliminar etiqueta "${tag.nombre_etiqueta}"?`)) return;
+            async confirmDelete(tag) {
+                const count = tag.usage_count || 0;
+                let confirmMsg = `¿Eliminar etiqueta "${tag.name}"?`;
+                if (count > 0) {
+                    confirmMsg = `La etiqueta "${tag.name}" está asignada a ${count} transacciones. ¿Confirmar purga?`;
                 }
 
-                try {
-                    await api.delete(`/tags/${tag.id_etiqueta}`);
-                    // Removing from array and re-init might work, but fetching again works best for sync with DB counters if needed later
-                    await this.fetchTags();
-                } catch (error) {
-                    alert('ERROR_ELIMINACION: ' + (error.response?.data?.detail || 'Fallo de borrado'));
+                if (confirm(confirmMsg)) {
+                    try {
+                        await api.delete(`/tags/${tag.id}`);
+                        await this.fetchTags();
+                        NotificationManager.success('Etiqueta eliminada');
+                    } catch (error) {
+                        NotificationManager.error(error.response?.data?.detail || 'Fallo de borrado');
+                    }
                 }
             }
         }));

@@ -198,8 +198,8 @@
             async checkOCRPlugin() {
                 try {
                     const res = await api.get('/plugins/');
-                    const ocr = res.data.find(p => p.nombre_tecnico === 'ia_ocr');
-                    this.ocrPluginActive = ocr ? ocr.activo : false;
+                    const ocr = res.data.find(p => p.technical_name === 'ia_ocr');
+                    this.ocrPluginActive = ocr ? ocr.is_active : false;
                 } catch (e) {
                     console.warn('Could not detect OCR plugin state');
                 }

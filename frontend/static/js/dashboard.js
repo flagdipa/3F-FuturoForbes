@@ -74,25 +74,30 @@ document.addEventListener('alpine:init', () => {
                     this.grid.load(layout);
                 } else {
                     // Layout por defecto: 12 columnas sin huecos
-                    // Fila 1: Balance(4) | Resumen Mensual(5) | Dólar Hoy(3)  → total 12
-                    // Fila 2: Transacciones(7) | Acceso Rápido(2) | IA(3)     → total 12
-                    const defaultWidgets = [
-                        'widget-balance-total',
-                        'widget-monthly-summary',
-                        'widget-dolar-hoy',
-                        'widget-recent-transactions',
-                        'widget-quick-add',
-                        'widget-ia-insights'
-                    ];
-                    await this.loadRequiredWidgetScripts(defaultWidgets);
-                    this.grid.load([
+                    // Respeta la seleccion del panel de checkboxes si existe
+                    const panelSelection = (() => {
+                        try {
+                            const s = localStorage.getItem(window.WIDGET_PANEL_KEY || '3f_active_widgets');
+                            return s ? JSON.parse(s) : null;
+                        } catch(e) { return null; }
+                    })();
+
+                    const allDefault = [
                         { x: 0, y: 0, w: 4, h: 4, id: 'widget-balance-total' },
                         { x: 4, y: 0, w: 5, h: 6, id: 'widget-monthly-summary' },
                         { x: 9, y: 0, w: 3, h: 4, id: 'widget-dolar-hoy' },
                         { x: 0, y: 4, w: 7, h: 5, id: 'widget-recent-transactions' },
                         { x: 7, y: 4, w: 2, h: 5, id: 'widget-quick-add' },
                         { x: 9, y: 4, w: 3, h: 5, id: 'widget-ia-insights' }
-                    ]);
+                    ];
+
+                    const defaultWidgetItems = panelSelection
+                        ? allDefault.filter(w => panelSelection.includes(w.id))
+                        : allDefault;
+
+                    const defaultWidgets = defaultWidgetItems.map(w => w.id);
+                    await this.loadRequiredWidgetScripts(defaultWidgets);
+                    this.grid.load(defaultWidgetItems);
                 }
             } catch (e) {
                 console.error("Failed to load layout", e);

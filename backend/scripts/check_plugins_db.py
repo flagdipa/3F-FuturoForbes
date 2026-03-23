@@ -23,9 +23,9 @@ def check_plugins():
         print(f"--- Installed Plugins ({len(plugins)}) ---")
         found_forecasting = False
         for p in plugins:
-            status = "ACTIVE" if p.activo else "INACTIVE"
-            print(f"[{p.id_plugin}] {p.nombre_display} ({p.nombre_tecnico}) - {status}")
-            if p.nombre_tecnico == "ia_forecasting":
+            status = "ACTIVE" if p.is_active else "INACTIVE"
+            print(f"[{p.id_plugin}] {p.display_name} ({p.technical_name}) - {status}")
+            if p.technical_name == "ia_forecasting":
                 found_forecasting = True
         
         if not found_forecasting:

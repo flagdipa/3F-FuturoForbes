@@ -39,7 +39,7 @@ def verify_scheduler():
             intervalo=1,
             fecha_inicio=date.today(),
             proxima_fecha=date.today(), # Due Today
-            activo=1,
+            is_active=1,
             auto_execute=True,
             notas="Auto Execute Test"
         )
@@ -59,7 +59,7 @@ def verify_scheduler():
             intervalo=1,
             fecha_inicio=date.today(),
             proxima_fecha=date.today(), # Due Today
-            activo=1,
+            is_active=1,
             auto_execute=False,
             notas="Manual Execute Test"
         )

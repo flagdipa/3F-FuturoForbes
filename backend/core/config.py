@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(
-        ...,
-        description="Database connection string (Required)"
+        default="sqlite:///3f_app.db",
+        description="Database connection string"
     )
     
     # JWT Configuration
     SECRET_KEY: str = Field(
-        default="temporary-secret-key-for-installation-only-32-chars",
+        default="temporary-secret-key-for-installation-only-must-be-32chars",
         min_length=32,
         description="JWT secret key - must be at least 32 characters"
     )
@@ -45,8 +45,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="development", description="Environment: development, staging, production")
     DEBUG: bool = Field(default=True, description="Debug mode")
     
-    # API Keys (Optional)
-    GOOGLE_AI_API_KEY: Optional[str] = Field(default=None, description="Google Gemini API key for AI features")
+    # OCR Configuration
+    TESSERACT_CMD: str = Field(
+        default=r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        description="Path to Tesseract executable (used by PyTesseract OCR engine)"
+    )
     
     @validator("DATABASE_URL")
     def validate_database_url(cls, v):

@@ -1,0 +1,27 @@
+[
+  { "name": "Sueldo", "type": "INCOME", "icon": "fa-briefcase", "color": "#00ff88" },
+  { "name": "Ventas Freelance", "type": "INCOME", "icon": "fa-laptop-code", "color": "#00f3ff" },
+  { "name": "Alquiler", "type": "EXPENSE", "icon": "fa-house", "color": "#ff1744" },
+  { "name": "Supermercado", "type": "EXPENSE", "icon": "fa-cart-shopping", "color": "#ffeb3b" },
+  { "name": "Servicios", "type": "EXPENSE", "icon": "fa-bolt", "color": "#00d9ff", "subcategories": [
+    { "name": "Luz", "type": "EXPENSE" },
+    { "name": "Gas", "type": "EXPENSE" },
+    { "name": "Internet", "type": "EXPENSE" },
+    { "name": "Agua", "type": "EXPENSE" }
+  ]},
+  { "name": "Transporte", "type": "EXPENSE", "icon": "fa-car", "color": "#da00ff", "subcategories": [
+    { "name": "Combustible", "type": "EXPENSE" },
+    { "name": "Peajes", "type": "EXPENSE" },
+    { "name": "Transporte Público", "type": "EXPENSE" }
+  ]},
+  { "name": "Salud", "type": "EXPENSE", "icon": "fa-stethoscope", "color": "#00ff88", "subcategories": [
+    { "name": "Obra Social", "type": "EXPENSE" },
+    { "name": "Farmacia", "type": "EXPENSE" }
+  ]},
+  { "name": "Entretenimiento", "type": "EXPENSE", "icon": "fa-film", "color": "#ffea00", "subcategories": [
+      { "name": "Netflix / Spotify", "type": "EXPENSE" },
+      { "name": "Salidas", "type": "EXPENSE" }
+  ]},
+  { "name": "Educación", "type": "EXPENSE", "icon": "fa-book", "color": "#2196f3" },
+  { "name": "Otros Gastos", "type": "EXPENSE", "icon": "fa-ellipsis", "color": "#8b5cf6" }
+]

@@ -1,31 +1,40 @@
-/**
- * 3F System - i18n Engine
- * Alpine.js Global Store for Multi-language Support
- */
+function initI18nStore() {
+    if (!window.Alpine) return;
+    if (Alpine.store('lang')) return;
 
-document.addEventListener('alpine:init', () => {
     Alpine.store('lang', {
         current: localStorage.getItem('3f_lang') || 'es',
         translations: {},
         loaded: false,
 
-        async init() {
-            await this.loadLanguage(this.current);
+        init() {
+            const saved = localStorage.getItem('3f_lang');
+            if (saved) {
+                this.loadLanguage(saved);
+            } else {
+                const browserLang = navigator.language.split('-')[0];
+                const target = ['es', 'en'].includes(browserLang) ? browserLang : 'es';
+                this.loadLanguage(target);
+            }
+        },
+
+        set(langCode) {
+            this.loadLanguage(langCode);
         },
 
         async loadLanguage(langCode) {
             try {
-                const response = await fetch(`/static/js/lang-${langCode}.json`);
+                console.log('Loading language:', langCode);
+                const response = await fetch(`/static/js/lang-${langCode}.json?t=${Date.now()}`);
                 if (!response.ok) throw new Error(`Language file for ${langCode} not found.`);
-                this.translations = await response.data || await response.json();
+                this.translations = await response.json();
+                console.log('Language loaded successfully:', langCode, this.translations);
                 this.current = langCode;
                 localStorage.setItem('3f_lang', langCode);
                 this.loaded = true;
-                console.log(`Language [${langCode}] loaded successfully.`);
             } catch (error) {
                 console.error('Failed to load translations:', error);
-                // Fallback to ES if anything fails
-                if (langCode !== 'es') await this.loadLanguage('es');
+                if (langCode !== 'es') this.loadLanguage('es');
             }
         },
 
@@ -44,4 +53,10 @@ document.addEventListener('alpine:init', () => {
             return value;
         }
     });
-});
+}
+
+if (window.Alpine) {
+    initI18nStore();
+} else {
+    document.addEventListener('alpine:init', initI18nStore);
+}

@@ -2,8 +2,8 @@ from typing import Dict, Any, List
 from backend.plugins.base import BasePlugin
 
 class ExportToolsPlugin(BasePlugin):
-    nombre_tecnico = "export_tools"
-    nombre_display = "Export Tools HQ"
+    technical_name = "export_tools"
+    display_name = "Export Tools HQ"
     version = "1.0.0"
     autor = "3F Core"
     descripcion = "Exportación avanzada a Excel, PDF y formatos contables MMEX."

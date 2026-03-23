@@ -3,8 +3,8 @@ from backend.plugins.base import BasePlugin
 from backend.core.forecasting_service import forecasting_service
 
 class IaForecastingPlugin(BasePlugin):
-    nombre_tecnico = "ia_forecasting"
-    nombre_display = "IA Forecasting Service"
+    technical_name = "ia_forecasting"
+    display_name = "IA Forecasting Service"
     version = "1.0.0"
     autor = "3F Core"
     descripcion = "Proyecciones financieras y análisis de tendencias basado en regresión lineal."

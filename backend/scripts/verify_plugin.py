@@ -10,11 +10,11 @@ from backend.models import Plugin
 
 def verify():
     with Session(engine) as session:
-        plugin = session.exec(select(Plugin).where(Plugin.nombre_tecnico == "ia_forecasting")).first()
+        plugin = session.exec(select(Plugin).where(Plugin.technical_name == "ia_forecasting")).first()
         if plugin:
-            print(f"Plugin found: {plugin.nombre_tecnico}")
-            print(f"Status: {'Active' if plugin.activo else 'Inactive'}")
-            print(f"Config: {plugin.configuracion}")
+            print(f"Plugin found: {plugin.technical_name}")
+            print(f"Status: {'Active' if plugin.is_active else 'Inactive'}")
+            print(f"Config: {plugin.config}")
         else:
             print("Plugin NOT found.")
 

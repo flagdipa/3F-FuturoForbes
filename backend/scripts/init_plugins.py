@@ -15,63 +15,63 @@ def init_plugins():
     
     with Session(engine) as session:
         # Check if plugin exists
-        statement = select(Plugin).where(Plugin.nombre_tecnico == "ia_forecasting")
+        statement = select(Plugin).where(Plugin.technical_name == "ia_forecasting")
         results = session.exec(statement)
         plugin = results.first()
 
         if not plugin:
             print("Registering 'ia_forecasting' plugin...")
             new_plugin = Plugin(
-                nombre_tecnico="ia_forecasting",
-                nombre_display="IA Forecasting Service",
+                technical_name="ia_forecasting",
+                display_name="IA Forecasting Service",
                 descripcion="Proyecciones financieras y análisis de tendencias basado en regresión lineal.",
                 version="1.0.0",
                 autor="3F Core",
                 instalado=True,
-                activo=True,
-                configuracion={"model": "linear_regression", "days_projection": 30},
+                is_active=True,
+                config={"model": "linear_regression", "days_projection": 30},
                 hooks_suscritos="dashboard_charts"
             )
             session.add(new_plugin)
             session.commit()
             print("Plugin registered successfully.")
         # 2. IA OCR
-        statement_ocr = select(Plugin).where(Plugin.nombre_tecnico == "ia_ocr")
+        statement_ocr = select(Plugin).where(Plugin.technical_name == "ia_ocr")
         results_ocr = session.exec(statement_ocr)
         plugin_ocr = results_ocr.first()
 
         if not plugin_ocr:
             print("Registering 'ia_ocr' plugin...")
             new_ocr = Plugin(
-                nombre_tecnico="ia_ocr",
-                nombre_display="IA OCR Vision",
+                technical_name="ia_ocr",
+                display_name="IA OCR Vision",
                 descripcion="Extracción inteligente de datos de facturas y tickets mediante Computer Vision.",
                 version="1.0.2",
                 autor="3F Core",
                 instalado=True,
-                activo=True,
-                configuracion={"provider": "google_genai", "confidence_threshold": 0.8},
+                is_active=True,
+                config={"provider": "google_genai", "confidence_threshold": 0.8},
                 hooks_suscritos="vault_upload"
             )
             session.add(new_ocr)
             print("Plugin OCR registered.")
 
         # 3. Export Tools (Utility)
-        statement_exp = select(Plugin).where(Plugin.nombre_tecnico == "export_tools")
+        statement_exp = select(Plugin).where(Plugin.technical_name == "export_tools")
         results_exp = session.exec(statement_exp)
         plugin_exp = results_exp.first()
 
         if not plugin_exp:
             print("Registering 'export_tools' plugin...")
             new_exp = Plugin(
-                nombre_tecnico="export_tools",
-                nombre_display="Export Tools HQ",
+                technical_name="export_tools",
+                display_name="Export Tools HQ",
                 descripcion="Exportación avanzada a Excel, PDF y formatos contables MMEX.",
                 version="1.0.0",
                 autor="3F Core",
                 instalado=True,
-                activo=False,
-                configuracion={"default_format": "xlsx"},
+                is_active=False,
+                config={"default_format": "xlsx"},
                 hooks_suscritos="reports_view"
             )
             session.add(new_exp)

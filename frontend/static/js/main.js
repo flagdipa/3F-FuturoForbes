@@ -45,9 +45,29 @@ async function checkAuth() {
         return;
     }
 
-    if (token && emailSpan) {
-        // En un futuro aquí pediremos los datos del usuario actual
-        emailSpan.innerText = 'Fer21gon';
+    if (token) {
+        console.log('Token found, fetching profile...');
+        try {
+            const res = await api.get('/auth/profile');
+            console.log('Profile fetched:', res.data);
+            const userData = res.data;
+            if (emailSpan) emailSpan.innerText = userData.email;
+            
+            const nameEl = document.getElementById('header-user-name');
+            if (nameEl) nameEl.innerText = userData.full_name || userData.email;
+            
+            const dashNameEl = document.getElementById('dash-user-name');
+            if (dashNameEl) dashNameEl.innerText = userData.full_name || userData.email;
+            
+            // Sync with avatars
+            const avatars = document.querySelectorAll('.user-menu img, .user-header img');
+            const displayName = userData.full_name || userData.email.split('@')[0];
+            avatars.forEach(img => {
+                img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=00f2ff&color=000`;
+            });
+        } catch (e) {
+            console.error('Error fetching profile:', e);
+        }
     }
 }
 

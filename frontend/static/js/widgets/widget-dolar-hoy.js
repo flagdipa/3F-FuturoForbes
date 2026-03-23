@@ -24,7 +24,7 @@
                     this.rates = {
                         blue: { buy: res.data.blue?.buy || res.data.blue?.compra || 0, sell: res.data.blue?.sell || res.data.blue?.venta || 0 },
                         oficial: { buy: res.data.oficial?.buy || res.data.oficial?.compra || 0, sell: res.data.oficial?.sell || res.data.oficial?.venta || 0 },
-                        mep: { price: res.data.mep?.price || res.data.bolsa?.venta || 0 }
+                        mep: { price: res.data.mep?.price || res.data.bolsa?.venta || res.data.mep?.venta || 0 }
                     };
                     this.loading = false;
                     return;

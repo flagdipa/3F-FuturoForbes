@@ -24,32 +24,27 @@
 <div x-data="budgetsPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
         <div class="col-12 mb-4 d-flex justify-content-between align-items-center">
-            <button class="neon-btn px-4 py-2 shadow-sm" @click="nuevoPresupuesto()">
+            <button class="neon-btn px-4 py-2 shadow-sm" @click="newBudget()">
                 <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('budgets.new')">DEFINIR LÍMITE</span>
             </button>
             <div class="d-flex align-items-center">
-                <label class="text-dim me-2 small">AÑO:</label>
-                <select class="form-select neon-input form-select-sm" style="width: 100px;" x-model="year" @change="loadBudgets()">
-                    <template x-for="y in years" :key="y">
-                        <option :value="y" x-text="y"></option>
-                    </template>
-                </select>
+                <!-- Dropdown optional for future filters -->
             </div>
         </div>
     </div>
 
     <!-- Grid de Presupuestos -->
     <div class="grid-stack">
-        <template x-for="budget in presupuestos" :key="budget.id_presupuesto">
+        <template x-for="line in budgetLines" :key="line.budget_id + '-' + line.id">
             <div class="grid-stack-item" gs-w="4" gs-h="5">
                 <div class="grid-stack-item-content h-100 position-relative">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h5 class="text-primary mb-1 hud-title" x-text="budget.nombre_categoria || 'General'"></h5>
-                            <span class="badge bg-dark border border-secondary text-dim extra-small" x-text="budget.periodo"></span>
+                            <h5 class="text-primary mb-1 hud-title" x-text="line.category_name || $store.lang.t('common.general')"></h5>
+                            <span class="badge bg-dark border border-secondary text-dim extra-small" x-text="line.budget_name"></span>
                         </div>
                         <div class="text-end">
-                            <h4 class="mb-0 text-white font-monospace" x-text="formatCurrency(budget.monto)"></h4>
+                            <h4 class="mb-0 text-white font-monospace" x-text="formatCurrency(line.amount)"></h4>
                             <small class="text-dim extra-small fw-bold" x-text="$store.lang.t('budgets.col_limit')">LÍMITE</small>
                         </div>
                     </div>
@@ -57,26 +52,20 @@
                     <!-- Barra de Progreso HUD -->
                     <div class="progress mb-2" style="height: 6px; background: rgba(255,255,255,0.1);">
                         <div class="progress-bar neon-glow" role="progressbar" 
-                             :style="`width: ${getPorcentaje(budget)}%`"
-                             :class="getColorBarra(budget)">
+                             :style="`width: ${Math.min(line.percentage, 100)}%`"
+                             :class="getBarColor(line)">
                         </div>
                     </div>
                     
                     <div class="d-flex justify-content-between extra-small text-dim font-monospace text-uppercase">
-                        <span x-text="$store.lang.t('budgets.col_spent') + ': ' + formatCurrency(budget.gasto_actual)"></span>
+                        <span x-text="$store.lang.t('budgets.col_spent') + ': ' + formatCurrency(line.current_spent)"></span>
                         <div class="text-end">
-                            <span x-text="(getPorcentaje(budget) || 0).toFixed(1) + '%'"></span>
-                            <template x-if="budget.es_rolling">
-                                <div class="text-info" style="font-size: 0.7em;" title="Rolling Accumulation">
-                                    <i class="fa-solid fa-rotate-right me-1"></i>
-                                    <span x-text="formatCurrency(budget.monto_acumulado)"></span>
-                                </div>
-                            </template>
+                            <span x-text="(line.percentage || 0).toFixed(1) + '%'"></span>
                         </div>
                     </div>
 
-                    <button class="btn btn-sm btn-link text-dim position-absolute bottom-0 end-0 m-2" @click="editarPresupuesto(budget)">
-                        <i class="fa-solid fa-gear"></i>
+                    <button class="btn btn-sm btn-link text-danger position-absolute bottom-0 end-0 m-2" @click="deleteBudget(line.budget_id)" title="Borrar Presupuesto Padre">
+                        <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
             </div>
@@ -84,7 +73,7 @@
     </div>
 
     <!-- Modal de Edición/Creación -->
-    <div class="modal fade" id="modalPresupuesto" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modalBudget" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content neon-modal">
                 <div class="modal-header border-0 pb-0">
@@ -92,37 +81,39 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="guardarPresupuesto">
+                    <form @submit.prevent="saveBudget">
                         <div class="mb-3">
-                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('budgets.col_category')">CATEGORÍA OJETIVO</label>
-                            <select class="form-select neon-input" x-model="form.id_categoria" required>
-                                <option value="" disabled x-text="$store.lang.t('common.loading')">Seleccionar...</option>
-                                <template x-for="cat in categorias" :key="cat.id_categoria">
-                                    <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
-                                </template>
-                            </select>
+                            <label class="text-dim extra-small fw-bold text-uppercase">NOMBRE DEL PRESUPUESTO</label>
+                            <input type="text" class="form-control neon-input" x-model="form.name" required placeholder="Ej: Marzo 2026">
                         </div>
-                        <div class="mb-3">
-                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('budgets.col_limit')">LÍMITE MENSUAL</label>
-                            <input type="number" step="0.01" class="form-control neon-input" x-model="form.monto" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('recurring.frequency')">PERIODO</label>
-                            <select class="form-select neon-input" x-model="form.periodo">
-                                <option value="Monthly" x-text="$store.lang.t('recurring.monthly')">Mensual</option>
-                                <option value="Yearly" x-text="$store.lang.t('recurring.yearly')">Anual</option>
-                                <option value="Weekly" x-text="$store.lang.t('recurring.weekly')">Semanal</option>
-                            </select>
-                        </div>
-                        <div class="mb-3 form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="rollingCheck" x-model="form.es_rolling">
-                            <label class="form-check-label text-white" for="rollingCheck">
-                                <i class="fa-solid fa-rotate-right me-2 text-info"></i>Presupuesto Flexible (Rolling)
-                            </label>
-                            <div class="form-text text-dim small">
-                                El saldo no utilizado se suma al siguiente periodo.
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase">DESDE</label>
+                                <input type="date" class="form-control neon-input" x-model="form.start_date" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase">HASTA</label>
+                                <input type="date" class="form-control neon-input" x-model="form.end_date" required>
                             </div>
                         </div>
+                        
+                        <div class="p-3 mb-3 border border-secondary border-opacity-25 rounded bg-black bg-opacity-25">
+                            <h6 class="text-info extra-small fw-bold text-uppercase mb-3"><i class="fa-solid fa-list me-1"></i> Asignación de Límite (Línea)</h6>
+                            <div class="mb-3">
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('budgets.col_category')">CATEGORÍA OBJETIVO</label>
+                                <select class="form-select neon-input" x-model.number="form.category_id" required>
+                                    <option value="" disabled x-text="$store.lang.t('common.loading')">Seleccionar...</option>
+                                    <template x-for="cat in categories" :key="cat.id">
+                                        <option :value="cat.id" x-text="cat.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('budgets.col_limit')">LÍMITE ASIGNADO</label>
+                                <input type="number" step="0.01" class="form-control neon-input" x-model.number="form.amount" required>
+                            </div>
+                        </div>
+
                         <div class="text-end mt-4">
                             <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
                             <button type="submit" class="btn neon-btn px-4 shadow-sm" x-text="$store.lang.t('common.save')">CONFIRMAR_PARAMETROS</button>
@@ -140,34 +131,45 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('budgetsPage', () => ({
-            presupuestos: [],
-            categorias: [],
-            form: { id_categoria: '', monto: 0, periodo: 'Monthly', es_rolling: false },
+            budgets: [],
+            budgetLines: [],
+            categories: [],
+            form: { name: '', start_date: '', end_date: '', category_id: '', amount: 0 },
             modal: null,
-            editingId: null,
             grid: null,
-            layoutManager: null,
-            year: new Date().getFullYear(),
-            years: [],
 
             async init() {
-                this.generateYears();
-                this.modal = new bootstrap.Modal(document.getElementById('modalPresupuesto'));
+                this.modal = new bootstrap.Modal(document.getElementById('modalBudget'));
                 await Promise.all([this.loadBudgets(), this.loadCategories()]);
-            },
-
-            generateYears() {
-                const current = new Date().getFullYear();
-                for (let i = current; i >= current - 5; i--) {
-                    this.years.push(i);
-                }
             },
 
             async loadBudgets() {
                 try {
-                    const res = await api.get('/presupuestos', { params: { year: this.year } });
-                    this.presupuestos = res.data;
+                    const res = await api.get('/budgets/');
+                    this.budgets = res.data;
+                    this.budgetLines = [];
                     
+                    // Cargar status para cada budget (líneas)
+                    for (const budget of this.budgets) {
+                        try {
+                            const statusRes = await api.get(`/budgets/${budget.id}/status`);
+                            for (const line of statusRes.data) {
+                                this.budgetLines.push({
+                                    id: line.id,
+                                    budget_id: budget.id,
+                                    budget_name: budget.name,
+                                    category_id: line.category_id,
+                                    category_name: line.category_name,
+                                    amount: line.allocated,
+                                    current_spent: line.spent,
+                                    percentage: line.percentage
+                                });
+                            }
+                        } catch (e) {
+                            console.warn("Error cargando status del budget", budget.id, e);
+                        }
+                    }
+
                     this.$nextTick(() => {
                         if (this.grid) {
                             this.grid.destroy(false);
@@ -187,41 +189,64 @@
 
             async loadCategories() {
                 try {
-                    // Asumiendo que existe endpoint de categorias lista simple
-                    const res = await api.get('/categorias'); 
-                    // Si api/categorias devuelve tree, necesitariamos aplanarlo o usar otro endpoint.
-                    // Por ahora asumimos que devuelve lista o tree y mostramos raiz. 
-                    // Ajuste rápido: Si es tree, solo mostramos nivel 1 para MVP.
-                    this.categorias = Array.isArray(res.data) ? res.data : []; 
+                    const res = await api.get('/categories'); 
+                    const rawCats = Array.isArray(res.data) ? res.data : (res.data.data || []);
+                    this.categories = rawCats.map(c => ({
+                        ...c,
+                        id: c.id ?? c.id_categoria,
+                        name: c.name ?? c.nombre_categoria
+                    }));
                 } catch (e) {
                     console.error("Error loading categories", e);
                 }
             },
 
-            nuevoPresupuesto() {
-                this.editingId = null;
-                this.form = { id_categoria: '', monto: 0, periodo: 'Monthly', es_rolling: false };
+            newBudget() {
+                const today = new Date();
+                const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+                const end = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+                this.form = { 
+                    name: 'Presupuesto ' + today.toLocaleString('es-ES', { month: 'long', year: 'numeric' }), 
+                    start_date: start, 
+                    end_date: end, 
+                    category_id: '', 
+                    amount: 0 
+                };
                 this.modal.show();
             },
 
-            editarPresupuesto(b) {
-                this.editingId = b.id_presupuesto;
-                this.form = { ...b };
-                this.modal.show();
-            },
-
-            async guardarPresupuesto() {
+            async saveBudget() {
                 try {
-                    let res;
-                    if (this.editingId) {
-                        res = await api.put(`/presupuestos/${this.editingId}`, this.form);
-                    } else {
-                        res = await api.post('/presupuestos/', this.form);
-                    }
+                    const payload = {
+                        name: this.form.name,
+                        period_type: "MONTHLY",
+                        start_date: this.form.start_date,
+                        end_date: this.form.end_date,
+                        lines: [
+                            {
+                                category_id: this.form.category_id,
+                                allocated_amount: this.form.amount
+                            }
+                        ]
+                    };
+                    await api.post('/budgets/', payload);
+                    NotificationManager.success(this.$store.lang.t('budgets.success_created') || 'Presupuesto creado con éxito', 'OK');
                     await this.loadBudgets();
                     this.modal.hide();
                 } catch (e) {
-                    alert('Error al guardar: ' + e.message);
+                    NotificationManager.error(e.response?.data?.detail || 'Error al guardar prespuesto', 'Error');
+                }
+            },
+            
+            async deleteBudget(id) {
+                if (!confirm(this.$store.lang.t('common.delete_confirm') || '¿Estás seguro de borrar este presupuesto completo?')) return;
+                try {
+                    await api.delete(`/budgets/${id}`);
+                    NotificationManager.success('Presupuesto eliminado', 'OK');
+                    await this.loadBudgets();
+                } catch (e) {
+                    NotificationManager.error('No se pudo borrar', 'Error');
                 }
             },
 
@@ -229,16 +254,11 @@
                 return CurrencyUtils.formatCurrency(val);
             },
 
-            getPorcentaje(budget) {
-                // Return real percentage calculated by backend
-                return budget.porcentaje || 0;
-            },
-
-            getColorBarra(budget) {
-                const p = this.getPorcentaje(budget);
-                if (p > 100) return 'bg-danger'; // Over budget
-                if (p > 90) return 'bg-warning'; // Warning zone
-                return 'bg-success'; // Safe zone
+            getBarColor(line) {
+                const p = line.percentage || 0;
+                if (p >= 100) return 'bg-danger'; 
+                if (p >= 80) return 'bg-warning'; 
+                return 'bg-success'; 
             }
         }))
     });

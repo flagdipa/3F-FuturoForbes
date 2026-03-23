@@ -53,54 +53,54 @@
                         <label class="text-dim extra-small mb-0" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.search_text')"></label>
                         <input type="text" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" 
                                :placeholder="$store.lang.t('common.search')" 
-                               x-model="filtros.busqueda" @input.debounce.500ms="aplicarFiltros()">
+                               x-model="filters.search" @input.debounce.500ms="applyFilters()">
                     </div>
                     <div class="col-md-1">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.date_from')">DESDE</label>
-                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.fecha_inicio" @change="aplicarFiltros()">
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.start_date" @change="applyFilters()">
                     </div>
                     <div class="col-md-1">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.date_to')">HASTA</label>
-                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.fecha_fin" @change="aplicarFiltros()">
+                        <input type="date" class="form-control neon-input form-control-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.end_date" @change="applyFilters()">
                     </div>
                     <div class="col-md-1">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('recurring.account')">CUENTA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_cuenta" @change="aplicarFiltros()">
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.account_id" @change="applyFilters()">
                             <option value="" x-text="$store.lang.t('transactions.all')">TODAS</option>
-                            <template x-for="c in colecciones.cuentas" :key="c.id_cuenta">
-                                <option :value="c.id_cuenta" x-text="c.nombre_cuenta"></option>
+                            <template x-for="c in collections.accounts" :key="c.id">
+                                <option :value="c.id" x-text="c.name"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.columns.beneficiary')">BENEFICIARIO</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_beneficiario" @change="aplicarFiltros()">
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.payee_id" @change="applyFilters()">
                             <option value="" x-text="$store.lang.t('transactions.all')">TODOS</option>
-                            <template x-for="b in colecciones.beneficiarios" :key="b.id_beneficiario">
-                                <option :value="b.id_beneficiario" x-text="b.nombre_beneficiario"></option>
+                            <template x-for="b in collections.payees" :key="b.id">
+                                <option :value="b.id" x-text="b.name"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('transactions.columns.category')">CATEGORÍA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_categoria" @change="aplicarFiltros()">
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.category_id" @change="applyFilters()">
                             <option value="" x-text="$store.lang.t('transactions.all')">TODAS</option>
-                            <template x-for="cat in colecciones.categorias" :key="cat.id_categoria">
-                                <option :value="cat.id_categoria" x-text="cat.nombre_categoria"></option>
+                            <template x-for="cat in collections.categories" :key="cat.id">
+                                <option :value="cat.id" x-text="cat.name"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="text-dim extra-small mb-0 fw-bold" style="font-size: 0.65rem;" x-text="$store.lang.t('nav.tags')">ETIQUETA</label>
-                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filtros.id_etiqueta" @change="aplicarFiltros()">
+                        <select class="form-select neon-input form-select-sm py-0" style="font-size: 0.7rem; height: 22px;" x-model="filters.tag_id" @change="applyFilters()">
                             <option value="" x-text="$store.lang.t('transactions.no_filter')">SIN_FILTRO</option>
-                            <template x-for="tag in allTags" :key="tag.id_etiqueta">
-                                <option :value="tag.id_etiqueta" x-text="tag.nombre_etiqueta"></option>
+                            <template x-for="tag in allTags" :key="tag.id">
+                                <option :value="tag.id" x-text="tag.name"></option>
                             </template>
                         </select>
                     </div>
                     <div class="col-md-1 text-end">
-                        <button class="btn btn-sm btn-outline-secondary w-100 py-0" style="height: 22px;" @click="limpiarFiltros()">
+                        <button class="btn btn-sm btn-outline-secondary w-100 py-0" style="height: 22px;" @click="clearFilters()">
                             <i class="fa-solid fa-eraser" style="font-size: 0.7rem;"></i>
                         </button>
                     </div>
@@ -138,66 +138,66 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="tx in transacciones" :key="tx.id_transaccion">
+                        <template x-for="tx in transactions" :key="tx.id">
                             <tr class="tx-row" 
-                                :class="{'bg-primary bg-opacity-10': selectedTxId === tx.id_transaccion}"
-                                @click="selectedTxId = tx.id_transaccion"
-                                @dblclick="editarTransaccion(tx)">
-                                <template x-for="col in columns" :key="col.key + '-' + tx.id_transaccion">
+                                :class="{'tx-row-selected': selectedTxId === tx.id}"
+                                @click="selectedTxId = tx.id"
+                                @dblclick="editTransaction(tx)">
+                                <template x-for="col in columns" :key="col.key + '-' + tx.id">
                                     <td class="align-middle text-nowrap">
                                         <template x-if="col.key === 'tipo'">
                                             <span class="badge rounded-pill" 
                                                   :class="{
-                                                      'bg-danger bg-opacity-25 text-danger border border-danger': tx.codigo_transaccion === 'Withdrawal',
-                                                      'bg-success bg-opacity-25 text-success border border-success': tx.codigo_transaccion === 'Deposit',
-                                                      'bg-info bg-opacity-25 text-info border border-info': tx.codigo_transaccion === 'Transfer'
+                                                      'bg-danger bg-opacity-25 text-danger border border-danger': tx.transaction_code === 'Withdrawal',
+                                                      'bg-success bg-opacity-25 text-success border border-success': tx.transaction_code === 'Deposit',
+                                                      'bg-info bg-opacity-25 text-info border border-info': tx.transaction_code === 'Transfer'
                                                   }"
-                                                  x-text="tx.codigo_transaccion === 'Withdrawal' ? 'Retiro' : (tx.codigo_transaccion === 'Deposit' ? 'Depósito' : 'Transfer.')"></span>
+                                                  x-text="tx.transaction_code === 'Withdrawal' ? 'Retiro' : (tx.transaction_code === 'Deposit' ? 'Depósito' : 'Transfer.')"></span>
                                         </template>
                                         <template x-if="col.key === 'fecha'">
-                                            <span x-text="formatFechaOnly(tx.fecha_transaccion)"></span>
+                                            <span x-text="formatFechaOnly(tx.date)"></span>
                                         </template>
                                         <template x-if="col.key === 'hora'">
-                                            <span x-text="formatHoraOnly(tx.fecha_transaccion)"></span>
+                                            <span x-text="formatHoraOnly(tx.date)"></span>
                                         </template>
                                         <template x-if="col.key === 'cuenta'">
-                                            <span class="text-accent" x-text="tx.nombre_cuenta"></span>
+                                            <span class="text-accent" x-text="tx.account_name"></span>
                                         </template>
                                         <template x-if="col.key === 'beneficiario'">
-                                            <span x-text="tx.nombre_beneficiario"></span>
+                                            <span x-text="tx.payee_name"></span>
                                         </template>
                                         <template x-if="col.key === 'categoria'">
-                                            <span :class="tx.es_dividida ? 'badge bg-warning bg-opacity-25 text-warning border border-warning px-2' : ''" 
-                                                  x-text="tx.es_dividida ? $store.lang.t('transactions.columns.is_split') : (tx.nombre_categoria || '-')"></span>
+                                            <span :class="tx.is_split ? 'badge bg-warning bg-opacity-25 text-warning border border-warning px-2' : ''" 
+                                                  x-text="tx.is_split ? $store.lang.t('transactions.columns.is_split') : (tx.category_name || '-')"></span>
                                         </template>
                                         <template x-if="col.key === 'monto'">
                                             <div class="text-end">
-                                                <span class="fs-6 fw-bold" :class="tx.codigo_transaccion === 'Withdrawal' ? 'text-danger' : (tx.codigo_transaccion === 'Deposit' ? 'text-success' : 'text-info')" 
-                                                      x-text="(tx.codigo_transaccion === 'Withdrawal' ? '-' : '') + formatCurrency(tx.monto_transaccion)">
+                                                <span class="fs-6 fw-bold" :class="tx.transaction_code === 'Withdrawal' ? 'text-danger' : (tx.transaction_code === 'Deposit' ? 'text-success' : 'text-info')" 
+                                                      x-text="(tx.transaction_code === 'Withdrawal' ? '-' : '') + formatCurrency(tx.amount)">
                                                 </span>
                                             </div>
                                         </template>
                                         <template x-if="col.key === 'saldo'">
                                             <div class="text-end">
-                                                <span class="fs-6 fw-bold text-info" x-show="tx.saldo !== null && tx.saldo !== undefined" x-text="formatCurrency(tx.saldo)"></span>
-                                                <span class="text-dim opacity-25" x-show="tx.saldo === null || tx.saldo === undefined">-</span>
+                                                <span class="fs-6 fw-bold text-info" x-show="tx.balance !== null && tx.balance !== undefined" x-text="formatCurrency(tx.balance)"></span>
+                                                <span class="text-dim opacity-25" x-show="tx.balance === null || tx.balance === undefined">-</span>
                                             </div>
                                         </template>
                                         <template x-if="col.key === 'estado'">
                                             <span class="badge rounded-pill" 
-                                                  :class="tx.estado === 'RECONCILED' 
+                                                  :class="tx.status === 'RECONCILED' 
                                                       ? 'bg-success bg-opacity-25 text-success border border-success' 
-                                                      : tx.estado === 'VOID' 
+                                                      : tx.status === 'VOID' 
                                                           ? 'bg-danger bg-opacity-25 text-danger border border-danger'
                                                           : 'bg-warning bg-opacity-25 text-warning border border-warning'"
-                                                  x-text="tx.estado === 'RECONCILED' ? 'Conciliado' : (tx.estado === 'VOID' ? 'Anulado' : 'Pendiente')"></span>
+                                                  x-text="tx.status === 'RECONCILED' ? 'Conciliado' : (tx.status === 'VOID' ? 'Anulado' : 'Pendiente')"></span>
                                         </template>
                                         <template x-if="col.key === 'etiquetas'">
                                             <div class="d-flex flex-wrap gap-1">
-                                                <template x-for="tagId in (tx.etiquetas || [])">
+                                                <template x-for="tagId in (tx.tags || [])">
                                                     <span class="badge px-2 py-1" 
-                                                          :style="'font-size: 0.65rem; background-color: ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)') + '44; color: ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)') + '; border: 1px solid ' + (allTags.find(t => t.id_etiqueta === tagId)?.color || 'var(--3f-primary)')"
-                                                          x-text="allTags.find(t => t.id_etiqueta === tagId)?.nombre_etiqueta || tagId"></span>
+                                                          :style="'font-size: 0.65rem; background-color: ' + (allTags.find(t => t.id === tagId)?.color || 'var(--3f-primary)') + '44; color: ' + (allTags.find(t => t.id === tagId)?.color || 'var(--3f-primary)') + '; border: 1px solid ' + (allTags.find(t => t.id === tagId)?.color || 'var(--3f-primary)')"
+                                                          x-text="allTags.find(t => t.id === tagId)?.name || tagId"></span>
                                                 </template>
                                             </div>
                                         </template>
@@ -214,19 +214,18 @@
             
             <!-- Barra de Acciones Inferior -->
             <div class="border-top border-secondary border-opacity-25 p-2 d-flex justify-content-center gap-2 bg-black bg-opacity-50">
-                <button class="btn btn-sm btn-outline-success px-4 neon-border" @click="nuevaTransaccion()">
+                <button class="btn btn-sm btn-outline-success neon-border btn-action-standard" @click="newTransaction()">
                     <i class="fa-solid fa-plus me-2"></i><span x-text="$store.lang.t('transactions.new')">Nuevo</span>
                 </button>
-                <button class="btn btn-sm btn-outline-primary px-4 neon-border" :disabled="!selectedTxId" 
-                        @click="if(selectedTxId) editarTransaccion(transacciones.find(t => t.id_transaccion === selectedTxId))">
+                <button class="btn btn-sm btn-outline-primary neon-border btn-action-standard" :disabled="!selectedTxId" 
+                        @click="if(selectedTxId) editTransaction(transactions.find(t => t.id === selectedTxId))">
                     <i class="fa-solid fa-pen me-2"></i><span x-text="$store.lang.t('common.edit')">Editar</span>
                 </button>
-                <button class="btn btn-sm btn-outline-warning px-4 neon-border" :disabled="!selectedTxId"
-                        @click="if(selectedTxId) duplicarTransaccion(selectedTxId)">
+                <button class="btn btn-sm btn-outline-warning neon-border btn-action-standard" :disabled="!selectedTxId"
+                        @click="if(selectedTxId) duplicateTransaction(selectedTxId)">
                     <i class="fa-solid fa-copy me-2"></i><span x-text="$store.lang.t('common.duplicate')">Duplicar</span>
                 </button>
-                <button class="btn btn-sm btn-outline-danger px-4 neon-border" :disabled="!selectedTxId"
-                        @click="if(selectedTxId && confirm($store.lang.t('common.delete_confirm'))) eliminarTransaccion(selectedTxId)">
+                <button class="btn btn-sm btn-outline-danger neon-border btn-action-standard" :disabled="!selectedTxId" @click="confirmDelete()">
                     <i class="fa-solid fa-trash me-2"></i><span x-text="$store.lang.t('common.delete')">Borrar</span>
                 </button>
             </div>
@@ -238,683 +237,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('transaccionesPage', () => ({
-            transacciones: [],
-            selectedTxId: null,
-            offset: 0,
-            limit: 100,
-            loading: false,
-            hasMore: true,
-            attachments: [],
-            editTx: { etiquetas: [], divisiones: [], es_dividida: false },
-            bsModal: null,
-            saving: false,
-            allTags: [],
-            filtros: {
-                busqueda: '',
-                fecha_inicio: '',
-                fecha_fin: '',
-                id_cuenta: '',
-                id_beneficiario: '',
-                id_categoria: '',
-                id_etiqueta: '',
-                moneda: ''
-            },
-            colecciones: {
-                cuentas: [],
-                beneficiarios: [],
-                categorias: []
-            },
-            
-            defaultColumns: [
-                { key: 'tipo', class: 'border-primary' },
-                { key: 'fecha', class: 'col-md-1 d-none d-md-table-cell border-primary' },
-                { key: 'hora', class: 'd-none d-lg-table-cell border-primary' },
-                { key: 'cuenta', class: 'col-md-2 border-primary text-truncate' },
-                { key: 'beneficiario', class: 'col-md-3 border-primary text-truncate' },
-                { key: 'categoria', class: 'col-md-2 d-none d-sm-table-cell border-primary text-truncate' },
-                { key: 'monto', class: 'col-md-1 border-primary', align: 'end' },
-                { key: 'saldo', class: 'col-md-1 d-none d-lg-table-cell border-primary', align: 'end' },
-                { key: 'etiquetas', class: 'd-none d-xl-table-cell border-primary' },
-                { key: 'estado', class: 'd-none d-md-table-cell border-primary' }
-            ],
-            columns: [],
-            sortable: null,
-            sortCol: 'fecha',
-            sortAsc: false, // Default desc order (newest first)
-
-            async init() {
-                // Load columns from localStorage if available
-                const savedOrder = localStorage.getItem('tx_columns_order_v1');
-                if (savedOrder) {
-                    const orderKeys = JSON.parse(savedOrder);
-                    this.columns = orderKeys.map(k => this.defaultColumns.find(c => c.key === k)).filter(Boolean);
-                    // Add any new columns that might have been added since save
-                    this.defaultColumns.forEach(c => {
-                        if (!this.columns.find(saved => saved.key === c.key)) {
-                            this.columns.push(c);
-                        }
-                    });
-                } else {
-                    this.columns = [...this.defaultColumns];
-                }
-                
-                let attempts = 0;
-                while (typeof bootstrap === 'undefined' && attempts < 20) {
-                    await new Promise(r => setTimeout(r, 100));
-                    attempts++;
-                }
-                if (typeof bootstrap !== 'undefined') {
-                    const modalEl = document.getElementById('modalNuevo');
-                    if (modalEl) this.bsModal = new bootstrap.Modal(modalEl);
-                }
-
-                // --- Handle Account/Currency Filtering from Navigation ---
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('id_cuenta')) {
-                    this.filtros.id_cuenta = urlParams.get('id_cuenta');
-                }
-                if (urlParams.has('moneda')) {
-                    this.filtros.moneda = urlParams.get('moneda');
-                }
-
-                await this.cargarColecciones();
-                await this.cargarMas();
-                
-                // Initialize Sortable and Resizers after data load and DOM update
-                this.$nextTick(() => {
-                    this.initSortable();
-                    this.initColumnResizers();
-                });
-            },
-
-            initColumnResizers() {
-                const headers = document.querySelectorAll('#tx-headers th');
-                headers.forEach(th => {
-                    if (th.querySelector('.resizer')) return;
-
-                    const resizer = document.createElement('div');
-                    resizer.classList.add('resizer');
-                    th.appendChild(resizer);
-
-                    let x = 0;
-                    let w = 0;
-
-                    const mouseMoveHandler = (e) => {
-                        const dx = e.clientX - x;
-                        th.style.width = `${w + dx}px`;
-                        th.classList.add('resizing'); // Optional style hook
-                        resizer.classList.add('resizing');
-                    };
-
-                    const mouseUpHandler = () => {
-                        document.removeEventListener('mousemove', mouseMoveHandler);
-                        document.removeEventListener('mouseup', mouseUpHandler);
-                        th.classList.remove('resizing');
-                        resizer.classList.remove('resizing');
-                    };
-
-                    const mouseDownHandler = (e) => {
-                        x = e.clientX;
-                        const styles = window.getComputedStyle(th);
-                        w = parseInt(styles.width, 10);
-
-                        document.addEventListener('mousemove', mouseMoveHandler);
-                        document.addEventListener('mouseup', mouseUpHandler);
-                        e.stopPropagation(); // Prevent sorting trigger
-                        e.preventDefault();
-                    };
-
-                    resizer.addEventListener('mousedown', mouseDownHandler);
-                    // Prevent sort click on resizer
-                    resizer.addEventListener('click', e => e.stopPropagation());
-                });
-            },
-
-            initSortable() {
-                const el = document.getElementById('tx-headers');
-                if (!el) return;
-                
-                this.sortable = new Sortable(el, {
-                    animation: 150,
-                    ghostClass: 'bg-primary',
-                    handle: 'th',
-                    onStart: (evt) => {
-                        // Store original order before drag
-                        this._preDragColumns = [...this.columns];
-                    },
-                    onEnd: (evt) => {
-                        // Revert DOM manipulation done by Sortable (Alpine manages DOM)
-                        const parent = evt.from;
-                        const movedEl = evt.item;
-                        if (evt.oldIndex < evt.newIndex) {
-                            parent.insertBefore(movedEl, parent.children[evt.oldIndex]);
-                        } else {
-                            parent.insertBefore(movedEl, parent.children[evt.oldIndex + 1]);
-                        }
-
-                        // Now update the data array (Alpine will re-render)
-                        const cols = [...this._preDragColumns];
-                        const item = cols.splice(evt.oldIndex, 1)[0];
-                        cols.splice(evt.newIndex, 0, item);
-                        this.columns = cols;
-
-                        // Save Order
-                        const keys = this.columns.map(c => c.key);
-                        localStorage.setItem('tx_columns_order_v1', JSON.stringify(keys));
-                    }
-                });
-            },
-
-            sortBy(key) {
-                if (this.sortCol === key) {
-                    this.sortAsc = !this.sortAsc;
-                } else {
-                    this.sortCol = key;
-                    this.sortAsc = true;
-                }
-                // Reset pagination and reload
-                this.aplicarFiltros();
-            },
-
-            async cargarColecciones() {
-                try {
-                    const unwrap = r => Array.isArray(r.data) ? r.data : (r.data?.data || []);
-                    const [tags, cuentas, benfs, cats] = await Promise.all([
-                        api.get('/tags/'),
-                        api.get('/cuentas/'),
-                        api.get('/beneficiarios/'),
-                        api.get('/categorias/')
-                    ]);
-                    this.allTags = unwrap(tags);
-                    // /api/cuentas/ usa 'id' y 'name' (esquema V2) — normalizar al formato esperado
-                    this.colecciones.cuentas = unwrap(cuentas).map(c => ({
-                        ...c,
-                        id_cuenta: c.id_cuenta ?? c.id,
-                        nombre_cuenta: c.nombre_cuenta ?? c.name
-                    }));
-                    this.colecciones.beneficiarios = unwrap(benfs);
-                    this.colecciones.categorias = unwrap(cats);
-                } catch (e) { console.error('Error cargando iniciales:', e); }
-            },
-
-            async cargarMas() {
-                if (this.loading || !this.hasMore) return;
-                this.loading = true;
-                try {
-                    // Only send params accepted by the backend API
-                    const apiFilterMap = {
-                        id_cuenta: 'id_cuenta',
-                        id_beneficiario: 'id_beneficiario',
-                        id_categoria: 'id_categoria',
-                        fecha_inicio: 'fecha_inicio',
-                        fecha_fin: 'fecha_fin'
-                    };
-                    let url = `/transactions/?skip=${this.offset}&limit=${this.limit}`;
-                    Object.keys(apiFilterMap).forEach(key => {
-                        if (this.filtros[key]) {
-                            url += `&${apiFilterMap[key]}=${encodeURIComponent(this.filtros[key])}`;
-                        }
-                    });
-                    
-                    // Map frontend column keys to backend sort fields
-                    const sortMap = {
-                        'fecha': 'date',
-                        'beneficiario': 'payee'
-                    };
-                    const apiSortCol = sortMap[this.sortCol] || 'date';
-                    url += `&sort_by=${apiSortCol}&order=${this.sortAsc ? 'asc' : 'desc'}`;
-
-                    const response = await api.get(url);
-                    const payload = response.data;
-                    const resultList = Array.isArray(payload) ? payload : (payload.data || []);
-                    
-                    let nuevas = resultList.map(tx => this.formatDataFromV2(tx));
-                    
-                    // Client-side filter: busqueda text search
-                    if (this.filtros.busqueda) {
-                        const q = this.filtros.busqueda.toLowerCase();
-                        nuevas = nuevas.filter(tx =>
-                            (tx.nombre_beneficiario || '').toLowerCase().includes(q) ||
-                            (tx.notas || '').toLowerCase().includes(q) ||
-                            (tx.nombre_cuenta || '').toLowerCase().includes(q) ||
-                            (tx.nombre_categoria || '').toLowerCase().includes(q)
-                        );
-                    }
-
-                    // No pagination metadata yet — assume more if full limit returned
-                    this.hasMore = (resultList.length >= this.limit);
-                    this.transacciones = [...this.transacciones, ...nuevas];
-                    this.offset += this.limit;
-                } catch (error) {
-                    console.error('Error al cargar transacciones:', error);
-                } finally {
-                    this.loading = false;
-                }
-            },
-            
-            handleScroll(e) {
-                const { scrollTop, scrollHeight, clientHeight } = e.target;
-                if (scrollTop + clientHeight >= scrollHeight - 50) this.cargarMas();
-            },
-            
-            formatCurrency(v) { return CurrencyUtils.formatCurrency(v); },
-            formatFechaOnly(f) { return f ? new Date(f).toLocaleDateString() : '-'; },
-            formatHoraOnly(f) { return f ? new Date(f).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'; },
-            
-            aplicarFiltros() {
-                this.transacciones = [];
-                this.offset = 0;
-                this.hasMore = true;
-                this.cargarMas();
-            },
-
-            limpiarFiltros() {
-                this.filtros = {
-                    busqueda: '',
-                    fecha_inicio: '',
-                    fecha_fin: '',
-                    id_cuenta: '',
-                    id_beneficiario: '',
-                    id_categoria: '',
-                    id_etiqueta: ''
-                };
-                this.aplicarFiltros();
-            },
-            
-            getNombreCuenta(id) {
-                let acc = this.colecciones.cuentas.find(c => c.id_cuenta == id || c.id === id);
-                return acc ? (acc.nombre_cuenta || acc.name) : 'Cuenta #' + id;
-            },
-            
-            getNombreCategoria(id) {
-                if (!id) return null;
-                let c = this.colecciones.categorias.find(c => c.id_categoria == id || c.id === id);
-                return c ? (c.nombre_categoria || c.name) : 'Cat #' + id;
-            },
-            
-            getNombreBeneficiario(id) {
-                if (!id) return null;
-                let b = this.colecciones.beneficiarios.find(b => b.id_beneficiario == id || b.id === id);
-                return b ? (b.nombre_beneficiario || b.name) : 'Ben #' + id;
-            },
-            
-            formatDataFromV2(tx) {
-                let mainRow = {
-                    id_transaccion: tx.id,
-                    fecha_transaccion: tx.date,
-                    // status from API: "PENDING", "RECONCILED", "VOID"
-                    estado: tx.status || 'PENDING',
-                    notas: tx.notes || tx.description || '',
-                    id_beneficiario: tx.payee_id,
-                    nombre_beneficiario: this.getNombreBeneficiario(tx.payee_id),
-                    etiquetas: (tx.tags || []).map(t => t.id), 
-                    es_dividida: false
-                };
-
-                let splits = tx.splits || [];
-                let isTransfer = false;
-                
-                // Transfer detection: 2 splits, different accounts, sum zero
-                if (splits.length === 2) {
-                    const s1 = splits[0], s2 = splits[1];
-                    const sum = parseFloat(s1.amount) + parseFloat(s2.amount);
-                    if (Math.abs(sum) < 0.001 && s1.account_id !== s2.account_id) isTransfer = true;
-                }
-
-                if (isTransfer) {
-                    mainRow.codigo_transaccion = 'Transfer';
-                    let fromSplit = splits.find(s => parseFloat(s.amount) < 0);
-                    let toSplit   = splits.find(s => parseFloat(s.amount) > 0);
-                    mainRow.monto_transaccion = Math.abs(parseFloat(fromSplit?.amount || splits[0].amount));
-                    mainRow.id_cuenta = fromSplit?.account_id;
-                    mainRow.id_cuenta_destino = toSplit?.account_id;
-                    mainRow.nombre_cuenta = `${this.getNombreCuenta(fromSplit?.account_id)} → ${this.getNombreCuenta(toSplit?.account_id)}`;
-                    mainRow.nombre_categoria = 'Transferencia';
-                    mainRow.saldo = null;
-                } else if (splits.length === 0) {
-                    mainRow.codigo_transaccion = 'Unknown';
-                    mainRow.monto_transaccion = 0;
-                    mainRow.nombre_cuenta = '-';
-                    mainRow.nombre_categoria = '-';
-                    mainRow.saldo = null;
-                } else if (splits.length === 1) {
-                    let amount = parseFloat(splits[0].amount);
-                    mainRow.codigo_transaccion = amount >= 0 ? 'Deposit' : 'Withdrawal';
-                    mainRow.monto_transaccion = Math.abs(amount);
-                    mainRow.id_cuenta = splits[0].account_id;
-                    mainRow.id_categoria = splits[0].category_id;
-                    mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
-                    mainRow.nombre_categoria = this.getNombreCategoria(splits[0].category_id);
-                    mainRow.saldo = null;
-                } else {
-                    // Multiple splits — split transaction or single-entry categorization
-                    mainRow.es_dividida = splits.length > 1;
-                    
-                    // The total transaction amount for a non-transfer is the absolute sum of all splits 
-                    // (since they all point to the same account in single-entry mode)
-                    const totalAmt = splits.reduce((sum, s) => sum + parseFloat(s.amount), 0);
-                    mainRow.codigo_transaccion = totalAmt >= 0 ? 'Deposit' : 'Withdrawal';
-                    mainRow.monto_transaccion = Math.abs(totalAmt);
-                    
-                    mainRow.id_cuenta = splits[0].account_id;
-                    mainRow.id_categoria = splits[0].category_id;
-                    mainRow.nombre_cuenta = this.getNombreCuenta(splits[0].account_id);
-                    
-                    if (splits.length === 1) {
-                        mainRow.nombre_categoria = this.getNombreCategoria(splits[0].category_id);
-                    } else {
-                        mainRow.nombre_categoria = 'Dividida (' + splits.length + ' divs)';
-                    }
-                    mainRow.saldo = null;
-                    
-                    // Store divisiones for editing
-                    mainRow.divisiones = splits.map(s => ({
-                        id_categoria: s.category_id,
-                        monto_division: Math.abs(parseFloat(s.amount)),
-                        notas: s.memo || ''
-                    }));
-                }
-                return mainRow;
-            },
-
-            nuevaTransaccion() {
-                this.editTx = {
-                    id_transaccion: 'NEW',
-                    fecha_transaccion: new Date().toISOString().slice(0, 16),
-                    monto_transaccion: null,
-                    id_cuenta: this.colecciones.cuentas[0]?.id_cuenta || null,
-                    id_beneficiario: this.colecciones.beneficiarios[0]?.id_beneficiario || null,
-                    id_categoria: null,
-                    id_cuenta_destino: null,
-                    codigo_transaccion: 'Withdrawal',
-                    etiquetas: [],
-                    divisiones: [],
-                    es_dividida: false,
-                    notas: '',
-                    estado: 'PENDING'
-                };
-                this.attachments = [];
-                if (this.bsModal) this.bsModal.show();
-            },
-
-            async editarTransaccion(tx) {
-                // Copia profunda
-                this.editTx = JSON.parse(JSON.stringify(tx));
-                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
-                if (!this.editTx.divisiones) this.editTx.divisiones = [];
-                this.attachments = [];
-                
-                if (this.editTx.fecha_transaccion) {
-                    try {
-                        this.editTx.fecha_transaccion = new Date(this.editTx.fecha_transaccion).toISOString().slice(0, 16);
-                    } catch(e) {}
-                }
-
-                // Cargar divisiones si es una TX dividida
-                if (this.editTx.es_dividida) {
-                    if (!this.editTx.divisiones || this.editTx.divisiones.length === 0) {
-                        try {
-                            const res = await api.get(`/transactions/${tx.id_transaccion}`);
-                            // Map V2 splits format to form divisiones format
-                            this.editTx.divisiones = (res.data.splits || []).map(s => ({
-                                id_categoria: s.category_id,
-                                monto_division: Math.abs(parseFloat(s.amount)),
-                                notas: s.memo || ''
-                            }));
-                        } catch (e) {
-                            console.error('Error cargando divisiones:', e);
-                        }
-                    }
-                }
-
-                // Cargar adjuntos
-                await this.cargarAdjuntos();
-
-                if (this.bsModal) this.bsModal.show();
-            },
-
-            async cargarAdjuntos() {
-                if (this.editTx.id_transaccion === 'NEW') return;
-                try {
-                    const res = await api.get(`/attachments/Transaccion/${this.editTx.id_transaccion}`);
-                    this.attachments = res.data || [];
-                } catch (e) {
-                    // El endpoint de adjuntos puede no existir aún — ignorar silenciosamente
-                    if (e.response?.status !== 404) {
-                        console.warn('Error cargando adjuntos:', e.message);
-                    }
-                    this.attachments = [];
-                }
-            },
-
-            async subirAdjunto(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                try {
-                    this.saving = true;
-                    await api.post(`/attachments/?tipo_referencia=Transaccion&id_referencia=${this.editTx.id_transaccion}`, formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    await this.cargarAdjuntos();
-                } catch (e) {
-                    alert('Error al subir archivo: ' + (e.response?.data?.detail || 'Fallo desconocido'));
-                } finally {
-                    this.saving = false;
-                    e.target.value = '';
-                }
-            },
-
-            async procesarOCR(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                try {
-                    this.saving = true;
-                    // Trigger OCR endpoint
-                    const response = await api.post('/ia/ocr', formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    
-                    const data = response.data;
-                    if (data && data.transaction_prefill) {
-                        const prefill = data.transaction_prefill;
-                        // Auto-fill values
-                        if (prefill.monto_transaccion) {
-                            this.editTx.monto_transaccion = prefill.monto_transaccion;
-                            this.editTx.codigo_transaccion = 'Withdrawal'; // Assume expense by default for tickets
-                        }
-                        if (prefill.fecha_transaccion) {
-                            // Extract just the day, to keep hours neutral or respect ISO format up to minutes
-                            this.editTx.fecha_transaccion = prefill.fecha_transaccion.slice(0, 16);
-                        }
-                        if (prefill.descripcion) {
-                            this.editTx.notas = prefill.descripcion + (data.engine ? ` [OCR: ${data.engine}]` : '');
-                        }
-                        
-                        // Handle splits if any
-                        if (prefill.splits_sugeridos && prefill.splits_sugeridos.length > 0) {
-                            this.editTx.es_dividida = true;
-                            this.editTx.divisiones = prefill.splits_sugeridos.map(s => ({
-                                id_categoria: null,
-                                monto_division: s.monto,
-                                notas: s.descripcion
-                            }));
-                        }
-                    }
-                } catch (e) {
-                    alert('Error OCR: ' + (e.response?.data?.detail || e.message || 'Fallo desconocido'));
-                } finally {
-                    this.saving = false;
-                    e.target.value = '';
-                }
-            },
-
-            async eliminarAdjunto(adjId) {
-                if (!confirm('¿Seguro que desea eliminar este comprobante?')) return;
-                try {
-                    await api.delete(`/attachments/${adjId}`);
-                    this.attachments = this.attachments.filter(a => a.id_adjunto !== adjId);
-                } catch (e) {
-                    alert('Error al eliminar adjunto');
-                }
-            },
-
-            descargarAdjunto(adj) {
-                window.open(`${api.defaults.baseURL}/attachments/download/${adj.id_adjunto}`, '_blank');
-            },
-
-            toggleTag(tagId) {
-                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
-                const idx = this.editTx.etiquetas.indexOf(tagId);
-                if (idx > -1) {
-                    this.editTx.etiquetas.splice(idx, 1);
-                } else {
-                    this.editTx.etiquetas.push(tagId);
-                }
-            },
-            
-            async guardarCambios() {
-                this.saving = true;
-                try {
-                    let baseAmount = parseFloat(this.editTx.monto_transaccion || 0);
-                    // Generate payload compatible with TransactionCreate
-                    let txPayload = {
-                        date: this.editTx.fecha_transaccion ? new Date(this.editTx.fecha_transaccion).toISOString() : new Date().toISOString(),
-                        description: this.editTx.notas || null,
-                        payee_id: this.editTx.id_beneficiario || null,
-                        notes: this.editTx.notas || null,
-                        status: this.editTx.estado || 'PENDING',
-                        tag_ids: this.editTx.etiquetas || [],
-                        splits: []
-                    };
-
-                    if (this.editTx.codigo_transaccion === 'Transfer') {
-                        if (!this.editTx.id_cuenta_destino) throw new Error("Debe seleccionar cuenta destino.");
-                        txPayload.description = txPayload.description || `Transferencia de cuenta #${this.editTx.id_cuenta} a #${this.editTx.id_cuenta_destino}`;
-                        txPayload.splits.push({
-                            account_id: this.editTx.id_cuenta,
-                            amount: -baseAmount,
-                            currency_code: 'ARS'
-                        });
-                        txPayload.splits.push({
-                            account_id: this.editTx.id_cuenta_destino,
-                            amount: baseAmount,
-                            currency_code: 'ARS'
-                        });
-                    } else {
-                        // Withdrawal or Deposit
-                        if (this.editTx.codigo_transaccion === 'Withdrawal') {
-                            baseAmount = -Math.abs(baseAmount);
-                        } else {
-                            baseAmount = Math.abs(baseAmount);
-                        }
-
-                        if (this.editTx.es_dividida && this.editTx.divisiones && this.editTx.divisiones.length > 0) {
-                            this.editTx.divisiones.forEach(d => {
-                                let pAmt = parseFloat(d.monto_division || 0);
-                                if (this.editTx.codigo_transaccion === 'Withdrawal') pAmt = -Math.abs(pAmt);
-                                else pAmt = Math.abs(pAmt);
-                                
-                                txPayload.splits.push({
-                                    account_id: this.editTx.id_cuenta,
-                                    category_id: d.id_categoria || null,
-                                    amount: pAmt,
-                                    currency_code: 'ARS',
-                                    memo: d.notas || null
-                                });
-                            });
-                        } else {
-                            txPayload.splits.push({
-                                account_id: this.editTx.id_cuenta,
-                                category_id: this.editTx.id_categoria || null,
-                                amount: baseAmount,
-                                currency_code: 'ARS'
-                            });
-                        }
-                    }
-
-                    let response;
-                    
-                    if (this.editTx.id_transaccion === 'NEW') {
-                        response = await api.post('/transactions/', txPayload);
-                        this.aplicarFiltros(); 
-                    } else {
-                        response = await api.put(`/transactions/${this.editTx.id_transaccion}`, txPayload);
-                        this.aplicarFiltros(); 
-                    }
-                    if (this.bsModal) this.bsModal.hide();
-                } catch (error) {
-                    const msg = error.response?.data?.detail || error.message;
-                    alert('ERROR_TRANSACCION: ' + (typeof msg === 'object' ? JSON.stringify(msg) : (msg || 'Fallas en enlace neuronal')));
-                } finally {
-                    this.saving = false;
-                }
-            },
-
-            async eliminarTransaccion(id) {
-                try {
-                    await api.delete(`/transactions/${id}`);
-                    this.transacciones = this.transacciones.filter(t => t.id_transaccion !== id);
-                    if (this.selectedTxId === id) this.selectedTxId = null;
-                } catch (error) {
-                    console.error('Error eliminando:', error);
-                    alert('Error al eliminar transacción');
-                }
-            },
-
-            async duplicarTransaccion(id) {
-                const tx = this.transacciones.find(t => t.id_transaccion === id);
-                if (!tx) return;
-                
-                // Clone and prepare for new insertion
-                this.editTx = JSON.parse(JSON.stringify(tx));
-                this.editTx.id_transaccion = 'NEW';
-                this.editTx.fecha_transaccion = new Date().toISOString().slice(0, 16);
-                
-                // Clear linked data that shouldn't be duplicated directly or needs reset
-                if (!this.editTx.etiquetas) this.editTx.etiquetas = [];
-                if (!this.editTx.divisiones) this.editTx.divisiones = [];
-                // Reset specialized fields if needed, e.g. recurrence
-                
-                this.attachments = []; // Don't duplicate attachments unless requested (complex)
-                
-                if (this.bsModal) this.bsModal.show();
-            },
-
-            toggleSplitMode() {
-                if (this.editTx.es_dividida && this.editTx.divisiones.length === 0) {
-                    this.agregarDivision();
-                }
-            },
-
-            agregarDivision() {
-                if (!this.editTx.divisiones) this.editTx.divisiones = [];
-                this.editTx.divisiones.push({
-                    id_categoria: this.colecciones.categorias[0]?.id_categoria || null,
-                    monto_division: 0,
-                    notas: ''
-                });
-            },
-
-            quitarDivision(index) {
-                this.editTx.divisiones.splice(index, 1);
-            },
-
-            getSplitSum() {
-                if (!this.editTx.divisiones) return 0;
-                return this.editTx.divisiones.reduce((sum, d) => sum + (parseFloat(d.monto_division) || 0), 0);
-            }
-        }));
-    });
-</script>
+<script src="/static/js/transactions.js"></script>
 {% endblock %}
+
+
+

@@ -6,8 +6,8 @@ class CryptoTrackerPlugin(BasePlugin):
     """
     Plugin to track live crypto prices using CoinGecko API.
     """
-    nombre_tecnico = "crypto_tracker"
-    nombre_display = "Crypto Live"
+    technical_name = "crypto_tracker"
+    display_name = "Crypto Live"
     version = "1.0.0"
     autor = "3F Labs"
     descripcion = "Seguimiento de precios de criptomonedas en tiempo real vía CoinGecko."
@@ -16,10 +16,10 @@ class CryptoTrackerPlugin(BasePlugin):
     API_URL = "https://api.coingecko.com/api/v3/simple/price"
 
     async def initialize(self):
-        self.logger.info(f"{self.nombre_display} inicializado")
+        self.logger.info(f"{self.display_name} inicializado")
 
     async def shutdown(self):
-        self.logger.info(f"{self.nombre_display} apagado")
+        self.logger.info(f"{self.display_name} apagado")
 
     async def get_live_prices(self, ids: List[str] = ["bitcoin", "ethereum", "tether", "binancecoin", "solana"]) -> Dict[str, Any]:
         """

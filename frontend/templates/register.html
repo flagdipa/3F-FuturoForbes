@@ -75,7 +75,7 @@
             }
             
             try {
-                await axios.post('/api/auth/registro', { nombre, email, password });
+                await axios.post('/api/auth/registro', { full_name: nombre, email, password });
                 alert('Registro exitoso. Ya puede iniciar sesión.');
                 window.location.href = '/login';
             } catch (error) {

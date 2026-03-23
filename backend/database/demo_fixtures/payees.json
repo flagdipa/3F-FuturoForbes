@@ -1,0 +1,14 @@
+[
+  { "name": "Coto Digital", "code": "COTO-001", "notes": "Supermercado retail" },
+  { "name": "YPF Gasolinera", "code": "YPF-NAFTA", "notes": "Combustible y shop" },
+  { "name": "Netflix", "code": "NETFLIX-SUBS", "notes": "Streaming video" },
+  { "name": "Edenor S.A.", "code": "EDENOR-LUZ", "notes": "Servicio de electricidad" },
+  { "name": "Metrogas", "code": "METRO-GAS", "notes": "Servicio de gas" },
+  { "name": "Personal Flow", "code": "PERSONAL-INT", "notes": "Internet y cable" },
+  { "name": "Empresa S.A. (Sueldo)", "code": "EMPLEADOR-01", "notes": "Pago de haberes" },
+  { "name": "McDonalds", "code": "MCD-FAST", "notes": "Comida rápida" },
+  { "name": "Apple Services", "code": "APPLE-ICLOUD", "notes": "iCloud / App Store" },
+  { "name": "Farmacity", "code": "FARMACITY-01", "notes": "Farmacia y perfumería" },
+  { "name": "Duenio Alquiler", "code": "RENT-PROP", "notes": "Pago mensual alquiler" },
+  { "name": "Mercado Libre", "code": "MELI-PURCH", "notes": "Compras generales" }
+]

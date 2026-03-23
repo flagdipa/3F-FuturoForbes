@@ -23,8 +23,8 @@ class BackupAutomaticoPlugin(BasePlugin):
     Soporta almacenamiento local y en AWS S3 con retención configurable.
     """
     
-    nombre_tecnico = "backup_automatico"
-    nombre_display = "Backup Automático"
+    technical_name = "backup_automatico"
+    display_name = "Backup Automático"
     version = "1.0.0"
     autor = "3F Team"
     descripcion = "Crea backups automáticos de la base de datos MySQL y los almacena localmente o en AWS S3"
@@ -37,7 +37,7 @@ class BackupAutomaticoPlugin(BasePlugin):
         
     async def initialize(self):
         """Inicializar el plugin y validar configuración"""
-        self.logger.info(f"Inicializando {self.nombre_display}")
+        self.logger.info(f"Inicializando {self.display_name}")
         
         # Validar configuración requerida
         if not self.get_config("enabled", True):
@@ -65,12 +65,12 @@ class BackupAutomaticoPlugin(BasePlugin):
                 self.logger.error(f"❌ Error conectando a S3: {e}")
                 self.s3_client = None
         
-        self.logger.info(f"✅ {self.nombre_display} inicializado correctamente")
+        self.logger.info(f"✅ {self.display_name} inicializado correctamente")
         self.logger.info(f"📁 Directorio de backups: {self.local_path}")
     
     async def shutdown(self):
         """Cerrar el plugin"""
-        self.logger.info(f"Apagando {self.nombre_display}")
+        self.logger.info(f"Apagando {self.display_name}")
         if self.s3_client:
             self.s3_client = None
     

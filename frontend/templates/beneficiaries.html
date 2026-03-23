@@ -3,7 +3,7 @@
 {% block header %}<span x-text="$store.lang.t('beneficiaries.title')">Gestión de Beneficiarios</span>{% endblock %}
 
 {% block content %}
-<div x-data="beneficiariosPage" class="content-wrapper bg-transparent">
+<div x-data="payeesPage" class="content-wrapper bg-transparent">
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
             <button class="neon-btn px-4 py-2 shadow-sm" @click="openCreateModal">
@@ -13,13 +13,13 @@
                 <div class="input-group input-group-sm neon-border overflow-hidden" style="width: 250px; background: rgba(0,0,0,0.2)">
                     <span class="input-group-text bg-transparent border-0 opacity-50"><i class="fa-solid fa-search"></i></span>
                     <input type="text" class="form-control bg-transparent border-0 text-white extra-small" 
-                           :placeholder="$store.lang.t('beneficiaries.filter_placeholder')" x-model="searchQuery" @input="filterBeneficiaries">
+                           :placeholder="$store.lang.t('beneficiaries.filter_placeholder')" x-model="searchQuery" @input="filterPayees">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de Beneficiarios -->
+    <!-- Tabla de Beneficiarios (Payees) -->
     <div class="card neon-card">
         <div class="card-body p-0 table-responsive">
             <template x-if="loading">
@@ -29,7 +29,7 @@
                 </div>
             </template>
             
-            <table class="table table-hover table-dark mb-0" x-show="!loading && filteredBeneficiaries.length > 0">
+            <table class="table table-hover table-dark mb-0" x-show="!loading && filteredPayees.length > 0">
                 <thead class="bg-black bg-opacity-40">
                     <tr class="extra-small tracking-wider fw-bold">
                         <th class="text-primary py-3" x-text="$store.lang.t('beneficiaries.col_name')">BENEFICIARIO</th>
@@ -40,25 +40,28 @@
                     </tr>
                 </thead>
                 <tbody class="align-middle">
-                    <template x-for="ben in filteredBeneficiaries" :key="ben.id_beneficiario">
-                        <tr class="cursor-pointer" @dblclick="editBeneficiary(ben)">
+                    <template x-for="payee in filteredPayees" :key="payee.id">
+                        <tr class="cursor-pointer" @dblclick="editPayee(payee)">
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="beneficiary-avatar-sm me-2 text-primary">
                                         <i class="fa-solid fa-user-tie"></i>
                                     </div>
-                                    <span x-text="ben.nombre_beneficiario" class="fw-bold"></span>
+                                    <span x-text="payee.name" class="fw-bold"></span>
                                 </div>
                             </td>
-                            <td class="text-dim" x-text="ben.banco || '-'"></td>
-                            <td class="text-white" x-text="ben.cbu || '-'"></td>
-                            <td class="text-white" x-text="ben.cuit || '-'"></td>
+                            <td class="text-dim" x-text="payee.bank_name || '-'"></td>
+                            <td class="text-white" x-text="payee.cbu || '-'"></td>
+                            <td class="text-white" x-text="payee.cuit || '-'"></td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-info me-1" @click="editBeneficiary(ben)">
+                                <button class="btn btn-sm btn-outline-info me-1" @click="editPayee(payee)">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-primary" @click="verTransacciones(ben)">
+                                <button class="btn btn-sm btn-outline-primary me-1" @click="viewTransactions(payee)" :title="$store.lang.t('beneficiaries.view_transactions')">
                                     <i class="fa-solid fa-list"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @click="deletePayee(payee)" :title="$store.lang.t('common.delete')" :disabled="payee.has_transactions">
+                                    <i class="fa-solid fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -66,7 +69,7 @@
                 </tbody>
             </table>
 
-            <template x-if="!loading && filteredBeneficiaries.length === 0">
+            <template x-if="!loading && filteredPayees.length === 0">
                 <div class="text-center p-5 text-dim opacity-50">
                     <i class="fa-solid fa-user-slash fs-1 mb-3"></i>
                     <p class="hud-title small mb-0" x-text="$store.lang.t('beneficiaries.not_found')">NO SE ENCONTRARON REGISTROS</p>
@@ -76,7 +79,7 @@
     </div>
 
     <!-- Modal de Creación/Edición -->
-    <div class="modal fade" id="benModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="payeeModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content neon-modal">
                 <div class="modal-header border-0 pb-0">
@@ -84,14 +87,14 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="saveBeneficiary">
+                    <form @submit.prevent="savePayee">
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.official_name')">NOMBRE_OFICIAL</label>
-                            <input type="text" class="form-control neon-input" x-model="formData.nombre_beneficiario" required>
+                            <input type="text" class="form-control neon-input" x-model="formData.name" required>
                         </div>
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.bank_entity')">ENTIDAD_BANCARIA / BANCO</label>
-                            <input type="text" class="form-control neon-input" x-model="formData.banco">
+                            <input type="text" class="form-control neon-input" x-model="formData.bank_name">
                         </div>
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.cbu_alias')">CBU_O_ALIAS_SBU</label>
@@ -104,12 +107,17 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.category_id')">CATEGORÍA_ID</label>
-                                <input type="number" class="form-control neon-input" x-model="formData.id_categoria">
+                                <select class="form-select neon-input" x-model.number="formData.default_category_id">
+                                    <option value="" x-text="$store.lang.t('beneficiaries.no_category_default')">Sin categoría predeterminada</option>
+                                    <template x-for="cat in categories" :key="cat.id">
+                                        <option :value="cat.id" x-text="cat.name"></option>
+                                    </template>
+                                </select>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('beneficiaries.internal_notes')">NOTAS_INTERNAS</label>
-                            <textarea class="form-control neon-input" x-model="formData.notas" rows="2"></textarea>
+                            <textarea class="form-control neon-input" x-model="formData.notes" rows="2"></textarea>
                         </div>
                         <div class="mt-4 text-end">
                             <button type="button" class="btn btn-outline-secondary px-4 me-2 border-opacity-10" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')">CANCELAR</button>
@@ -129,19 +137,20 @@
 {% block extra_js %}
 <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('beneficiariosPage', () => ({
-            beneficiaries: [],
-            filteredBeneficiaries: [],
+        Alpine.data('payeesPage', () => ({
+            payees: [],
+            filteredPayees: [],
             loading: true,
             saving: false,
             searchQuery: '',
-            formData: { nombre_beneficiario: '', banco: '', cbu: '', cuit: '', id_categoria: null, notas: '' },
+            formData: { name: '', bank_name: '', cbu: '', cuit: '', default_category_id: null, notes: '' },
+            categories: [],
             isEdit: false,
             editId: null,
             bsModal: null,
 
             async init() {
-                // Esperar a que Bootstrap esté disponible
+                // Wait for bootstrap
                 let attempts = 0;
                 while (typeof bootstrap === 'undefined' && attempts < 20) {
                     await new Promise(r => setTimeout(r, 100));
@@ -149,26 +158,43 @@
                 }
 
                 if (typeof bootstrap !== 'undefined') {
-                    const modalEl = document.getElementById('benModal');
+                    const modalEl = document.getElementById('payeeModal');
                     if (modalEl) {
                         this.bsModal = new bootstrap.Modal(modalEl);
-                    } else {
-                        console.error('CRITICAL: Modal element not found in DOM');
                     }
-                } else {
-                    console.error('CRITICAL: Bootstrap not loaded after 2s');
-                    alert('ERROR_SISTEMA: Librería visual no cargada. Recarga la página.');
                 }
+                
+                await Promise.all([
+                    this.fetchPayees(),
+                    this.fetchCategories()
+                ]);
+            },
 
-                await this.fetchBeneficiaries();
+            async fetchCategories() {
+                try {
+                    const res = await api.get('categories/');
+                    const rawCats = Array.isArray(res.data) ? res.data : (res.data.data || []);
+                    this.categories = rawCats.map(c => ({
+                        ...c,
+                        id: c.id ?? c.id_categoria,
+                        name: c.name ?? c.nombre_categoria
+                    }));
+                } catch (e) {
+                    console.error('Error fetching categories:', e);
+                }
             },
             
-            async fetchBeneficiaries() {
+            async fetchPayees() {
                 this.loading = true;
                 try {
-                    const res = await api.get('beneficiarios/');
-                    this.beneficiaries = res.data.data || [];
-                    this.filterBeneficiaries();
+                    const res = await api.get('payees/');
+                    const rawPayees = Array.isArray(res.data) ? res.data : (res.data.data || []);
+                    this.payees = rawPayees.map(p => ({
+                        ...p,
+                        id: p.id ?? p.id_beneficiario,
+                        name: p.name ?? p.nombre
+                    }));
+                    this.filterPayees();
                 } catch (e) {
                     console.error('Error:', e);
                 } finally {
@@ -176,46 +202,74 @@
                 }
             },
             
-            filterBeneficiaries() {
+            filterPayees() {
                 const query = this.searchQuery.toLowerCase();
-                this.filteredBeneficiaries = this.beneficiaries.filter(b => 
-                    b.nombre_beneficiario.toLowerCase().includes(query) || 
-                    (b.banco && b.banco.toLowerCase().includes(query))
+                this.filteredPayees = this.payees.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(query)) || 
+                    (p.bank_name && p.bank_name.toLowerCase().includes(query))
                 );
             },
             
             openCreateModal() {
                 this.isEdit = false;
-                this.formData = { nombre_beneficiario: '', banco: '', cbu: '', cuit: '', id_categoria: null, notas: '' };
+                this.formData = { name: '', bank_name: '', cbu: '', cuit: '', default_category_id: null, notes: '' };
                 this.bsModal.show();
             },
             
-            editBeneficiary(ben) {
+            editPayee(payee) {
                 this.isEdit = true;
-                this.editId = ben.id_beneficiario;
-                this.formData = { ...ben };
+                this.editId = payee.id;
+                this.formData = { ...payee };
                 this.bsModal.show();
             },
             
-            async saveBeneficiary() {
+            async savePayee() {
                 this.saving = true;
                 try {
+                    const payload = { ...this.formData };
+                    if (!payload.default_category_id) payload.default_category_id = null;
+                    if (!payload.bank_name) payload.bank_name = null;
+                    if (!payload.cbu) payload.cbu = null;
+                    if (!payload.cuit) payload.cuit = null;
+                    if (!payload.notes) payload.notes = null;
+
                     if (this.isEdit) {
-                        await api.put(`beneficiarios/${this.editId}`, this.formData);
+                        await api.put(`payees/${this.editId}`, payload);
+                        NotificationManager.success(this.$store.lang.t('beneficiaries.updated'), this.$store.lang.t('common.edit'));
                     } else {
-                        await api.post('beneficiarios/', this.formData);
+                        await api.post('payees/', payload);
+                        NotificationManager.success(this.$store.lang.t('beneficiaries.created'), this.$store.lang.t('beneficiaries.new'));
                     }
-                    await this.fetchBeneficiaries();
+                    await this.fetchPayees();
                     this.bsModal.hide();
                 } catch (e) {
-                    alert('ERROR_AL_GUARDAR: ' + (e.response?.data?.detail || 'Fallo de enlace'));
+                    NotificationManager.error(e.response?.data?.detail || this.$store.lang.t('common.error'), this.$store.lang.t('beneficiaries.error_saving'));
                 } finally {
                     this.saving = false;
                 }
             },
             
-            verTransacciones(ben) {
-                window.location.href = `/transacciones?beneficiario=${ben.id_beneficiario}`;
+            viewTransactions(payee) {
+                window.location.href = `/transactions?payee_id=${payee.id}`;
+            },
+
+            async deletePayee(payee) {
+                if (payee.has_transactions) {
+                    NotificationManager.error(this.$store.lang.t('beneficiaries.cannot_delete_with_transactions'), this.$store.lang.t('beneficiaries.action_denied'));
+                    return;
+                }
+                
+                const confirmMsg = this.$store.lang.t('beneficiaries.delete_confirm').replace('{name}', payee.name);
+                if (confirm(confirmMsg)) {
+                    try {
+                        await api.delete(`payees/${payee.id}`);
+                        NotificationManager.success(this.$store.lang.t('beneficiaries.deleted'), this.$store.lang.t('common.success'));
+                        await this.fetchPayees();
+                    } catch (e) {
+                        console.error('Error al eliminar:', e);
+                        NotificationManager.error(e.response?.data?.detail || this.$store.lang.t('common.error'), this.$store.lang.t('common.error'));
+                    }
+                }
             }
         }))
     })

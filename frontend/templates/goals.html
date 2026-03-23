@@ -50,7 +50,7 @@
     </template>
 
     <div class="row g-4">
-        <template x-for="goal in goals" :key="goal.id_meta">
+        <template x-for="goal in goals" :key="goal.id">
             <div class="col-md-6 col-lg-4">
                 <div class="neon-card h-100 position-relative overflow-hidden group-hover-action border-opacity-25" :style="`border-color: ${goal.color}`">
                     <!-- Progress Background -->
@@ -61,13 +61,13 @@
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="d-flex align-items-center gap-3">
                             <div class="icon-square shadow-lg border border-opacity-10" :style="`background-color: ${goal.color}20; color: ${goal.color}; border-color: ${goal.color}`">
-                                <i :class="`fa-solid ${goal.icono} fs-5`"></i>
+                                <i :class="`fa-solid ${goal.icon} fs-5`"></i>
                             </div>
                              <div>
-                                 <h5 class="text-white fw-bold mb-0" x-text="goal.nombre_meta"></h5>
+                                 <h5 class="text-white fw-bold mb-0" x-text="goal.name"></h5>
                                  <div class="d-flex align-items-center gap-2">
-                                     <small class="text-dim extra-small text-uppercase" x-text="formatDate(goal.fecha_limite)"></small>
-                                     <template x-if="goal.id_cuenta">
+                                     <small class="text-dim extra-small text-uppercase" x-text="formatDate(goal.target_date)"></small>
+                                     <template x-if="goal.account_id">
                                          <span class="badge bg-secondary bg-opacity-25 text-dim border border-secondary border-opacity-25 extra-small">
                                              <i class="fa-solid fa-link me-1"></i>VINCULADA
                                          </span>
@@ -83,7 +83,7 @@
                                 <li><a class="dropdown-item" href="#" @click="editGoal(goal)"><i class="fa-solid fa-pen small me-2 text-primary"></i> <span x-text="$store.lang.t('common.edit')"></span></a></li>
                                 <li><a class="dropdown-item" href="#" @click="deposit(goal)"><i class="fa-solid fa-piggy-bank small me-2 text-success"></i> <span x-text="$store.lang.t('goals.update_balance')"></span></a></li>
                                 <li><hr class="dropdown-divider border-secondary opacity-50"></li>
-                                <li><a class="dropdown-item text-danger" href="#" @click="deleteGoal(goal.id_meta)"><i class="fa-solid fa-trash small me-2"></i> <span x-text="$store.lang.t('common.delete')"></span></a></li>
+                                <li><a class="dropdown-item text-danger" href="#" @click="deleteGoal(goal.id)"><i class="fa-solid fa-trash small me-2"></i> <span x-text="$store.lang.t('common.delete')"></span></a></li>
                             </ul>
                         </div>
                     </div>
@@ -105,11 +105,11 @@
                     <div class="d-flex justify-content-between align-items-end mt-4">
                         <div>
                             <small class="d-block text-dim extra-small text-uppercase fw-bold mb-1" x-text="$store.lang.t('goals.actual_amount')">Actual</small>
-                            <span class="fw-bold fs-4 text-white" x-text="formatCurrency(goal.monto_actual)"></span>
+                            <span class="fw-bold fs-4 text-white" x-text="formatCurrency(goal.current_amount)"></span>
                         </div>
                         <div class="text-end">
                             <small class="d-block text-dim extra-small text-uppercase fw-bold mb-1" x-text="$store.lang.t('goals.target_amount')">Meta</small>
-                            <span class="fw-bold text-dim" x-text="formatCurrency(goal.monto_objetivo)"></span>
+                            <span class="fw-bold text-dim" x-text="formatCurrency(goal.target_amount)"></span>
                         </div>
                     </div>
 
@@ -143,24 +143,24 @@
                     <form @submit.prevent="saveGoal">
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.goal_name')"></label>
-                            <input type="text" x-model="form.nombre_meta" class="form-control neon-input" required placeholder="Ej: Vacaciones">
+                            <input type="text" x-model="form.name" class="form-control neon-input" required placeholder="Ej: Vacaciones">
                         </div>
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.target_amount')"></label>
-                                <input type="number" x-model.number="form.monto_objetivo" class="form-control neon-input text-primary fw-bold" required step="0.01">
+                                <input type="number" x-model.number="form.target_amount" class="form-control neon-input text-primary fw-bold" required step="0.01">
                             </div>
                              <div class="col-6 mb-3">
                                  <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('goals.deadline')"></label>
-                                 <input type="date" x-model="form.fecha_limite" class="form-control neon-input">
+                                 <input type="date" x-model="form.target_date" class="form-control neon-input">
                              </div>
                          </div>
                          <div class="mb-3">
                              <label class="text-dim extra-small fw-bold text-uppercase">VINCULAR_A_CUENTA (AUTO-SNAPSHOT)</label>
-                             <select x-model.number="form.id_cuenta" class="form-select neon-input">
+                             <select x-model.number="form.account_id" class="form-select neon-input">
                                  <option :value="null">-- MANUAL (Sin vinculación) --</option>
-                                 <template x-for="account in accounts" :key="account.id_cuenta">
-                                     <option :value="account.id_cuenta" x-text="account.nombre_cuenta"></option>
+                                 <template x-for="account in accounts" :key="account.id">
+                                     <option :value="account.id" x-text="account.name"></option>
                                  </template>
                              </select>
                              <small class="text-dim extra-small mt-1 d-block">Si vinculas una cuenta, el saldo actual se actualizará automáticamente basado en el saldo real.</small>
@@ -180,8 +180,8 @@
                         <div class="mb-3">
                             <label class="text-dim extra-small fw-bold text-uppercase">SYM_ICON</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-transparent border-secondary text-dim"><i :class="'fa-solid ' + form.icono"></i></span>
-                                <input type="text" x-model="form.icono" class="form-control neon-input" placeholder="fa-bullseye">
+                                <span class="input-group-text bg-transparent border-secondary text-dim"><i :class="'fa-solid ' + form.icon"></i></span>
+                                <input type="text" x-model="form.icon" class="form-control neon-input" placeholder="fa-bullseye">
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
@@ -241,16 +241,16 @@ document.addEventListener('alpine:init', () => {
          depositModal: null,
         
         form: {
-            nombre_meta: '',
-            monto_objetivo: 0,
-            monto_actual: 0,
-            fecha_limite: '',
+            name: '',
+            target_amount: 0,
+            current_amount: 0,
+            target_date: '',
             color: '#0d6efd',
             icono: 'fa-bullseye'
         },
         
         depositForm: {
-            id_meta: null,
+            id: null,
             current: 0,
             amount: 0
         },
@@ -258,7 +258,7 @@ document.addEventListener('alpine:init', () => {
         monthlySavings: 0,
 
         calculateRemainingMonths(goal) {
-            const pending = goal.monto_objetivo - goal.monto_actual;
+            const pending = goal.target_amount - goal.current_amount;
             if (pending <= 0 || this.monthlySavings <= 0) return 0;
             return Math.ceil(pending / this.monthlySavings);
         },
@@ -304,13 +304,13 @@ document.addEventListener('alpine:init', () => {
         },
         
         get totalSavedFormatted() {
-            const total = this.goals.reduce((acc, g) => acc + Number(g.monto_actual), 0);
+            const total = this.goals.reduce((acc, g) => acc + Number(g.current_amount), 0);
             return CurrencyUtils.formatCurrency(total);
         },
 
         getPercent(goal) {
-            if (!goal.monto_objetivo || goal.monto_objetivo == 0) return 0;
-            let p = (goal.monto_actual / goal.monto_objetivo) * 100;
+            if (!goal.target_amount || goal.target_amount == 0) return 0;
+            let p = (goal.current_amount / goal.target_amount) * 100;
             return Math.min(100, Math.max(0, p)).toFixed(1);
         },
 
@@ -326,13 +326,13 @@ document.addEventListener('alpine:init', () => {
         openModal() {
             this.editing = false;
             this.form = {
-                nombre_meta: '',
-                monto_objetivo: 0,
-                monto_actual: 0,
-                fecha_limite: '',
+                name: '',
+                target_amount: 0,
+                current_amount: 0,
+                target_date: '',
                  color: '#0d6efd',
-                 icono: 'fa-bullseye',
-                 id_cuenta: null
+                 icon: 'fa-bullseye',
+                 account_id: null
              };
              this.modal.show();
          },
@@ -347,7 +347,7 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 if (this.editing) {
-                    await axios.put(`/api/goals/${this.form.id_meta}`, this.form);
+                    await axios.put(`/api/goals/${this.form.id}`, this.form);
                     showToast("Meta actualizada", "success");
                 } else {
                     await axios.post('/api/goals/', this.form);
@@ -372,9 +372,9 @@ document.addEventListener('alpine:init', () => {
         },
         
          deposit(goal) {
-             if (goal.id_cuenta) {
+             if (goal.account_id) {
                  if (confirm("Esta meta está vinculada a una cuenta. ¿Deseas forzar el recálculo desde el saldo real ahora?")) {
-                     axios.post(`/api/goals/${goal.id_meta}/recalculate`).then(() => {
+                     axios.post(`/api/goals/${goal.id}/recalculate`).then(() => {
                          showToast("Recálculo completado", "success");
                          this.loadGoals();
                      }).catch(e => showToast("Error al recalcular", "error"));
@@ -382,9 +382,9 @@ document.addEventListener('alpine:init', () => {
                  return;
              }
              this.depositForm = {
-                 id_meta: goal.id_meta,
-                 current: Number(goal.monto_actual),
-                 amount: Number(goal.monto_actual) // Start with current amount for easy edit
+                 id: goal.id,
+                 current: Number(goal.current_amount),
+                 amount: Number(goal.current_amount) // Start with current amount for easy edit
              };
              this.depositModal.show();
          },
@@ -392,8 +392,8 @@ document.addEventListener('alpine:init', () => {
         async saveDeposit() {
             try {
                 // Update ONLY the amount
-                await axios.put(`/api/goals/${this.depositForm.id_meta}`, {
-                    monto_actual: this.depositForm.amount
+                await axios.put(`/api/goals/${this.depositForm.id}`, {
+                    current_amount: this.depositForm.amount
                 });
                 showToast("Saldo actualizado", "success");
                 this.depositModal.hide();
@@ -407,3 +407,4 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 {% endblock %}
+

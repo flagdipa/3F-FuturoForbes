@@ -87,55 +87,73 @@
 
     .widget-toolbox {
         position: fixed;
-        right: -300px;
+        right: -340px;
         top: 60px;
         bottom: 0;
-        width: 300px;
-        background: rgba(10, 10, 20, 0.95);
+        width: 320px;
+        background: rgba(4, 15, 19, 0.97);
         backdrop-filter: blur(20px);
-        border-left: 1px solid var(--neon-green);
+        border-left: 1px solid var(--3f-border);
         transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         z-index: 1050;
         padding: 20px;
         box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        overflow-y: auto;
     }
 
     .widget-toolbox.active {
         right: 0;
     }
 
-    .toolbox-item {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Widget Checkbox Card */
+    .widget-check-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
         border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 10px;
-        cursor: pointer;
+        padding: 10px 12px;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 12px;
         transition: all 0.2s;
+        cursor: pointer;
     }
 
-    .toolbox-item:hover {
-        background: rgba(0, 255, 136, 0.1);
-        border-color: var(--neon-green);
-        transform: translateX(-5px);
+    .widget-check-card:hover {
+        background: rgba(37,150,190,0.08);
+        border-color: var(--3f-primary);
     }
 
-    .toolbox-item i {
-        font-size: 1.2rem;
-        color: var(--neon-green);
+    .widget-check-card.active-widget {
+        border-color: rgba(37,150,190,0.4);
+        background: rgba(37,150,190,0.06);
     }
 
-    .toolbox-item-info h6 {
+    .widget-check-card .widget-checkbox {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--3f-primary);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .widget-check-card .wc-icon {
+        font-size: 1.1rem;
+        color: var(--3f-primary);
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .widget-check-card .wc-info h6 {
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
     }
 
-    .toolbox-item-info span {
+    .widget-check-card .wc-info span {
         font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255,255,255,0.45);
     }
 
     /* Loader */
@@ -224,8 +242,8 @@
     <!-- Header de Dashboard -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3" role="banner">
         <div>
-            <h1 class="hud-title mb-0">MISSION CONTROL</h1>
-            <p class="text-dim small mb-0">SISTEMA 3F OPERACIONAL // USER: <span class="text-primary">ADMIN</span></p>
+            <h1 class="hud-title mb-0" x-text="$store.lang.t('dashboard.title')"></h1>
+            <p class="text-dim small mb-0"><span x-text="$store.lang.t('dashboard.status')"></span> // USER: <span class="text-primary" id="dash-user-name">Cargando...</span></p>
         </div>
         
         <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto" role="toolbar" aria-label="Controles del dashboard">
@@ -234,19 +252,19 @@
                     :class="isEditing ? 'btn-success' : 'btn-outline-primary'"
                     :aria-label="isEditing ? 'Guardar cambios en el diseño del dashboard' : 'Activar modo de edición del dashboard'">
                 <i class="fa-solid" :class="isEditing ? 'fa-save' : 'fa-th-large'"></i>
-                <span x-text="isEditing ? 'GUARDAR DISEÑO' : 'EDITAR DASHBOARD'"></span>
+                <span x-text="isEditing ? $store.lang.t('dashboard.save_layout') : $store.lang.t('dashboard.edit_dashboard')"></span>
             </button>
             <button @click="$dispatch('open-toolbox')" 
                     x-show="isEditing"
                     class="btn btn-sm btn-outline-info neon-border"
                     aria-label="Abrir panel de herramientas para agregar widgets">
-                <i class="fa-solid fa-plus-circle"></i> AGREGAR WIDGET
+                <i class="fa-solid fa-plus-circle"></i> <span x-text="$store.lang.t('dashboard.add_widget')"></span>
             </button>
             <button @click="resetLayout()" 
                     x-show="isEditing"
                     class="btn btn-sm btn-outline-warning neon-border"
                     aria-label="Restaurar diseño original del dashboard">
-                <i class="fa-solid fa-undo-alt"></i> RESET LAYOUT
+                <i class="fa-solid fa-undo-alt"></i> <span x-text="$store.lang.t('dashboard.reset_layout')"></span>
             </button>
         </div>
     </div>
@@ -256,26 +274,27 @@
         <!-- Renderizado dinámico vía loadLayout -->
     </div>
 
-    <!-- Toolbox de Widgets -->
-    <div x-data="{ showToolbox: false }" class="widget-toolbox" :class="{ 'active': showToolbox }" @open-toolbox.window="showToolbox = true">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="widget-title">BIBLIOTECA DE WIDGETS</h5>
-            <i class="fa-solid fa-times cursor-pointer" @click="showToolbox = false"></i>
+    <!-- Panel de Widgets (Checkboxes) -->
+    <div x-data="widgetPanel" class="widget-toolbox" :class="{ 'active': open }" @open-toolbox.window="open = true">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="widget-title mb-0" style="color: var(--3f-primary);"><i class="fa-solid fa-sliders me-2"></i>WIDGETS</h5>
+            <i class="fa-solid fa-times cursor-pointer" style="cursor:pointer" @click="open = false"></i>
         </div>
-        
-        <div class="toolbox-search mb-3">
-            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Buscar widget...">
-        </div>
-
-        <div class="toolbox-list">
-            <template x-for="widget in availableWidgets" :key="widget.id">
-                <div class="toolbox-item" @click="addWidget(widget.id); showToolbox = false">
-                    <i class="fa-solid" :class="widget.icon"></i>
-                    <div class="toolbox-item-info">
+        <p class="text-dim" style="font-size: 0.72rem;">Marca los widgets que quieres ver en tu Centro de Control. El orden y tamaño se guardan automáticamente.</p>
+        <div>
+            <template x-for="widget in allWidgets" :key="widget.id">
+                <label class="widget-check-card" :class="{ 'active-widget': isActive(widget.id) }" :for="'wchk-' + widget.id">
+                    <input type="checkbox"
+                           class="widget-checkbox"
+                           :id="'wchk-' + widget.id"
+                           :checked="isActive(widget.id)"
+                           @change="toggle(widget.id, $event.target.checked)">
+                    <i class="fa-solid wc-icon" :class="widget.icon"></i>
+                    <div class="wc-info">
                         <h6 x-text="widget.name"></h6>
                         <span x-text="widget.category"></span>
                     </div>
-                </div>
+                </label>
             </template>
         </div>
     </div>
@@ -287,7 +306,7 @@
         <div id="tpl-widget-balance-total">
             <div x-data="widgetBalanceTotal" class="h-100 d-flex flex-column">
                 <div class="widget-header">
-                    <h5 class="widget-title">BALANCE CONSOLIDADO</h5>
+                    <h5 class="widget-title" x-text="$store.lang.t('dashboard.consolidated_balance')"></h5>
                     <div class="widget-actions">
                         <i class="fa-solid fa-sync" @click="fetchData()"></i>
                     </div>
@@ -299,15 +318,15 @@
                     <template x-if="!loading">
                         <div>
                             <h2 class="neon-glow mb-1" x-text="'$ ' + total.toLocaleString()"></h2>
-                            <p class="text-dim small mb-0">EQUIVALENTE TOTAL (ARS)</p>
+                            <p class="text-dim small mb-0" x-text="$store.lang.t('dashboard.total_equivalent')"></p>
                             <div class="mt-3 d-flex justify-content-center gap-4">
                                 <div>
-                                    <small class="text-success d-block">LÍQUIDO</small>
-                                    <span class="fw-bold">$ 450k</span>
+                                    <small class="text-success d-block" x-text="$store.lang.t('dashboard.liquid')"></small>
+                                    <span class="fw-bold" x-text="'$ ' + Math.round(liquid / 1000) + 'k'"></span>
                                 </div>
                                 <div>
-                                    <small class="text-info d-block">INVERS.</small>
-                                    <span class="fw-bold">$ 800k</span>
+                                    <small class="text-info d-block" x-text="$store.lang.t('dashboard.investments')"></small>
+                                    <span class="fw-bold" x-text="'$ ' + Math.round(investments / 1000) + 'k'"></span>
                                 </div>
                             </div>
                         </div>
@@ -320,7 +339,7 @@
         <div id="tpl-widget-dolar-hoy">
             <div x-data="widgetDolarHoy" class="h-100 d-flex flex-column">
                 <div class="widget-header">
-                    <h5 class="widget-title">COTIZACIONES AR</h5>
+                    <h5 class="widget-title" x-text="$store.lang.t('dashboard.quotes_ar')"></h5>
                     <div class="widget-actions">
                         <i class="fa-solid fa-external-link" onclick="window.location='/plugins/cotizaciones'"></i>
                     </div>
@@ -356,7 +375,7 @@
         <div id="tpl-widget-recent-transactions">
             <div x-data="widgetRecentTransactions" class="h-100 d-flex flex-column">
                 <div class="widget-header">
-                    <h5 class="widget-title">ACTIVIDAD RECIENTE</h5>
+                    <h5 class="widget-title" x-text="$store.lang.t('dashboard.recent_activity')"></h5>
                     <div class="widget-actions">
                         <i class="fa-solid fa-list" onclick="window.location='/transacciones'"></i>
                     </div>
@@ -388,7 +407,7 @@
         <div id="tpl-widget-monthly-summary">
             <div x-data="widgetMonthlySummary" class="h-100 d-flex flex-column">
                 <div class="widget-header">
-                    <h5 class="widget-title">GASTOS VS INGRESOS</h5>
+                    <h5 class="widget-title" x-text="$store.lang.t('dashboard.income_vs_expense')"></h5>
                     <div class="widget-actions">
                         <i class="fa-solid fa-chart-pie"></i>
                     </div>
@@ -408,11 +427,11 @@
                             </div>
                             <div class="col-6">
                                 <div class="mb-2">
-                                    <small class="text-success d-block">INGRESOS</small>
+                                    <small class="text-success d-block" x-text="$store.lang.t('common.income')"></small>
                                     <span class="fw-bold" x-text="'$' + summary.income.toLocaleString('es-AR')"></span>
                                 </div>
                                 <div>
-                                    <small class="text-danger d-block">GASTOS</small>
+                                    <small class="text-danger d-block" x-text="$store.lang.t('common.expense')"></small>
                                     <span class="fw-bold" x-text="'$' + summary.expense.toLocaleString('es-AR')"></span>
                                 </div>
                             </div>
@@ -462,13 +481,13 @@
                 </div>
                 <div class="widget-body d-flex flex-column justify-content-center gap-2">
                     <button class="btn btn-outline-danger btn-sm w-100" @click="openForm('EXPENSE')">
-                        <i class="fa-solid fa-minus-circle me-1"></i> NUEVO GASTO
+                        <i class="fa-solid fa-minus-circle me-1"></i> <span x-text="$store.lang.t('common.new_expense')"></span>
                     </button>
                     <button class="btn btn-outline-success btn-sm w-100" @click="openForm('INCOME')">
-                        <i class="fa-solid fa-plus-circle me-1"></i> NUEVO INGRESO
+                        <i class="fa-solid fa-plus-circle me-1"></i> <span x-text="$store.lang.t('common.new_income')"></span>
                     </button>
                     <button class="btn btn-outline-primary btn-sm w-100" @click="openForm('TRANSFER')">
-                        <i class="fa-solid fa-exchange-alt me-1"></i> TRANSFERENCIA
+                        <i class="fa-solid fa-exchange-alt me-1"></i> <span x-text="$store.lang.t('common.transfer')"></span>
                     </button>
                 </div>
             </div>
@@ -552,6 +571,9 @@
 <!-- Transaction Form Logic & Template -->
 {% include "transactions/main_form.html" %}
 <script src="/static/js/transaction-form.js"></script>
+
+<!-- Widget Panel (checkbox-based selector) -->
+<script src="/static/js/widget-panel.js"></script>
 
 <!-- Dashboard Manager -->
 <script src="/static/js/dashboard.js"></script>

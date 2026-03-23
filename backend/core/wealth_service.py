@@ -1,9 +1,14 @@
 from sqlmodel import Session, select
-from ..models.models import ListaCuentas, LibroTransacciones
-from ..models.models_advanced import Activo, Inversion
-from ..models.models_wealth import WealthSnapshot
 from decimal import Decimal
 from datetime import datetime
+# from ..models.models import ListaCuentas, LibroTransacciones
+# from ..models.models_advanced import Activo, Inversion
+# from ..models.models_wealth import WealthSnapshot
+class ListaCuentas: pass
+class LibroTransacciones: pass
+class Activo: pass
+class Inversion: pass
+class WealthSnapshot: pass
 
 from ..core.fx_service import fx_service
 

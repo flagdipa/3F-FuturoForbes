@@ -46,20 +46,20 @@
 
     <!-- Grid de Plugins Instalados -->
     <div class="row g-4" x-show="view === 'installed'" x-transition>
-        <template x-for="p in plugins" :key="p.id_plugin">
+        <template x-for="p in plugins" :key="p.id">
             <div class="col-md-6 col-lg-4">
-                <div class="card neon-card h-100 transition-all border-hud" :class="p.activo ? 'opacity-100' : 'opacity-75'">
+                <div class="card neon-card h-100 transition-all border-hud" :class="p.is_active ? 'opacity-100' : 'opacity-75'">
                     <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-start pt-3">
                         <div>
-                            <h5 class="mb-0 text-primary fw-bold font-orbitron" x-text="p.nombre_display"></h5>
-                            <span class="extra-small text-dim font-orbitron" x-text="p.nombre_tecnico"></span>
+                            <h5 class="mb-0 text-primary fw-bold font-orbitron" x-text="p.display_name"></h5>
+                            <span class="extra-small text-dim font-orbitron" x-text="p.technical_name"></span>
                         </div>
                         <span class="badge rounded-pill" 
-                              :class="p.activo ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-secondary bg-opacity-25 text-dim border border-secondary'"
-                              x-text="p.activo ? $store.lang.t('plugins.active') : $store.lang.t('plugins.inactive')"></span>
+                              :class="p.is_active ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-secondary bg-opacity-25 text-dim border border-secondary'"
+                              x-text="p.is_active ? $store.lang.t('plugins.active') : $store.lang.t('plugins.inactive')"></span>
                     </div>
                     <div class="card-body">
-                        <p class="small text-white opacity-75" x-text="p.descripcion"></p>
+                        <p class="small text-white opacity-75" x-text="p.description"></p>
                         <div class="d-flex flex-column gap-1 mt-3">
                             <div class="d-flex justify-content-between extra-small">
                                 <span class="text-dim fw-bold" x-text="$store.lang.t('plugins.version')"></span>
@@ -67,18 +67,18 @@
                             </div>
                             <div class="d-flex justify-content-between extra-small">
                                 <span class="text-dim fw-bold" x-text="$store.lang.t('plugins.author')"></span>
-                                <span class="text-white bg-dark px-1" x-text="p.autor"></span>
+                                <span class="text-white bg-dark px-1" x-text="p.author"></span>
                             </div>
                         </div>
                     </div>
                     <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 p-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <button class="btn btn-sm flex-grow-1 me-2" 
-                                    :class="p.activo ? 'btn-outline-danger' : 'btn-outline-success border-success'"
+                                    :class="p.is_active ? 'btn-outline-danger' : 'btn-outline-success border-success'"
                                     @click="toggleEstado(p)"
                                     :disabled="loading">
-                                <i class="fa-solid me-1" :class="p.activo ? 'fa-power-off' : 'fa-play'"></i>
-                                <span class="fw-bold" x-text="p.activo ? 'DESACTIVAR' : 'ACTIVAR'"></span>
+                                <i class="fa-solid me-1" :class="p.is_active ? 'fa-power-off' : 'fa-play'"></i>
+                                <span class="fw-bold" x-text="p.is_active ? 'DESACTIVAR' : 'ACTIVAR'"></span>
                             </button>
                             <button class="btn btn-sm btn-outline-primary neon-border" @click="configurarPlugin(p)">
                                 <i class="fa-solid fa-gear"></i>
@@ -87,7 +87,7 @@
                         <div class="d-flex justify-content-between gap-2">
                             <button class="btn btn-sm btn-outline-info flex-grow-1" 
                                     @click="probarPlugin(p)" 
-                                    :disabled="!p.activo || loading"
+                                    :disabled="!p.is_active || loading"
                                     title="Probar hooks">
                                 <i class="fa-solid fa-vial me-1"></i>
                                 <span class="small">Probar</span>
@@ -124,28 +124,28 @@
 
     <!-- Grid de Marketplace -->
     <div class="row g-4" x-show="view === 'marketplace'" x-transition>
-        <template x-for="m in availableModules" :key="m.nombre_tecnico">
+        <template x-for="m in availableModules" :key="m.technical_name">
             <div class="col-md-6 col-lg-4">
                 <div class="card neon-card h-100 border-hud opacity-100 hover-glow">
                     <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-start pt-3">
                         <div>
-                            <h5 class="mb-0 text-info fw-bold font-orbitron" x-text="m.nombre_display"></h5>
-                            <span class="extra-small text-dim font-orbitron" x-text="m.nombre_tecnico"></span>
+                            <h5 class="mb-0 text-info fw-bold font-orbitron" x-text="m.display_name"></h5>
+                            <span class="extra-small text-dim font-orbitron" x-text="m.technical_name"></span>
                         </div>
-                        <span class="badge rounded-pill bg-info bg-opacity-25 text-info border border-info" x-text="m.precio === 0 ? 'FREE' : '$' + m.precio"></span>
+                        <span class="badge rounded-pill bg-info bg-opacity-25 text-info border border-info" x-text="m.price === 0 ? 'FREE' : '$' + m.price"></span>
                     </div>
                     <div class="card-body">
-                        <p class="small text-white opacity-75" x-text="m.descripcion"></p>
+                        <p class="small text-white opacity-75" x-text="m.description"></p>
                         <div class="extra-small text-dim mt-2">
-                             <i class="fa-solid fa-tags me-1"></i> <span x-text="m.categoria"></span>
+                             <i class="fa-solid fa-tags me-1"></i> <span x-text="m.category"></span>
                         </div>
                     </div>
                     <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 p-3">
                         <button class="btn btn-sm btn-outline-info w-100 fw-bold" 
                                 @click="instalarModulo(m)"
-                                :disabled="loading || moduloYaInstalado(m.nombre_tecnico)">
-                            <i class="fa-solid me-1" :class="moduloYaInstalado(m.nombre_tecnico) ? 'fa-check' : 'fa-download'"></i>
-                            <span x-text="moduloYaInstalado(m.nombre_tecnico) ? 'INSTALADO' : 'INSTALAR AHORA'"></span>
+                                :disabled="loading || moduloYaInstalado(m.technical_name)">
+                            <i class="fa-solid me-1" :class="moduloYaInstalado(m.technical_name) ? 'fa-check' : 'fa-download'"></i>
+                            <span x-text="moduloYaInstalado(m.technical_name) ? 'INSTALADO' : 'INSTALAR AHORA'"></span>
                         </button>
                     </div>
                 </div>
@@ -165,25 +165,25 @@
                 </div>
                 <div class="modal-body" x-if="editPlugin">
                     <div class="p-2 mb-3 bg-primary bg-opacity-10 border-start border-primary border-4">
-                         <h6 class="text-primary fw-bold mb-0 font-orbitron" x-text="editPlugin.nombre_display"></h6>
-                         <small class="text-dim smaller" x-text="editPlugin.nombre_tecnico"></small>
+                         <h6 class="text-primary fw-bold mb-0 font-orbitron" x-text="editPlugin.display_name"></h6>
+                         <small class="text-dim smaller" x-text="editPlugin.technical_name"></small>
                     </div>
                     
                      <!-- Hooks suscritos -->
-                     <div class="mb-3" x-show="editPlugin.hooks_suscritos">
+                     <div class="mb-3" x-show="editPlugin.subscribed_hooks">
                          <label class="text-dim extra-small fw-bold text-uppercase mb-2">
                              <i class="fa-solid fa-link me-1"></i>Hooks Suscritos
                          </label>
                          <div class="bg-dark bg-opacity-40 p-2 rounded border border-secondary border-opacity-10">
                              <div class="d-flex flex-wrap gap-1">
-                                 <template x-for="hook in (editPlugin.hooks_suscritos || '').split(',')" :key="hook">
+                                 <template x-for="hook in (editPlugin.subscribed_hooks || '').split(',')" :key="hook">
                                      <span class="badge bg-info bg-opacity-25 text-info extra-small" x-text="hook.trim()"></span>
                                  </template>
                              </div>
                          </div>
                      </div>
 
-                     <!-- Dynamic Visual Editor (Phase 6.1) -->
+                     <!-- Dynamic Visual Editor -->
                      <div class="mb-4">
                          <label class="text-primary extra-small fw-bold text-uppercase mb-3"><i class="fa-solid fa-microchip me-1"></i>Editor de Parámetros</label>
                          <div class="d-flex flex-column gap-3">
@@ -262,7 +262,7 @@
         Alpine.data('pluginsPage', () => ({
             plugins: [],
             loading: false,
-            view: 'installed', // 'installed' or 'marketplace'
+            view: 'installed',
             showRaw: false,
             editPlugin: null,
             configRaw: '',
@@ -270,24 +270,24 @@
             bsModal: null,
             availableModules: [
                 { 
-                    nombre_tecnico: "ia_forecasting", nombre_display: "IA Forecasting", 
-                    descripcion: "Proyecciones avanzadas basadas en ML.", 
-                    version: "1.0.0", autor: "3F Core", precio: 0, categoria: "Financiero" 
+                    technical_name: "ia_forecasting", display_name: "IA Forecasting", 
+                    description: "Proyecciones avanzadas basadas en ML.", 
+                    version: "1.0.0", author: "3F Core", price: 0, category: "Financiero" 
                 },
                 { 
-                    nombre_tecnico: "ia_ocr", nombre_display: "AI OCR Vision", 
-                    descripcion: "Reconocimiento de facturas por fotos.", 
-                    version: "1.0.2", autor: "3F Core", precio: 0, categoria: "Herramientas" 
+                    technical_name: "ia_ocr", display_name: "AI OCR Vision", 
+                    description: "Reconocimiento de facturas por fotos.", 
+                    version: "1.0.2", author: "3F Core", price: 0, category: "Herramientas" 
                 },
                 { 
-                    nombre_tecnico: "gmail_connector", nombre_display: "Gmail Bridge", 
-                    descripcion: "Sincroniza transacciones desde tu correo.", 
-                    version: "0.9.0", autor: "3F Labs", precio: 5, categoria: "Conectores" 
+                    technical_name: "gmail_connector", display_name: "Gmail Bridge", 
+                    description: "Sincroniza transacciones desde tu correo.", 
+                    version: "0.9.0", author: "3F Labs", price: 5, category: "Conectores" 
                 },
                 { 
-                    nombre_tecnico: "crypto_tracker", nombre_display: "Crypto Live", 
-                    descripcion: "Precios en tiempo real de Binance/Kraken.", 
-                    version: "1.2.0", autor: "3F Labs", precio: 0, categoria: "Inversiones" 
+                    technical_name: "crypto_tracker", display_name: "Crypto Live", 
+                    description: "Precios en tiempo real de Binance/Kraken.", 
+                    version: "1.2.0", author: "3F Labs", price: 0, category: "Inversiones" 
                 }
             ],
 
@@ -301,28 +301,38 @@
                 this.loading = true;
                 try {
                     const res = await api.get('/plugins/');
-                    this.plugins = res.data;
+                    this.plugins = (res.data || []).map(p => ({
+                        ...p,
+                        id: p.id,
+                        technical_name: p.technical_name,
+                        display_name: p.display_name,
+                        description: p.description,
+                        is_active: p.is_active,
+                        author: p.author,
+                        config: p.config ?? {},
+                        subscribed_hooks: p.subscribed_hooks ?? ''
+                    }));
                 } catch (e) {
-                    console.error('Error cargando plugins:', e);
+                    console.error('Error loading plugins:', e);
                 } finally {
                     this.loading = false;
                 }
             },
 
-            moduloYaInstalado(nombre) {
-                return this.plugins.some(p => p.nombre_tecnico === nombre);
+            moduloYaInstalado(name) {
+                return this.plugins.some(p => p.technical_name === name);
             },
 
             async instalarModulo(m) {
                 this.loading = true;
                 try {
                     const res = await api.post('/plugins/', {
-                        nombre_tecnico: m.nombre_tecnico,
-                        nombre_display: m.nombre_display,
-                        descripcion: m.descripcion,
+                        technical_name: m.technical_name,
+                        display_name: m.display_name,
+                        description: m.description,
                         version: m.version,
-                        autor: m.autor,
-                        configuracion: {}
+                        author: m.author,
+                        config: {}
                     });
                     this.plugins.push(res.data);
                     notifications.show('Módulo instalado con éxito', 'success');
@@ -337,15 +347,10 @@
             async toggleEstado(p) {
                 this.loading = true;
                 try {
-                    if (p.activo) {
-                        await api.post(`/plugins/${p.id_plugin}/desactivar`);
-                        p.activo = false;
-                        notifications.show('Módulo Desactivado', 'warning');
-                    } else {
-                        await api.post(`/plugins/${p.id_plugin}/activar`);
-                        p.activo = true;
-                        notifications.show('Módulo Activado - Cargando en memoria...', 'success');
-                    }
+                    const endpoint = p.is_active ? 'desactivar' : 'activar';
+                    await api.post(`/plugins/${p.id}/${endpoint}`);
+                    p.is_active = !p.is_active;
+                    notifications.show(p.is_active ? 'Módulo Activado' : 'Módulo Desactivado', p.is_active ? 'success' : 'warning');
                 } catch (e) {
                     const msg = e.response?.data?.detail || 'Error al cambiar estado';
                     notifications.show(msg, 'error');
@@ -355,34 +360,30 @@
             },
 
             async probarPlugin(p) {
-                if (!p.activo) {
+                if (!p.is_active) {
                     notifications.show('El módulo debe estar activo para probarlo', 'warning');
                     return;
                 }
                 this.loading = true;
                 try {
-                    const res = await api.post(`/plugins/${p.id_plugin}/test`);
+                    const res = await api.post(`/plugins/${p.id}/test`);
                     notifications.show(`Tests completados: ${res.data.tests.length} hooks probados`, 'success');
                 } catch (e) {
-                    const msg = e.response?.data?.detail || 'Error al probar módulo';
-                    notifications.show(msg, 'error');
+                    notifications.show('Error al probar módulo', 'error');
                 } finally {
                     this.loading = false;
                 }
             },
 
             async eliminarPlugin(p) {
-                if (!confirm(`¿Estás seguro de eliminar el módulo "${p.nombre_display}"?\n\nEsta acción no se puede deshacer.`)) {
-                    return;
-                }
+                if (!confirm(`¿Estás seguro de eliminar el módulo "${p.display_name}"?`)) return;
                 this.loading = true;
                 try {
-                    await api.delete(`/plugins/${p.id_plugin}`);
-                    this.plugins = this.plugins.filter(pl => pl.id_plugin !== p.id_plugin);
+                    await api.delete(`/plugins/${p.id}`);
+                    this.plugins = this.plugins.filter(pl => pl.id !== p.id);
                     notifications.show('Módulo eliminado correctamente', 'success');
                 } catch (e) {
-                    const msg = e.response?.data?.detail || 'Error al eliminar módulo';
-                    notifications.show(msg, 'error');
+                    notifications.show('Error al eliminar módulo', 'error');
                 } finally {
                     this.loading = false;
                 }
@@ -390,17 +391,14 @@
 
             async verEstado(p) {
                 try {
-                    const res = await api.get(`/plugins/${p.id_plugin}/estado`);
-                    const estado = res.data;
-                    let mensaje = `<strong>${estado.nombre_tecnico}</strong><br><br>`;
-                    mensaje += `<strong>Base de datos:</strong><br>`;
-                    mensaje += `• Instalado: ${estado.en_base_de_datos.instalado ? '✅' : '❌'}<br>`;
-                    mensaje += `• Activo: ${estado.en_base_de_datos.activo ? '✅' : '❌'}<br><br>`;
-                    mensaje += `<strong>En memoria:</strong><br>`;
-                    mensaje += `• Cargado: ${estado.en_memoria.cargado ? '✅' : '❌'}<br>`;
-                    mensaje += `• Hooks registrados: ${estado.en_memoria.hooks_registrados}`;
-                    
-                    notifications.show(mensaje, 'info');
+                    const res = await api.get(`/plugins/${p.id}/estado`);
+                    const status = res.data;
+                    let msg = `<strong>${status.technical_name}</strong><br><br>`;
+                    msg += `• Instalado: ${status.en_base_de_datos.instalado ? '✅' : '❌'}<br>`;
+                    msg += `• Activo: ${status.en_base_de_datos.is_active ? '✅' : '❌'}<br>`;
+                    msg += `• En memoria: ${status.en_memoria.cargado ? '✅' : '❌'}<br>`;
+                    msg += `• Hooks: ${status.en_memoria.hooks_registrados}`;
+                    notifications.show(msg, 'info');
                 } catch (e) {
                     notifications.show('Error al obtener estado', 'error');
                 }
@@ -409,16 +407,11 @@
             async mostrarHooksDisponibles() {
                 try {
                     const res = await api.get('/plugins/hooks/disponibles');
-                    const hooks = res.data.hooks;
-                    
-                    let mensaje = '<strong>Hooks Disponibles en el Sistema:</strong><br><br>';
-                    mensaje += '<div class="text-start">';
-                    hooks.forEach(h => {
-                        mensaje += `<div class="mb-1">• <code>${h.nombre}</code>: ${h.descripcion}</div>`;
+                    let msg = '<strong>Hooks Disponibles:</strong><br><br>';
+                    res.data.hooks.forEach(h => {
+                        msg += `• <code>${h.nombre}</code>: ${h.descripcion}<br>`;
                     });
-                    mensaje += '</div>';
-                    
-                    notifications.show(mensaje, 'info');
+                    notifications.show(msg, 'info');
                 } catch (e) {
                     notifications.show('Error al cargar hooks', 'error');
                 }
@@ -426,7 +419,7 @@
 
             configurarPlugin(p) {
                 this.editPlugin = p;
-                this.configObject = JSON.parse(JSON.stringify(p.configuracion || {}));
+                this.configObject = JSON.parse(JSON.stringify(p.config || {}));
                 this.configRaw = JSON.stringify(this.configObject, null, 4);
                 this.showRaw = false;
                 if (this.bsModal) this.bsModal.show();
@@ -439,27 +432,19 @@
             syncToObject() {
                 try {
                     this.configObject = JSON.parse(this.configRaw);
-                } catch (e) {
-                    // Invalid JSON
-                }
+                } catch (e) { }
             },
 
             async guardarConfig() {
                 this.loading = true;
                 try {
-                    // Usar el endpoint específico para configuración que recarga el plugin
-                    const res = await api.put(`/plugins/${this.editPlugin.id_plugin}/config`, this.configObject);
-                    const idx = this.plugins.findIndex(pl => pl.id_plugin === this.editPlugin.id_plugin);
-                    if (idx !== -1) {
-                        this.plugins[idx].configuracion = res.data.configuracion;
-                    }
-                    
-                    const recargado = this.editPlugin.activo ? ' y recargado' : '';
-                    notifications.show(`Configuración guardada${recargado}`, 'success');
+                    const res = await api.put(`/plugins/${this.editPlugin.id}/config`, this.configObject);
+                    const idx = this.plugins.findIndex(pl => pl.id === this.editPlugin.id);
+                    if (idx !== -1) this.plugins[idx].config = res.data.config;
+                    notifications.show('Configuración guardada', 'success');
                     if (this.bsModal) this.bsModal.hide();
                 } catch (e) {
-                    const msg = e.response?.data?.detail || 'Error al guardar configuración';
-                    notifications.show(msg, 'error');
+                    notifications.show('Error al guardar configuración', 'error');
                 } finally {
                     this.loading = false;
                 }

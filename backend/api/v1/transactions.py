@@ -13,7 +13,8 @@ from sqlmodel import Session, select
 
 from ...core.ledger_engine import LedgerEngine, LedgerError
 from ...dependencies import get_db
-from ...models import Account, Transaction, TransactionSplit, TransactionStatus, TransactionTagLink
+from ...models import Account, Transaction, TransactionSplit, TransactionStatus, TransactionTagLink, User
+from ..auth.deps import get_current_user
 from .schemas.transaction import (
     TransactionCreate,
     TransactionResponse,
@@ -25,7 +26,7 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-CURRENT_USER_ID = 1  # TODO: replace with real auth dependency
+# Removed CURRENT_USER_ID mock
 
 
 # ---------------------------------------------------------------------------
@@ -39,24 +40,36 @@ def _bypass_balance_if_single_entry(engine: LedgerEngine, splits_data: list) -> 
     This is a deliberate UX concession — the frontend submits single splits
     for simple income/expense entries.
     """
-    balance_sum = sum(Decimal(str(s["amount"])) for s in splits_data)
+    try:
+        balance_sum = sum(Decimal(str(s.get("amount", 0) or 0)) for s in splits_data)
+    except Exception:
+        # Invalid numeric format encountered, default to 0 to let LedgerEngine fail cleanly with 400
+        balance_sum = Decimal("0")
+        
     if balance_sum != Decimal("0"):
         engine.validate_balanced = lambda _: True
 
 
 def _build_transaction_stmt(
     *,
-    id_cuenta: Optional[int] = None,
-    id_beneficiario: Optional[int] = None,
-    id_categoria: Optional[int] = None,
-    fecha_inicio: Optional[str] = None,
-    fecha_fin: Optional[str] = None,
+    user_id: int,
+    account_id: Optional[int] = None,
+    payee_id: Optional[int] = None,
+    category_id: Optional[int] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    fecha_inicio: Optional[str] = None,  # Deprecated
+    fecha_fin: Optional[str] = None,     # Deprecated
+    currency: Optional[str] = None,
     sort_by: str = "date",
     order: str = "desc",
     skip: int = 0,
     limit: int = 100,
 ):
     """Construct the filtered, sorted, paginated SELECT statement for transactions."""
+    
+    _start = start_date or fecha_inicio
+    _end = end_date or fecha_fin
     stmt = select(Transaction).options(
         selectinload(Transaction.payee),
         selectinload(Transaction.tags),
@@ -64,22 +77,24 @@ def _build_transaction_stmt(
         selectinload(Transaction.splits).selectinload(TransactionSplit.category)
     )
     
-    # Soft Delete Filter
-    stmt = stmt.where(Transaction.deleted_at == None)
+    # Soft Delete Filter and User Filter
+    stmt = stmt.where(Transaction.deleted_at == None, Transaction.user_id == user_id)
 
-    if fecha_inicio:
-        stmt = stmt.where(Transaction.date >= fecha_inicio)
-    if fecha_fin:
-        stmt = stmt.where(Transaction.date <= fecha_fin)
-    if id_beneficiario:
-        stmt = stmt.where(Transaction.payee_id == id_beneficiario)
-
-    if id_cuenta or id_categoria:
+    if _start:
+        stmt = stmt.where(Transaction.date >= _start)
+    if _end:
+        stmt = stmt.where(Transaction.date <= _end)
+    if payee_id:
+        stmt = stmt.where(Transaction.payee_id == payee_id)
+    
+    if account_id or category_id or currency:
         stmt = stmt.join(TransactionSplit, TransactionSplit.transaction_id == Transaction.id)
-        if id_cuenta:
-            stmt = stmt.where(TransactionSplit.account_id == id_cuenta)
-        if id_categoria:
-            stmt = stmt.where(TransactionSplit.category_id == id_categoria)
+        if account_id:
+            stmt = stmt.where(TransactionSplit.account_id == account_id)
+        if category_id:
+            stmt = stmt.where(TransactionSplit.category_id == category_id)
+        if currency:
+            stmt = stmt.where(TransactionSplit.currency_code == currency)
         stmt = stmt.distinct()
 
     order_fn = asc if order == "asc" else desc
@@ -105,23 +120,34 @@ def _build_transaction_stmt(
 
 @router.get("/", response_model=List[TransactionResponse])
 def list_transactions(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    id_cuenta: Optional[int] = None,
-    id_beneficiario: Optional[int] = None,
-    id_categoria: Optional[int] = None,
+    account_id: Optional[int] = None,
+    payee_id: Optional[int] = None,
+    category_id: Optional[int] = None,
+    id_cuenta: Optional[int] = None, # Alias
+    id_beneficiario: Optional[int] = None, # Alias
+    id_categoria: Optional[int] = None, # Alias
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
+    currency: Optional[str] = None,
     sort_by: str = "date",
     order: str = "desc",
 ):
     stmt = _build_transaction_stmt(
-        id_cuenta=id_cuenta,
-        id_beneficiario=id_beneficiario,
-        id_categoria=id_categoria,
+        user_id=current_user.id,
+        account_id=account_id or id_cuenta,
+        payee_id=payee_id or id_beneficiario,
+        category_id=category_id or id_categoria,
+        start_date=start_date,
+        end_date=end_date,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
+        currency=currency,
         sort_by=sort_by,
         order=order,
         skip=skip,
@@ -131,10 +157,10 @@ def list_transactions(
 
 
 @router.get("/{id}", response_model=TransactionResponse)
-def get_transaction(id: int, db: Session = Depends(get_db)):
+def get_transaction(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     stmt = (
         select(Transaction)
-        .where(Transaction.id == id)
+        .where(Transaction.id == id, Transaction.user_id == current_user.id)
         .options(
             selectinload(Transaction.payee),
             selectinload(Transaction.tags),
@@ -149,14 +175,14 @@ def get_transaction(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=TransactionResponse, status_code=201)
-async def create_transaction(tx_in: TransactionCreate, db: Session = Depends(get_db)):
+async def create_transaction(tx_in: TransactionCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     engine = LedgerEngine(db)
     splits_data = [s.model_dump() for s in tx_in.splits]
     _bypass_balance_if_single_entry(engine, splits_data)
 
     try:
         transaction = await engine.create_transaction(
-            user_id=CURRENT_USER_ID,
+            user_id=current_user.id,
             date=tx_in.date,
             description=tx_in.description,
             splits=splits_data,
@@ -172,13 +198,13 @@ async def create_transaction(tx_in: TransactionCreate, db: Session = Depends(get
 
 
 @router.put("/{id}", response_model=TransactionResponse)
-async def update_transaction(id: int, tx_in: TransactionCreate, db: Session = Depends(get_db)):
+async def update_transaction(id: int, tx_in: TransactionCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Full replace: revert old splits, update header, insert new splits.
     Uses the same single-entry bypass as create.
     """
     transaction = db.get(Transaction, id)
-    if not transaction:
+    if not transaction or transaction.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     engine = LedgerEngine(db)
@@ -242,8 +268,12 @@ async def update_transaction(id: int, tx_in: TransactionCreate, db: Session = De
 
 
 @router.post("/{id}/void", response_model=TransactionResponse)
-async def void_transaction(id: int, reason: str = "", db: Session = Depends(get_db)):
+async def void_transaction(id: int, reason: str = "", current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Void a transaction and revert its account balance impact."""
+    transaction = db.get(Transaction, id)
+    if not transaction or transaction.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
     engine = LedgerEngine(db)
     try:
         return await engine.void_transaction(id, reason)
@@ -252,7 +282,7 @@ async def void_transaction(id: int, reason: str = "", db: Session = Depends(get_
 
 
 @router.post("/transfer", response_model=TransactionResponse, status_code=201)
-async def create_transfer(transfer_in: TransferCreate, db: Session = Depends(get_db)):
+async def create_transfer(transfer_in: TransferCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Convenience endpoint to create a balanced two-leg transfer."""
     engine = LedgerEngine(db)
     splits = [
@@ -269,7 +299,7 @@ async def create_transfer(transfer_in: TransferCreate, db: Session = Depends(get
     ]
     try:
         return await engine.create_transaction(
-            user_id=CURRENT_USER_ID,
+            user_id=current_user.id,
             date=transfer_in.date,
             description=(
                 transfer_in.description
@@ -282,10 +312,10 @@ async def create_transfer(transfer_in: TransferCreate, db: Session = Depends(get
 
 
 @router.delete("/{id}", status_code=204)
-async def delete_transaction(id: int, db: Session = Depends(get_db)):
+async def delete_transaction(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Soft delete a transaction after voiding it to revert balance impact."""
     transaction = db.get(Transaction, id)
-    if not transaction:
+    if not transaction or transaction.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Transaction not found")
     
     engine = LedgerEngine(db)

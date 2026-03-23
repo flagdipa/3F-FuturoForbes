@@ -29,6 +29,7 @@ class User(AuditMixin, SoftDeleteMixin, table=True):
     # Relationships
     accounts: List["Account"] = Relationship(back_populates="user")
     transactions: List["Transaction"] = Relationship(back_populates="user")
+    institutions: List["Institution"] = Relationship(back_populates="user")
 
 # --- FINANZAS CORE ---
 
@@ -57,16 +58,36 @@ class AccountType(str, Enum):
     INCOME = "INCOME"
     EXPENSE = "EXPENSE"
 
+class Institution(SoftDeleteMixin, table=True):
+    __tablename__ = "institutions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    name: str = Field(index=True)
+    type: Optional[str] = None # Bank, Broker, etc.
+    branch: Optional[str] = None
+    address: Optional[str] = None
+    website: Optional[str] = None
+    contact: Optional[str] = None
+    phone: Optional[str] = None
+    cuit: Optional[str] = None
+    icon: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    user: User = Relationship(back_populates="institutions")
+    accounts: List["Account"] = Relationship(back_populates="institution")
+
 class Account(AuditMixin, SoftDeleteMixin, table=True):
     __tablename__ = "accounts"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
     parent_id: Optional[int] = Field(default=None, foreign_key="accounts.id")
     name: str
+    code: str = Field(unique=True, index=True)
     type: AccountType
     currency_code: str = Field(foreign_key="currencies.code")
     account_number: Optional[str] = None
-    institution_name: Optional[str] = None
+    institution_id: Optional[int] = Field(default=None, foreign_key="institutions.id")
     initial_balance: Decimal = Field(default=0, max_digits=20, decimal_places=8)
     current_balance: Decimal = Field(default=0, max_digits=20, decimal_places=8)
     color: Optional[str] = None
@@ -77,6 +98,7 @@ class Account(AuditMixin, SoftDeleteMixin, table=True):
     # Relationships
     user: User = Relationship(back_populates="accounts")
     splits: List["TransactionSplit"] = Relationship(back_populates="account")
+    institution: Optional["Institution"] = Relationship(back_populates="accounts")
 
 class Category(SoftDeleteMixin, table=True):
     __tablename__ = "categories"
@@ -98,10 +120,15 @@ class Payee(SoftDeleteMixin, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
     name: str = Field(index=True)
+    code: str = Field(unique=True, index=True)
     default_category_id: Optional[int] = Field(default=None, foreign_key="categories.id")
+    bank_name: Optional[str] = None
+    cbu: Optional[str] = None
+    cuit: Optional[str] = None
     address: Optional[str] = None
     website: Optional[str] = None
     notes: Optional[str] = None
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
@@ -171,34 +198,42 @@ class Budget(SoftDeleteMixin, table=True):
     __tablename__ = "budgets"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
-    category_id: int = Field(foreign_key="categories.id")
-    amount: Decimal = Field(max_digits=20, decimal_places=8)
-    period: str = Field(default="MONTHLY")
-    year: int = Field(index=True)
-    month: int = Field(index=True)
+    name: str
+    period_type: str = Field(default="MONTHLY")  # MONTHLY, YEARLY, CUSTOM
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    lines: List["BudgetLine"] = Relationship(back_populates="budget")
 
 class BudgetLine(SQLModel, table=True):
     __tablename__ = "budget_lines"
     id: Optional[int] = Field(default=None, primary_key=True)
     budget_id: int = Field(foreign_key="budgets.id")
     category_id: int = Field(foreign_key="categories.id")
-    amount: Decimal = Field(max_digits=20, decimal_places=8)
+    allocated_amount: Decimal = Field(max_digits=20, decimal_places=8)
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    budget: Optional[Budget] = Relationship(back_populates="lines")
 
 class SavingGoal(SoftDeleteMixin, table=True):
     __tablename__ = "saving_goals"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
+    account_id: Optional[int] = Field(default=None, foreign_key="accounts.id")
     name: str
     target_amount: Decimal = Field(max_digits=20, decimal_places=8)
     current_amount: Decimal = Field(default=0, max_digits=20, decimal_places=8)
     target_date: Optional[date] = None
     currency_code: str = Field(foreign_key="currencies.code")
+    color: str = Field(default="#0d6efd")
+    icon: str = Field(default="fa-bullseye")
+    notes: Optional[str] = None
+    status: str = Field(default="ACTIVE")
     is_completed: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -289,6 +324,30 @@ class CustomFieldValue(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+# --- BÓVEDA DIGITAL (VAULT) ---
+
+class Directory(SoftDeleteMixin, table=True):
+    __tablename__ = "directories"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    name: str
+    parent_id: Optional[int] = Field(default=None, foreign_key="directories.id")
+    path: str  # Full computed path, e.g. "/Facturas/2024"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Attachment(SoftDeleteMixin, table=True):
+    __tablename__ = "attachments"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    entity_type: Optional[str] = None     # 'transaction', 'account', etc.
+    entity_id: Optional[int] = None       # FK a la entidad relacionada
+    original_filename: str                # Nombre original del archivo subido
+    generated_filename: str              # Nombre generado: YYMMDD_hhmm_COD1_COD2.ext
+    file_path: str                        # Ruta fisica completa en disco
+    directory_id: Optional[int] = Field(default=None, foreign_key="directories.id")
+    mime_type: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # --- AUDITORÍA Y PLUGINS ---
 
 class AuditLog(SQLModel, table=True):
@@ -305,28 +364,28 @@ class AuditLog(SQLModel, table=True):
 
 class Plugin(SQLModel, table=True):
     """
-    Representa un módulo o plugin del sistema.
-    Inspirado en la arquitectura modular de PrestaShop.
+    Represents a module or plugin of the system.
+    Inspired by PrestaShop's modular architecture.
     """
     __tablename__ = "plugins"
     
-    id_plugin: Optional[int] = Field(default=None, primary_key=True)
-    nombre_tecnico: str = Field(unique=True, index=True) # ej: "ia_ocr", "gmail_connector"
-    nombre_display: str
-    descripcion: Optional[str] = None
+    id: Optional[int] = Field(default=None, primary_key=True)
+    technical_name: str = Field(unique=True, index=True) # e.g.: "ia_ocr", "gmail_connector"
+    display_name: str
+    description: Optional[str] = None
     version: str = "1.0.0"
-    autor: str = "3F Core"
+    author: str = "3F Core"
     
-    # Estados del ciclo de vida
-    instalado: bool = Field(default=False)
-    activo: bool = Field(default=False)
+    # Lifecycle states
+    is_installed: bool = Field(default=False)
+    is_active: bool = Field(default=False)
     
-    # Metadatos flexibles
-    configuracion: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
-    hooks_suscritos: str = Field(default="") # Lista separada por comas de hooks
+    # Flexible metadata
+    config: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+    subscribed_hooks: str = Field(default="") # Comma-separated list of hooks
     
-    creado_el: datetime = Field(default_factory=datetime.utcnow)
-    actualizado_el: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class SystemConfig(AuditMixin, table=True):
     __tablename__ = "system_config"

@@ -38,8 +38,8 @@
                         x-model="selectedAccountId" 
                         @change="loadProjection()">
                     <option value="">Seleccionar Cuenta...</option>
-                    <template x-for="acc in accounts" :key="acc.id_cuenta">
-                        <option :value="acc.id_cuenta" x-text="acc.nombre_cuenta"></option>
+                    <template x-for="acc in accounts" :key="acc.id">
+                        <option :value="acc.id" x-text="acc.name"></option>
                     </template>
                 </select>
                 
@@ -161,7 +161,7 @@
                 
                 // If there's an account ID in URL, select it
                 const urlParams = new URLSearchParams(window.location.search);
-                const accId = urlParams.get('id_cuenta');
+                const accId = urlParams.get('account_id') || urlParams.get('id_cuenta');
                 if (accId) {
                     this.selectedAccountId = accId;
                     this.loadProjection();
@@ -170,8 +170,8 @@
 
             async loadAccounts() {
                 try {
-                    const res = await api.get('/cuentas/');
-                    this.accounts = res.data.data || [];
+                    const res = await api.get('/accounts/');
+                    this.accounts = Array.isArray(res.data) ? res.data : (res.data?.data || []);
                 } catch (e) {
                     console.error('Error loading accounts', e);
                 }
@@ -187,11 +187,11 @@
 
                 this.loading = true;
                 try {
-                    const res = await api.get(`/reportes/proyeccion-cuenta/${this.selectedAccountId}?dias=${this.days}`);
+                    const res = await api.get(`/reports/account-projection/${this.selectedAccountId}?days=${this.days}`);
                     this.projectionData = res.data;
                     this.updateChart();
                 } catch (e) {
-                    notifications.show('Error al generar proyección', 'error');
+                    notifications.show('Error generating projection', 'error');
                 } finally {
                     this.loading = false;
                 }
@@ -236,22 +236,24 @@
                 if (this.chart) {
                     this.chart.data.labels = labels;
                     this.chart.data.datasets[0].data = data;
+                    this.chart.data.labels = this.projectionData.map(d => d.date);
+                    this.chart.data.datasets[0].data = this.projectionData.map(d => d.balance);
                     this.chart.update();
                 } else {
                     this.chart = new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: labels,
+                            labels: this.projectionData.map(d => d.date),
                             datasets: [{
                                 label: 'Saldo Proyectado',
-                                data: data,
-                                borderColor: '#00f2ff',
-                                backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                                data: this.projectionData.map(d => d.balance),
+                                borderColor: '#00f0ff',
+                                backgroundColor: 'rgba(0, 240, 255, 0.1)',
                                 fill: true,
-                                tension: 0.4,
+                                tension: 0.3,
+                                borderWidth: 2,
                                 pointRadius: 0,
-                                pointHoverRadius: 6,
-                                borderWidth: 3
+                                pointHoverRadius: 6
                             }]
                         },
                         options: {

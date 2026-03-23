@@ -114,3 +114,7 @@ async def dispatch_hook(hook_name: str, **kwargs):
 def register_hook(hook_name: str, callback: Callable, priority: int = 10, plugin_id: Optional[str] = None):
     """Global utility to register a hook."""
     HooksEngine().register(hook_name, callback, priority, plugin_id)
+
+def get_registered_hooks() -> Dict[str, List[HookListener]]:
+    """Global utility to get all registered hooks and their listeners."""
+    return HooksEngine()._listeners

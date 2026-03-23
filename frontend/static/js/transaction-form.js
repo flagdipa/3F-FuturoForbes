@@ -11,6 +11,12 @@ document.addEventListener('alpine:init', () => {
         currencySymbol: '$',
         previewValue: '',
 
+        // Prevent Alpine expression errors in HUD Neon V2 modal
+        saving: false,
+        isScanningReceipt: false,
+        attachments: [],
+        editTx: { id: 'NEW', tags: [], splits: [], is_split: false, transaction_code: 'Withdrawal', amount: '', date: new Date().toISOString().slice(0, 16) },
+
         formData: {
             type: 'EXPENSE',
             amount: '',

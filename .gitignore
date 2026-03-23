@@ -1,17 +1,83 @@
+# =====================================
+# 3F FuturoForbes - .gitignore
+# =====================================
+
+# === Python ===
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+.pytest_cache/
+*.pyo
+*.pyd
+.coverage
+htmlcov/
+.tox/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# === Entornos virtuales ===
 .env
-.venv
-env/
+.venv/
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
+.env.backup*
+
+# === Bases de datos ===
+*.db
+*.db.bak
+*.sqlite
+*.sqlite3
+
+# === Logs ===
+*.log
+logs/*.log
+
+# === Uploads y attachments ===
+uploads/
+attachments/
+
+# === Node ===
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Frontend build ===
 dist/
 build/
+
+# === IDEs ===
 .vscode/
 .idea/
-*.log
-uploads/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Archivos temporales de test ===
+test_out*.txt
+pytest_out*.txt
+tests_res*.txt
+final_tests*.txt
+test-results/
+*_out.txt
+
+# === Archivos de instalación temporales ===
+.installed
+install_*/
+
+# === Otros ===
+tmp/
+*.bak

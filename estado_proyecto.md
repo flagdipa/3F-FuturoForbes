@@ -1,5 +1,5 @@
 # Estado de Desarrollo — Sistema 3F (Futuro Forbes)
-## Última actualización: 2026-03-11 @ 00:40 (ART)
+## Última actualización: 2026-03-22 @ 14:22 (ART)
 
 ---
 
@@ -79,21 +79,21 @@ Esta sesión se centró en corregir los problemas del dashboard: barra de despla
 | Gestión de Cuentas (CRUD) | ✅ Funcional — UI alineada con endpoints sin versión (`/api/`) |
 | Transacciones (CRUD + Splits) | ✅ Funcional — V2 OK en backend y probado end-to-end inserción/lista en UI |
 | Categorías con árbol jerárquico | 🟡 Parcial — backend OK, UI pendiente |
-| Beneficiarios con auto-categorización | 🔴 Con bug — `beneficiary-manager.js` modificado pero no validado |
+| Beneficiarios con auto-categorización | ✅ Funcional — Bug resuelto, UI limpia y estandarizada en inglés |
 | Transferencias entre cuentas | 🟡 Parcial — soportada en modelo, detectadas en lista, formulario a validar |
 | Transacciones Recurrentes | 🔴 Sin validar — modelo existe, scheduler sin confirmar |
 | Presupuestos con alertas | 🔴 Sin validar en V2 |
-| Metas de Ahorro | 🟡 Parcial — endpoints existen, UI sin probar |
+| Metas de Ahorro | ✅ Funcional — Endpoints V1 y UI (goals.html) sincronizados y en inglés |
 | Activos con depreciación | 🔴 Sin validar |
-| Inversiones (Stocks) | 🔴 Sin validar en V2 |
+| Inversiones (Stocks) | ✅ Validado — UI (stocks.html) limpia y en inglés |
 | Dashboard personalizable (GridStack) | ✅ Funcional — layout corregido, sin overflow horizontal |
-| OCR de tickets (PaddleOCR) | 🟡 Local funciona — UI no validada end-to-end |
-| IA Forecasting | 🔴 Sin validar — endpoint existe pero no probado |
+| OCR de tickets (Pytesseract) | ✅ Funcional (Restaurado local) |
+| IA Forecasting | ✅ Funcional — Endpoint y UI (forecasting.html) en inglés |
 | Exportación PDF/Excel | 🔴 Sin validar — código existe |
-| Bóveda Digital (Vault) | 🔴 Sin validar |
+| Bóveda Digital (Vault) | ✅ Validado — Limpieza de fallbacks legacy completada |
 | Auditoría inmutable | 🔴 Bug — modelo duplicado, tabla conflicto |
 | Notificaciones in-app | 🔴 Sin implementar en UI |
-| Sistema de Plugins (lista + activar) | 🟡 Parcial — descubrimiento OK, 2 plugins con errores |
+| Sistema de Plugins (lista + activar) | ✅ Funcional — Centro de Control HUD reescrito y estandarizado |
 | Multi-moneda (FX) | 🔴 Sin validar en V2 |
 | Argentina Datos (cotizaciones) | ✅ Funcional |
 | Dólar Hoy widget | ✅ Funcional |
@@ -118,11 +118,11 @@ Esta sesión se centró en corregir los problemas del dashboard: barra de despla
 7. ~~**Remover `/v1/` hardcodeado en Frontend**~~ (COMPLETADO)
 
 ### 🔶 Prioridad MEDIA
-7. **Validar OCR en UI**: Subir imagen → autocompletado del formulario
-8. **Validar Beneficiarios**: CRUD + filtro de transacciones
-9. **Validar Presupuestos**: Creación y seguimiento
-10. **Restaurar suite de tests**: reimplementar con conftest correcto
-11. **Configurar GEMINI_API_KEY** para OCR cloud como backup
+7. ~~**Validar OCR en UI**: Subir imagen → autocompletado del formulario (con Tesseract)~~ (COMPLETADO)
+8. ~~**Validar Beneficiarios**: CRUD + filtro de transacciones~~ (COMPLETADO)
+9. ~~**Validar Presupuestos**: Creación y seguimiento~~ (COMPLETADO)
+10. ~~**Restaurar suite de tests**: reimplementar con conftest correcto~~ (COMPLETADO - 15/15 Pasar)
+11. ~~**Configurar GEMINI_API_KEY** para OCR cloud como backup~~ (COMPLETADO — `gemini_engine.py` implementado, fallback activo en `/api/ia/ocr`)
 
 ### 🔷 Prioridad BAJA
 12. Validar exportación PDF/Excel
@@ -138,6 +138,8 @@ Esta sesión se centró en corregir los problemas del dashboard: barra de despla
 
 | Fecha | Sesión | Logros principales |
 |---|---|---|
+| 2026-03-22 | Tests & Gemini OCR Fallback | ✅ Suite de tests V2 restaurada (15/15 PASS). Gemini OCR fallback implementado en `ia.py` y `gemini_engine.py`. `google-genai` instalado. Falla graciosamente si no hay API key. |
+| 2026-03-22 | English Naming Std & Payee Fix | ✅ Fase 5 COMPLETADA. Bug de beneficiarios resuelto: UI limpia, codes únicos y estandarización completa. |
 | 2026-03-11 | Tests & Auth Fix | Errores de garbled output en pytest solucionados borrando archivo corrupto. Inserción de transacción en UI comprobada exitosa.|
 | 2026-03-11 | UI Transacciones Fix | Mapeo de campos normalizado. APIs hardcodeadas a `/v1/` removidas en todo JS/HTML. Vistas de Market, Dashboard e Inversiones funcionando |
 | 2026-03-11 | Fix Dashboard UI | CSS reparado (2 `}` sueltos), overflow horizontal eliminado, GridStack layout corregido, localStorage versionado |

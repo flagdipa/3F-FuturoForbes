@@ -103,10 +103,96 @@ body {
     overflow-y: auto;
 }
 
-/* Sidebar Collapse (Desktop & Mobile) */
-.sidebar-collapse .app-sidebar {
-    transform: translateX(-100%);
-    width: 0 !important;
+/* Sidebar Collapse: Desktop → mini (icon only ~60px), Mobile → off-canvas */
+@media (min-width: 992px) {
+    .sidebar-collapse .app-sidebar {
+        width: 60px !important;
+        overflow: visible !important;
+        transform: translateX(0) !important;
+    }
+
+    .sidebar-collapse .app-sidebar .sidebar-wrapper,
+    .sidebar-collapse .app-sidebar .nav {
+        overflow: visible !important;
+        width: 60px !important;
+    }
+
+    /* Ocultar textos del menú al colapsar (solo mostrar íconos) */
+    .sidebar-collapse .app-sidebar .nav-link p,
+    .sidebar-collapse .app-sidebar .nav-header,
+    .sidebar-collapse .app-sidebar .nav-treeview,
+    .sidebar-collapse .app-sidebar .nav-link .nav-arrow {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* Centrar los íconos al colapsar */
+    .sidebar-collapse .app-sidebar .nav-link {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 10px 0 !important;
+        text-align: center !important;
+        width: 60px !important;
+        height: 44px !important;
+        overflow: visible !important;
+    }
+
+    .sidebar-collapse .app-sidebar .nav-link .nav-icon {
+        margin: 0 !important;
+        font-size: 1.25rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Main content se ajusta al mini sidebar en desktop */
+    .sidebar-collapse .app-main {
+        margin-left: 60px !important;
+        width: calc(100vw - 60px) !important;
+    }
+}
+
+/* Tooltip al hovear sobre ícono en modo colapsado */
+@media (min-width: 992px) {
+    .sidebar-collapse .app-sidebar .nav-item .nav-link {
+        position: relative;
+    }
+
+    .sidebar-collapse .app-sidebar .nav-item .nav-link::after {
+        content: attr(data-label);
+        position: absolute;
+        left: 58px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--3f-bg-darker);
+        border: 1px solid var(--3f-border);
+        color: var(--3f-text);
+        padding: 4px 10px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-size: 0.8rem;
+        z-index: 2000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .sidebar-collapse .app-sidebar .nav-item .nav-link:hover::after {
+        opacity: 1;
+    }
+
+    /* Main content se ajusta al mini sidebar en desktop */
+    .sidebar-collapse .app-main {
+        margin-left: 54px !important;
+        width: calc(100vw - 54px) !important;
+    }
 }
 
 /* Main Area: The ONLY scrolling zone */
@@ -116,17 +202,11 @@ body {
     width: calc(100vw - 280px);
     height: calc(100vh - 50px);
     overflow-y: auto !important;
-    /* THE ONLY ONE */
     overflow-x: hidden;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     scrollbar-width: thin;
     scrollbar-color: var(--3f-primary) transparent;
-}
-
-.sidebar-collapse .app-main {
-    margin-left: 0 !important;
-    width: 100vw !important;
 }
 
 /* Kill generic AdminLTE scrollbars if any */
@@ -282,6 +362,36 @@ h4,
     color: var(--3f-text-dim) !important;
 }
 
+/* Action Buttons Standard (Centrados y con igual tamaño) */
+.btn-action-standard {
+    flex: 1 !important; /* Forzar que todos ocupen el mismo espacio en el flex container */
+    max-width: 200px !important; /* Evitar que se estiren demasiado en pantallas gigantes */
+    min-width: 140px !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+}
+
+/* Row highlight when selected */
+.tx-row-selected {
+    background-color: rgba(37, 150, 190, 0.15) !important;
+    border-left: 3px solid var(--3f-primary) !important;
+    box-shadow: inset 0 0 10px rgba(37, 150, 190, 0.1);
+}
+
+/* Hover effects for neon action buttons */
+.btn-action-standard:hover {
+    box-shadow: 0 0 15px var(--3f-primary-glow);
+    transform: translateY(-1px);
+    background-color: var(--3f-primary);
+    color: white !important;
+}
+
 /* Mejora de Inputs y Placeholders */
 .form-control::placeholder {
     color: rgba(190, 224, 236, 0.6) !important;
@@ -349,14 +459,27 @@ h4,
     }
 }
 
-.sidebar-collapse .app-sidebar {
-    width: 0;
-    transform: translateX(-100%);
-}
+/* Generic sidebar-collapse rules removed — the desktop behavior
+   is handled by @media (min-width: 992px) at L107-141 (width: 54px,
+   icons centered, tooltip on hover). Mobile uses the sidebar-open
+   drawer pattern at L370-411. */
 
-.sidebar-collapse .app-sidebar {
-    width: 0;
-    overflow: hidden;
+/* Hide brand text when sidebar is collapsed (desktop only) */
+@media (min-width: 992px) {
+    .sidebar-collapse .sidebar-brand .brand-text {
+        display: none !important;
+    }
+    .sidebar-collapse .sidebar-brand {
+        text-align: center !important;
+        padding: 8px 0 !important;
+        width: 60px !important;
+        overflow: hidden !important;
+    }
+    .sidebar-collapse .brand-link {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        border-bottom: none !important;
+    }
 }
 
 /* Sidebar nav link text truncation */
@@ -367,12 +490,7 @@ h4,
     max-width: 100%;
 }
 
-@media (min-width: 992px) {
-    .sidebar-mini.sidebar-collapse .app-sidebar {
-        width: 70px;
-        overflow: visible;
-    }
-}
+/* Sidebar text rules and other global styles kept below */
 
 .brand-link {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
@@ -807,5 +925,50 @@ a:not(.btn):focus {
     
     .neon-card {
         border: 2px solid #ffffff !important;
+    }
+}
+
+/* === SIDEBAR DRAG & DROP === */
+
+.sidebar-drag-handle {
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.nav-item:hover .sidebar-drag-handle {
+    opacity: 0.4;
+}
+
+.sidebar-drag-handle:active {
+    cursor: grabbing;
+    opacity: 1 !important;
+    color: var(--3f-primary);
+}
+
+.sidebar-sortable-ghost {
+    opacity: 0.3;
+    background: rgba(37, 150, 190, 0.05) !important;
+}
+
+.sidebar-sortable-chosen {
+    background: rgba(37, 150, 190, 0.1) !important;
+    border-left: 2px solid var(--3f-primary);
+}
+
+.sidebar-sortable-drag {
+    opacity: 0.85;
+    background: var(--3f-bg-darker) !important;
+    box-shadow: 0 4px 20px rgba(37, 150, 190, 0.3);
+}
+
+.cursor-grab {
+    cursor: grab !important;
+}
+
+/* Hide drag handles when sidebar is collapsed */
+@media (min-width: 992px) {
+    .sidebar-collapse .sidebar-drag-handle {
+        display: none !important;
     }
 }

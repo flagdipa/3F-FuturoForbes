@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Setup engines
-SRC_URL = "mysql+pymysql://root:@localhost:3306/temp_recovery"
+SRC_URL = "mysql+pymysql://root:@localhost:3306/3f_db"
 DEST_URL = os.getenv("DATABASE_URL")
 
 src_engine = create_engine(SRC_URL)

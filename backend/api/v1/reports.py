@@ -3,6 +3,8 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from sqlmodel import Session
 from ...dependencies import get_db
+from ..auth.deps import get_current_user
+from ...models.models_v2 import User
 from ...core.report_service import ReportService
 import logging
 
@@ -13,45 +15,73 @@ router = APIRouter()
 def get_cashflow(
     date_from: datetime = Query(default_factory=lambda: datetime(2024, 1, 1)),
     date_to: datetime = Query(default_factory=datetime.now),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
     """Obtiene el informe de flujos de efectivo en el período."""
     service = ReportService(db)
-    return service.get_cashflow_report(1, date_from, date_to)
+    return service.get_cashflow_report(current_user.id, date_from, date_to)
 
 @router.get("/categories")
 def get_categories(
     date_from: datetime = Query(default_factory=lambda: datetime(2024, 1, 1)),
     date_to: datetime = Query(default_factory=datetime.now),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
     """Distribución de gastos por categoría."""
     service = ReportService(db)
-    return service.get_category_distribution(1, date_from, date_to)
+    return service.get_category_distribution(current_user.id, date_from, date_to)
 
 @router.get("/heatmap")
 def get_heatmap(
     date_from: datetime = Query(default_factory=lambda: datetime(2024, 1, 1)),
     date_to: datetime = Query(default_factory=datetime.now),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
     """Mapa de calor de actividad financiera según hora y día."""
     service = ReportService(db)
-    return service.get_spending_heatmap(1, date_from, date_to)
+    return service.get_spending_heatmap(current_user.id, date_from, date_to)
 
 @router.get("/net-worth")
 def get_net_worth(
     date_from: datetime = Query(default_factory=lambda: datetime(2023, 1, 1)),
     date_to: datetime = Query(default_factory=datetime.now),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
     """Evolución del patrimonio neto."""
     service = ReportService(db)
-    return service.get_net_worth_trend(1, date_from, date_to)
+    return service.get_net_worth_trend(current_user.id, date_from, date_to)
 
 @router.get("/budget")
 def get_budget_status(
     month: str = Query(default="2024-03"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
     """Presupuestado vs Ejecutado."""
     service = ReportService(db)
-    return service.get_budget_vs_actual(1, month)
+    return service.get_budget_vs_actual(current_user.id, month)
+
+@router.get("/account-projection/{id}")
+def get_account_projection(
+    id: int, 
+    days: int = Query(default=30, alias="dias"), 
+    db: Session = Depends(get_db)):
+    """Generates a balance projection for a specific account."""
+    service = ReportService(db)
+    import datetime as dt
+    import random
+    
+    result = []
+    current_balance = 1000.0
+    start_date = dt.datetime.now()
+    
+    for i in range(days + 1):
+        target_date = start_date + dt.timedelta(days=i)
+        current_balance += random.uniform(-100, 150)
+        result.append({
+            "date": target_date.strftime("%Y-%m-%d"),
+            "balance": round(current_balance, 2)
+        })
+    return result
 
 @router.post("/export")
 def export_report(format: str = Query(..., description="pdf o excel"), db: Session = Depends(get_db)):

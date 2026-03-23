@@ -8,8 +8,8 @@ class ArgentinaDatosPlugin(BasePlugin):
     Plugin para consumir datos financieros de api.argentinadatos.com
     Siguiendo la especificación detallada del prompt.
     """
-    nombre_tecnico = "argentina_datos"
-    nombre_display = "Argentina Datos"
+    technical_name = "argentina_datos"
+    display_name = "Argentina Datos"
     version = "1.1.0"
     autor = "3F Labs"
     descripcion = "Información financiera argentina: cotizaciones, inflación, UVA y más."
@@ -20,12 +20,12 @@ class ArgentinaDatosPlugin(BasePlugin):
         self.service = ArgentinaDatosService()
 
     async def initialize(self):
-        self.logger.info(f"{self.nombre_display} inicializado")
+        self.logger.info(f"{self.display_name} inicializado")
         # Asegurar que existan datos iniciales si no hay caché
         # El scheduler se encargará de las actualizaciones periódicas
 
     async def shutdown(self):
-        self.logger.info(f"{self.nombre_display} apagado")
+        self.logger.info(f"{self.display_name} apagado")
 
     async def sync_enabled_apis(self):
         """

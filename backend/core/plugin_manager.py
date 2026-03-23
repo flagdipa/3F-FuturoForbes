@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import importlib
 import logging
@@ -65,9 +65,9 @@ class PluginManager:
                             manifest['id'] = entry.name
 
                             if self.db:
-                                db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == entry.name)).first()
+                                db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == entry.name)).first()
                                 manifest['is_installed'] = db_plugin is not None
-                                manifest['is_active'] = db_plugin.activo if db_plugin else False
+                                manifest['is_active'] = db_plugin.is_active if db_plugin else False
                             else:
                                 manifest['is_installed'] = False
                                 manifest['is_active'] = False
@@ -138,9 +138,9 @@ class PluginManager:
             default_config = {}
             if self.db:
                 PluginModel = _get_plugin_model()
-                db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
-                if db_plugin and db_plugin.configuracion:
-                    default_config = db_plugin.configuracion
+                db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
+                if db_plugin and db_plugin.config:
+                    default_config = db_plugin.config
 
             instance = plugin_class(config=default_config)
             return instance
@@ -154,7 +154,7 @@ class PluginManager:
             return False
 
         PluginModel = _get_plugin_model()
-        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
+        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
         if db_plugin:
             return True  # Already installed
 
@@ -165,11 +165,11 @@ class PluginManager:
         try:
             if instance.install():
                 db_plugin = PluginModel(
-                    nombre_tecnico=plugin_id,
-                    nombre_display=instance.name,
+                    technical_name=plugin_id,
+                    display_name=instance.name,
                     version=instance.version,
-                    activo=False,
-                    configuracion={}
+                    is_active=False,
+                    config={}
                 )
                 self.db.add(db_plugin)
                 self.db.commit()
@@ -185,7 +185,7 @@ class PluginManager:
             return False
 
         PluginModel = _get_plugin_model()
-        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
+        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
         if not db_plugin:
             return True
 
@@ -207,7 +207,7 @@ class PluginManager:
             return False
 
         PluginModel = _get_plugin_model()
-        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
+        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
         if not db_plugin:
             return False
 
@@ -216,7 +216,7 @@ class PluginManager:
             return False
 
         if instance.activate():
-            db_plugin.activo = True
+            db_plugin.is_active = True
             self.db.add(db_plugin)
             self.db.commit()
 
@@ -239,7 +239,7 @@ class PluginManager:
             return False
 
         PluginModel = _get_plugin_model()
-        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
+        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
         if not db_plugin:
             return False
 
@@ -247,7 +247,7 @@ class PluginManager:
         if instance:
             instance.deactivate()
 
-        db_plugin.activo = False
+        db_plugin.is_active = False
         self.db.add(db_plugin)
         self.db.commit()
 
@@ -269,13 +269,13 @@ class PluginManager:
             return False
 
         PluginModel = _get_plugin_model()
-        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.nombre_tecnico == plugin_id)).first()
+        db_plugin = self.db.exec(select(PluginModel).where(PluginModel.technical_name == plugin_id)).first()
         if not db_plugin:
             return False
 
         instance = self.get_plugin_instance(plugin_id)
         if instance and instance.set_config(data):
-            db_plugin.configuracion = instance.get_config()
+            db_plugin.config = instance.get_config()
             self.db.add(db_plugin)
             self.db.commit()
             return True
@@ -284,3 +284,4 @@ class PluginManager:
 
 # Singleton global instance (no DB - methods that need DB take it as param)
 plugin_manager = PluginManager()
+

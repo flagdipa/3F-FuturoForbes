@@ -10,14 +10,14 @@
         border-radius: 12px;
         padding: 24px;
         backdrop-filter: blur(15px);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
     }
     
     .goal-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 242, 255, 0.15);
+        box-shadow: 0 10px 40px rgba(0, 242, 255, 0.2);
         border-color: var(--neon-blue);
     }
     
@@ -36,22 +36,35 @@
         font-size: 1.5rem;
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .goal-card:hover .goal-icon-wrapper {
+        background: rgba(0, 242, 255, 0.1);
+        border-color: var(--neon-blue);
+        color: var(--neon-blue);
     }
 
     /* Radial Progress Bar */
-    .radial-progress {
+    .radial-progress-container {
         position: relative;
         width: 120px;
         height: 120px;
+        margin: 0 auto;
+    }
+
+    .radial-progress {
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
         background: conic-gradient(
-            var(--neon-blue) calc(var(--progress) * 1%), 
+            var(--progress-color, var(--neon-blue)) calc(var(--progress) * 1%), 
             rgba(255,255,255,0.05) 0
         );
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        transition: all 0.5s ease;
     }
 
     .radial-progress::before {
@@ -68,56 +81,59 @@
         text-align: center;
     }
     
-    .radial-progress.completed {
+    .goal-card.completed .radial-progress {
         background: conic-gradient(var(--neon-green) 100%, transparent 0);
         box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     }
     
-    .radial-progress.delayed {
-        background: conic-gradient(
-            var(--neon-pink) calc(var(--progress) * 1%), 
-            rgba(255,255,255,0.05) 0
-        );
-        box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+    .status-badge {
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div x-data="goalsManager" class="container-fluid py-4">
+<div x-data="goalsManager()" class="container-fluid py-4">
 
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="font-orbitron text-primary mb-0"><i class="fa-solid fa-flag-checkered me-2"></i>METAS DE AHORRO</h2>
-            <p class="text-dim small mb-0">PROYECCIÓN DE OBJETIVOS A CORTO Y LARGO PLAZO</p>
+            <h2 class="font-orbitron text-primary mb-0"><i class="fa-solid fa-flag-checkered me-3"></i><span x-text="$store.lang.t('goals.title')"></span></h2>
+            <p class="text-dim small mb-0 mt-1" x-text="$store.lang.t('goals.simulator_tip') || 'PLANIFICACIÓN Y SEGUIMIENTO DE OBJETIVOS FINANCIEROS'"></p>
         </div>
-        <button class="btn btn-primary neon-border-static" data-bs-toggle="modal" data-bs-target="#new-goal-modal">
-            <i class="fa-solid fa-plus-circle me-1"></i> NUEVA META
+        <button class="btn btn-primary neon-border-static px-4" @click="openModal('newGoal')">
+            <i class="fa-solid fa-plus-circle me-2"></i> <span x-text="$store.lang.t('goals.new')"></span>
         </button>
     </div>
 
     <!-- Filtros de Estado -->
-    <div class="mb-4 d-flex gap-2 bg-black bg-opacity-25 p-2 rounded d-inline-block border border-secondary border-opacity-50">
-        <button class="btn btn-sm" :class="filterStatus === 'ALL' ? 'btn-outline-info' : 'btn-link text-dim'" @click="filterStatus = 'ALL'">Todas</button>
-        <button class="btn btn-sm" :class="filterStatus === 'ACTIVE' ? 'btn-outline-primary' : 'btn-link text-dim'" @click="filterStatus = 'ACTIVE'">En Curso</button>
-        <button class="btn btn-sm" :class="filterStatus === 'COMPLETED' ? 'btn-outline-success' : 'btn-link text-success text-opacity-50'" @click="filterStatus = 'COMPLETED'">Completadas</button>
+    <div class="mb-4 d-flex gap-2 bg-black bg-opacity-25 p-2 rounded d-inline-block border border-secondary border-opacity-25">
+        <button class="btn btn-sm px-3" :class="filterStatus === 'ALL' ? 'btn-info' : 'btn-ghost text-dim'" @click="filterStatus = 'ALL'" x-text="$store.lang.t('common.all')"></button>
+        <button class="btn btn-sm px-3" :class="filterStatus === 'ACTIVE' ? 'btn-primary' : 'btn-ghost text-dim'" @click="filterStatus = 'ACTIVE'" x-text="'En Curso'"></button>
+        <button class="btn btn-sm px-3" :class="filterStatus === 'COMPLETED' ? 'btn-success' : 'btn-ghost text-dim'" @click="filterStatus = 'COMPLETED'" x-text="'Logradas'"></button>
     </div>
 
     <!-- Grid de Metas -->
     <div class="row g-4">
         <template x-if="loading">
             <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-circle-notch fa-spin text-info fs-1 border-info"></i>
-                <p class="text-dim mt-3 font-orbitron">SINCRONIZANDO METAS...</p>
+                <div class="spinner-border text-info mb-3" style="width: 3rem; height: 3rem;"></div>
+                <p class="text-dim font-orbitron" x-text="$store.lang.t('common.loading')"></p>
             </div>
         </template>
 
         <template x-if="!loading && filteredGoals.length === 0">
             <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-flag text-dim fs-1 mb-3"></i>
-                <h5 class="text-white font-orbitron">NO HAY METAS EN ESTA VISTA</h5>
-                <p class="text-dim">Crea un objetivo financiero para comenzar a trackearlo.</p>
+                <div class="bg-dark bg-opacity-25 rounded-pill d-inline-flex p-4 mb-4 border border-secondary border-opacity-25">
+                    <i class="fa-solid fa-flag text-dim fs-1"></i>
+                </div>
+                <h4 class="text-white font-orbitron" x-text="$store.lang.t('goals.no_goals')"></h4>
+                <p class="text-dim max-w-md mx-auto" x-text="$store.lang.t('goals.create_first')"></p>
+                <button class="btn btn-outline-primary btn-sm mt-3" @click="openModal('newGoal')" x-text="$store.lang.t('goals.new')"></button>
             </div>
         </template>
 
@@ -127,193 +143,199 @@
                     
                     <div class="d-flex justify-content-between align-items-start mb-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="goal-icon-wrapper text-info" :class="goal.is_completed ? 'text-success border-success' : ''">
-                                <i class="fa-solid" :class="goal.is_completed ? 'fa-check' : 'fa-bullseye'"></i>
+                            <div class="goal-icon-wrapper" :class="goal.is_completed ? 'text-success border-success' : 'text-info'">
+                                <i class="fa-solid" :class="goal.is_completed ? 'fa-medal' : 'fa-bullseye'"></i>
                             </div>
                             <div>
                                 <h5 class="text-white mb-0 fw-bold" x-text="goal.name"></h5>
-                                <div class="badge bg-opacity-25 mt-1" 
-                                     :class="goal.status === 'delayed' && !goal.is_completed ? 'bg-danger text-danger border border-danger' : 'bg-secondary text-dim'"
-                                     x-text="goal.is_completed ? 'LOGRADO' : (goal.status === 'delayed' ? 'ATRASADO' : 'EN CAMINO')">
+                                <div class="mt-1">
+                                    <span class="status-badge" 
+                                         :class="goal.is_completed ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 
+                                                 (goal.status === 'delayed' ? 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25' : 
+                                                 'bg-info bg-opacity-10 text-info border border-info border-opacity-25')"
+                                         x-text="goal.is_completed ? 'LOGRADO' : (goal.status === 'delayed' ? 'ATRASADO' : 'EN TIEMPO')">
+                                    </span>
                                 </div>
                             </div>
                         </div>
                         <div class="dropdown">
-                            <i class="fa-solid fa-ellipsis-v text-dim cursor-pointer p-2" data-bs-toggle="dropdown"></i>
-                            <ul class="dropdown-menu dropdown-menu-dark">
+                            <button class="btn btn-link text-dim p-1" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
                                 <template x-if="!goal.is_completed">
-                                    <li><a class="dropdown-item text-success" href="#" @click="openContributeModal(goal)"><i class="fa-solid fa-plus-circle me-2"></i> Sumar Fondos</a></li>
+                                    <li><a class="dropdown-item text-success" href="#" @click.prevent="openContribute(goal)"><i class="fa-solid fa-plus-circle me-2"></i> Sumar Fondos</a></li>
                                 </template>
-                                <li><a class="dropdown-item" href="#"><i class="fa-solid fa-edit me-2"></i> Editar Meta</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#" @click="deleteGoal(goal)"><i class="fa-solid fa-trash me-2"></i> Eliminar</a></li>
+                                <li><a class="dropdown-item" href="#" @click.prevent="openEdit(goal)"><i class="fa-solid fa-pen-to-square me-2"></i> <span x-text="$store.lang.t('common.edit')"></span></a></li>
+                                <li><hr class="dropdown-divider border-secondary border-opacity-50"></li>
+                                <li><a class="dropdown-item text-danger" href="#" @click.prevent="deleteGoal(goal)"><i class="fa-solid fa-trash-can me-2"></i> <span x-text="$store.lang.t('common.delete')"></span></a></li>
                             </ul>
                         </div>
                     </div>
 
                     <div class="row align-items-center">
                         <div class="col-5">
-                            <!-- Circular Progress -->
-                            <div class="radial-progress mx-auto" 
-                                 :style="'--progress: ' + goal.progress_percentage"
-                                 :class="goal.is_completed ? 'completed' : (goal.status === 'delayed' ? 'delayed' : '')">
-                                <div class="radial-inner">
-                                    <h4 class="mb-0 font-orbitron" 
-                                        :class="goal.is_completed ? 'text-success' : (goal.status === 'delayed' ? 'text-danger' : 'text-info')"
-                                        x-text="goal.progress_percentage + '%'"></h4>
+                            <div class="radial-progress-container">
+                                <div class="radial-progress" 
+                                     :style="'--progress: ' + goal.progress_percentage + '; --progress-color: ' + (goal.is_completed ? 'var(--neon-green)' : (goal.status === 'delayed' ? 'var(--neon-pink)' : 'var(--neon-blue)'))">
+                                    <div class="radial-inner">
+                                        <h4 class="mb-0 font-orbitron fw-bold" 
+                                            :class="goal.is_completed ? 'text-success' : (goal.status === 'delayed' ? 'text-danger' : 'text-info')"
+                                            x-text="Math.round(goal.progress_percentage) + '%'"></h4>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-7">
                             <div class="mb-3">
-                                <small class="text-dim d-block mb-1">Ahorrado</small>
-                                <h4 class="text-white mb-0 font-orbitron" x-text="formatCurrency(goal.current_amount, goal.currency_code)"></h4>
+                                <small class="text-dim d-block mb-1 text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;" x-text="$store.lang.t('goals.actual_amount')"></small>
+                                <h4 class="text-white mb-0 font-orbitron" x-text="formatMoney(goal.current_amount, goal.currency_code)"></h4>
                             </div>
                             <div>
-                                <small class="text-dim d-block mb-1">Objetivo Total</small>
-                                <h6 class="text-secondary mb-0 font-orbitron" x-text="formatCurrency(goal.target_amount, goal.currency_code)"></h6>
+                                <small class="text-dim d-block mb-1 text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;" x-text="$store.lang.t('goals.target_amount')"></small>
+                                <h6 class="text-secondary mb-0 font-orbitron" x-text="formatMoney(goal.target_amount, goal.currency_code)"></h6>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mt-4 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
                         <small class="text-dim">
-                            <i class="fa-regular fa-calendar me-1"></i> Fecha Límite:
+                            <i class="fa-regular fa-calendar me-1"></i> <span x-text="$store.lang.t('goals.deadline')"></span>:
                         </small>
-                        <span class="text-white font-orbitron small" x-text="goal.target_date ? goal.target_date : 'Sin límite'"></span>
+                        <span class="text-white font-orbitron small" x-text="goal.target_date || 'Permanente'"></span>
                     </div>
 
                 </div>
             </div>
         </template>
     </div>
-</div>
 
-<!-- Modal Contribute -->
-<div class="modal fade" id="contribute-modal" tabindex="-1" x-data="{ amount: '' }">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark border-success" style="box-shadow: 0 0 20px rgba(0,255,136,0.2);">
-            <div class="modal-header border-secondary border-opacity-50">
-                <h5 class="modal-title font-orbitron text-success"><i class="fa-solid fa-plus-circle me-2"></i>SUMAR FONDOS</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                <p class="text-white mb-4">¿Cuánto vas a sumar a la meta <strong id="contribute-goal-name" class="text-info"></strong>?</p>
-                
-                <div class="input-group input-group-lg mb-3 mx-auto" style="max-width: 300px;">
-                    <span class="input-group-text bg-black border-secondary text-dim">$</span>
-                    <input type="number" class="form-control bg-black text-white border-secondary text-center font-orbitron" x-model="amount" placeholder="0.00">
+    <!-- Modal Form (New/Edit) -->
+    <div class="modal fade" id="goal-form-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-primary" style="box-shadow: 0 0 30px rgba(0,242,255,0.1);">
+                <div class="modal-header border-secondary border-opacity-25">
+                    <h5 class="modal-title font-orbitron text-primary">
+                        <i :class="isEdit ? 'fa-solid fa-edit' : 'fa-solid fa-plus-circle'" class="me-2"></i>
+                        <span x-text="isEdit ? $store.lang.t('goals.edit') : $store.lang.t('goals.new')"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-            </div>
-            <div class="modal-footer border-secondary border-opacity-50 justify-content-center">
-                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">CANCELAR</button>
-                <button type="button" class="btn btn-success neon-border-static px-4" @click="window.dispatchEvent(new CustomEvent('save-contribution', {detail: {amount: amount}}))">
-                    AGREGAR
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal New Goal -->
-<div class="modal fade" id="new-goal-modal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark border-primary" style="box-shadow: 0 0 20px rgba(0,242,255,0.2);">
-            <div class="modal-header border-secondary border-opacity-50">
-                <h5 class="modal-title font-orbitron text-primary"><i class="fa-solid fa-flag-checkered me-2"></i>NUEVA META</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form @submit.prevent="window.dispatchEvent(new Event('create-goal'))">
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="small text-dim">Nombre del Objetivo</label>
-                        <input type="text" id="ng-name" class="form-control bg-black text-white border-secondary" required placeholder="Ej: Auto Nuevo">
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-8">
-                            <label class="small text-dim">Monto Objetivo</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-black border-secondary text-dim">$</span>
-                                <input type="number" id="ng-amount" step="0.01" class="form-control bg-black text-white border-secondary font-orbitron" required placeholder="0.00">
+                <form @submit.prevent="saveGoal()">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="small text-dim text-uppercase mb-2" x-text="$store.lang.t('goals.goal_name')"></label>
+                            <input type="text" x-model="form.name" class="form-control bg-black text-white border-secondary border-opacity-50" required placeholder="Ej: Fondo de Emergencia v2.0">
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-8">
+                                <label class="small text-dim text-uppercase mb-2" x-text="$store.lang.t('goals.target_amount')"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-black border-secondary border-opacity-50 text-dim">$</span>
+                                    <input type="number" x-model="form.target_amount" step="0.01" class="form-control bg-black text-white border-secondary border-opacity-50 font-orbitron" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <label class="small text-dim text-uppercase mb-2">Moneda</label>
+                                <select x-model="form.currency_code" class="form-select bg-black text-white border-secondary border-opacity-50">
+                                    <option value="ARS">ARS</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="small text-dim">Moneda</label>
-                            <select id="ng-currency" class="form-select bg-black text-white border-secondary">
-                                <option value="ARS">ARS</option>
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
-                            </select>
+                        <div class="mb-3">
+                            <label class="small text-dim text-uppercase mb-2" x-text="$store.lang.t('goals.actual_amount')"></label>
+                            <input type="number" x-model="form.current_amount" step="0.01" class="form-control bg-black text-white border-secondary border-opacity-50 font-orbitron" placeholder="0.00">
+                        </div>
+                        <div class="mb-0">
+                            <label class="small text-dim text-uppercase mb-2" x-text="$store.lang.t('goals.deadline')"></label>
+                            <input type="date" x-model="form.target_date" class="form-control bg-black text-white border-secondary border-opacity-50">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="small text-dim">Fecha Límite (Opcional)</label>
-                        <input type="date" id="ng-date" class="form-control bg-black text-white border-secondary">
+                    <div class="modal-footer border-secondary border-opacity-25">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                        <button type="submit" class="btn btn-primary neon-border-static px-4" :disabled="submitting">
+                            <span x-show="!submitting" x-text="isEdit ? $store.lang.t('common.save') : $store.lang.t('goals.new')"></span>
+                            <span x-show="submitting"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                        </button>
                     </div>
-                </div>
-                <div class="modal-footer border-secondary border-opacity-50">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">CANCELAR</button>
-                    <button type="submit" class="btn btn-sm btn-primary neon-border-static">CREAR META</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- Modal Contribute -->
+    <div class="modal fade" id="contribute-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-success" style="box-shadow: 0 0 30px rgba(0,255,136,0.1);">
+                <div class="modal-header border-secondary border-opacity-25">
+                    <h5 class="modal-title font-orbitron text-success"><i class="fa-solid fa-vault me-2"></i>DEPÓSITO A META</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form @submit.prevent="saveContribution()">
+                    <div class="modal-body p-4 text-center">
+                        <p class="text-white mb-4">Ingresa el monto a sumar para <strong class="text-info" x-text="activeGoal?.name"></strong></p>
+                        
+                        <div class="input-group input-group-lg mb-3 mx-auto" style="max-width: 320px;">
+                            <span class="input-group-text bg-black border-secondary border-opacity-50 text-dim" x-text="activeGoal?.currency_code === 'USD' ? 'u$s' : '$'"></span>
+                            <input type="number" step="0.01" class="form-control bg-black text-white border-secondary border-opacity-50 text-center font-orbitron" x-model="contribution.amount" required placeholder="0.00" autofocus>
+                        </div>
+                        <p class="small text-dim">Este monto se sumará al progreso actual de la meta.</p>
+                    </div>
+                    <div class="modal-footer border-secondary border-opacity-25 justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
+                        <button type="submit" class="btn btn-success neon-border-static px-4" :disabled="submitting">
+                            <span x-show="!submitting">CONFIRMAR</span>
+                            <span x-show="submitting"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    let contributeModal = null;
-    let newGoalModal = null;
-
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('goalsManager', () => ({
+    function goalsManager() {
+        return {
             loading: true,
+            submitting: false,
             filterStatus: 'ACTIVE',
             goals: [],
-            selectedGoalId: null,
+            activeGoal: null,
+            isEdit: false,
+            bsModals: {
+                form: null,
+                contribute: null
+            },
+            form: {
+                name: '',
+                target_amount: '',
+                current_amount: 0,
+                currency_code: 'ARS',
+                target_date: ''
+            },
+            contribution: {
+                amount: ''
+            },
 
             async init() {
-                contributeModal = new bootstrap.Modal(document.getElementById('contribute-modal'));
-                newGoalModal = new bootstrap.Modal(document.getElementById('new-goal-modal'));
-                
+                this.bsModals.form = new bootstrap.Modal(document.getElementById('goal-form-modal'));
+                this.bsModals.contribute = new bootstrap.Modal(document.getElementById('contribute-modal'));
                 await this.fetchData();
-
-                window.addEventListener('save-contribution', async (e) => {
-                    if(!this.selectedGoalId || !e.detail.amount) return;
-                    await this.addFunds(this.selectedGoalId, parseFloat(e.detail.amount));
-                    contributeModal.hide();
-                });
-
-                window.addEventListener('create-goal', async (e) => {
-                    const name = document.getElementById('ng-name').value;
-                    const amount = parseFloat(document.getElementById('ng-amount').value);
-                    const currency = document.getElementById('ng-currency').value;
-                    const d = document.getElementById('ng-date').value;
-                    
-                    await this.createGoal({
-                        name: name,
-                        target_amount: amount,
-                        currency_code: currency,
-                        target_date: d ? d : null
-                    });
-                    
-                    newGoalModal.hide();
-                    document.getElementById('ng-name').value = '';
-                    document.getElementById('ng-amount').value = '';
-                });
             },
 
             async fetchData() {
                 this.loading = true;
                 try {
-                    const res = await fetch(`/api/goals/`);
-                    if(res.ok) {
-                        this.goals = await res.json();
-                    }
+                    const res = await api.get('goals/');
+                    this.goals = res.data;
                 } catch(e) {
-                    console.error(e);
+                    console.error("Error fetching goals:", e);
                 } finally {
                     this.loading = false;
                 }
@@ -326,63 +348,72 @@
                 return this.goals;
             },
 
-            formatCurrency(val, code) {
-                if(!val && val !== 0) return "$ 0.00";
-                return (code === 'USD' ? 'u$s ' : '$ ') + Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            formatMoney(val, code) {
+                return (code === 'USD' ? 'u$s ' : '$ ') + parseFloat(val || 0).toLocaleString(undefined, { 
+                    minimumFractionDigits: 0, 
+                    maximumFractionDigits: 2 
+                });
             },
 
-            openContributeModal(goal) {
-                this.selectedGoalId = goal.id;
-                document.getElementById('contribute-goal-name').innerText = goal.name;
-                contributeModal.show();
+            openModal(type) {
+                this.isEdit = false;
+                this.form = { name: '', target_amount: '', current_amount: 0, currency_code: 'ARS', target_date: '' };
+                this.bsModals.form.show();
             },
 
-            async addFunds(id, amount) {
+            openEdit(goal) {
+                this.isEdit = true;
+                this.activeGoal = goal;
+                this.form = { ...goal };
+                this.bsModals.form.show();
+            },
+
+            openContribute(goal) {
+                this.activeGoal = goal;
+                this.contribution = { amount: '' };
+                this.bsModals.contribute.show();
+            },
+
+            async saveGoal() {
+                this.submitting = true;
                 try {
-                    const payload = { amount: amount };
-                    const res = await fetch(`/api/goals/${id}/contribute`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
-                    });
-                    if(res.ok) {
-                        await this.fetchData(); // reload
+                    if(this.isEdit) {
+                        await api.put(`goals/${this.activeGoal.id}`, this.form);
                     } else {
-                        alert("Error registrando contribución.");
+                        await api.post('goals/', this.form);
                     }
-                } catch (e) {
-                    console.error(e);
+                    this.bsModals.form.hide();
+                    await this.fetchData();
+                } catch(e) {
+                    alert("Error guardando la meta.");
+                } finally {
+                    this.submitting = false;
                 }
             },
 
-            async createGoal(data) {
+            async saveContribution() {
+                this.submitting = true;
                 try {
-                    const res = await fetch(`/api/goals/`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(data)
-                    });
-                    if(res.ok) {
-                        await this.fetchData(); // reload
-                    } else {
-                        alert("Error creando la meta.");
-                    }
-                } catch (e) {
-                    console.error(e);
+                    await api.post(`goals/${this.activeGoal.id}/contribute`, this.contribution);
+                    this.bsModals.contribute.hide();
+                    await this.fetchData();
+                } catch(e) {
+                    alert("Error registrando contribución.");
+                } finally {
+                    this.submitting = false;
                 }
             },
 
             async deleteGoal(goal) {
-                if(confirm("¿Estás seguro de eliminar la meta " + goal.name + "?")) {
-                    try {
-                        const res = await fetch(`/api/goals/${goal.id}`, { method: 'DELETE' });
-                        if(res.ok) {
-                            this.goals = this.goals.filter(g => g.id !== goal.id);
-                        }
-                    } catch (e) { }
+                if(!confirm(`¿Estás seguro de eliminar la meta "${goal.name}"?`)) return;
+                try {
+                    await api.delete(`goals/${goal.id}`);
+                    this.goals = this.goals.filter(g => g.id !== goal.id);
+                } catch(e) {
+                    alert("Error eliminando la meta.");
                 }
             }
-        }));
-    });
+        };
+    }
 </script>
 {% endblock %}

@@ -37,7 +37,7 @@
                 <button @click="resetLayout()" class="neon-btn border-secondary text-dim px-3 py-1 btn-sm">
                     <i class="fa-solid fa-rotate-left me-1"></i> <span x-text="$store.lang.t('dashboard.refresh')"></span>
                 </button>
-                <button class="neon-btn px-3 py-1 shadow-sm" @click="nuevoActivo()">
+                <button class="neon-btn px-3 py-1 shadow-sm" @click="newAsset()">
                     <i class="fa-solid fa-plus-circle me-2"></i><span x-text="$store.lang.t('assets.new')">Registrar Activo</span>
                 </button>
             </div>
@@ -46,17 +46,17 @@
 
     <!-- GridStack Layout -->
     <div class="grid-stack mt-2">
-        <template x-for="item in assets" :key="item.id_activo">
+        <template x-for="item in assets" :key="item.id">
             <div class="grid-stack-item shadow-lg" gs-w="4" gs-h="6">
                 <div class="grid-stack-item-content neon-card overflow-hidden h-100 p-0 border-opacity-10 group-hover-action">
                     <!-- Top accent bar -->
                     <div class="position-absolute top-0 start-0 w-100" style="height: 3px; background: linear-gradient(90deg, var(--3f-primary), transparent 70%); opacity: 0.8"></div>
                     
                     <div class="widget-header d-flex justify-content-between px-3 py-2 border-bottom border-secondary border-opacity-10 bg-black bg-opacity-20">
-                        <span class="text-white fw-bold extra-small tracking-wider" x-text="item.nombre_activo"></span>
+                        <span class="text-white fw-bold extra-small tracking-wider" x-text="item.name"></span>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge extra-small p-1" :class="item.activo ? 'border border-success text-success' : 'border border-secondary text-dim'" 
-                                  x-text="item.activo ? 'ONLINE' : 'OFFLINE'"></span>
+                            <span class="badge extra-small p-1" :class="item.is_active ? 'border border-success text-success' : 'border border-secondary text-dim'" 
+                                  x-text="item.is_active ? 'ONLINE' : 'OFFLINE'"></span>
                             <i class="fa-solid fa-grip-lines text-dim extra-small cursor-grab"></i>
                         </div>
                     </div>
@@ -64,38 +64,38 @@
                     <div class="p-4 d-flex flex-column h-100">
                         <div class="d-flex align-items-start mb-4">
                             <div class="icon-square shadow-lg border border-primary border-opacity-20 me-3" style="width: 48px; height: 48px; background: rgba(0, 240, 255, 0.05)">
-                                <i :class="`fa-solid ${getIcon(item.tipo_activo)} fs-4 text-primary`"></i>
+                                <i :class="`fa-solid ${getIcon(item.type)} fs-4 text-primary`"></i>
                             </div>
                             <div>
-                                <span class="text-dim extra-small d-block text-uppercase fw-bold mb-1 opacity-75" x-text="getTypeLabel(item.tipo_activo)"></span>
-                                <h3 class="text-white fw-bold mb-0 lh-1" x-text="formatCurrency(item.valor_actual)"></h3>
+                                <span class="text-dim extra-small d-block text-uppercase fw-bold mb-1 opacity-75" x-text="getTypeLabel(item.type)"></span>
+                                <h3 class="text-white fw-bold mb-0 lh-1" x-text="formatCurrency(item.current_value)"></h3>
                             </div>
                         </div>
                         
-                        <p class="text-dim smaller mb-4 text-truncate opacity-75 italic" x-text="item.notas || $store.lang.t('common.none')"></p>
+                        <p class="text-dim smaller mb-4 text-truncate opacity-75 italic" x-text="item.notes || $store.lang.t('common.none')"></p>
                         
                         <div class="mt-auto">
                             <div class="d-flex justify-content-between mb-2 smaller text-dim border-top border-secondary border-opacity-10 pt-3">
                                 <span class="text-uppercase fw-bold opacity-50" x-text="$store.lang.t('assets.initial_value')"></span>
-                                <span class="text-white" x-text="formatCurrency(item.valor_inicial)"></span>
+                                <span class="text-white" x-text="formatCurrency(item.initial_value)"></span>
                             </div>
                             <div class="d-flex justify-content-between mb-4 smaller">
                                 <span class="text-uppercase fw-bold opacity-50" x-text="$store.lang.t('assets.variation')"></span>
-                                <span :class="item.tasa_variacion >= 0 ? 'text-success' : 'text-danger'" class="fw-bold fs-6">
-                                    <i class="fa-solid me-1" :class="item.tasa_variacion >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
-                                    <span x-text="Math.abs(item.tasa_variacion)"></span>%
+                                <span :class="(item.variation_rate || 0) >= 0 ? 'text-success' : 'text-danger'" class="fw-bold fs-6">
+                                    <i class="fa-solid me-1" :class="(item.variation_rate || 0) >= 0 ? 'fa-caret-up' : 'fa-caret-down'"></i>
+                                    <span x-text="Math.abs(item.variation_rate || 0)"></span>%
                                 </span>
                             </div>
 
                             <div class="d-flex gap-2 mb-2">
-                                <button class="neon-btn flex-grow-1 border-info text-info py-2" @click="verHistorial(item)">
+                                <button class="neon-btn flex-grow-1 border-info text-info py-2" @click="viewHistory(item)">
                                     <i class="fa-solid fa-chart-line me-2 smaller"></i> <span class="extra-small" x-text="$store.lang.t('assets.history')"></span>
                                 </button>
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-secondary border-opacity-10 px-3" @click="editar(item)">
+                                    <button class="btn btn-sm btn-outline-secondary border-opacity-10 px-3" @click="editAsset(item)">
                                         <i class="fa-solid fa-pen smaller"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger border-opacity-10 px-3" @click="eliminar(item.id_activo)">
+                                    <button class="btn btn-sm btn-outline-danger border-opacity-10 px-3" @click="deleteAsset(item.id)">
                                         <i class="fa-solid fa-trash smaller"></i>
                                     </button>
                                 </div>
@@ -122,11 +122,11 @@
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.name')"></label>
-                            <input type="text" class="form-control neon-input" x-model="editItem.nombre_activo" placeholder="Ej: BMW X5, Apartamento Centro...">
+                            <input type="text" class="form-control neon-input" x-model="editItem.name" placeholder="Ej: BMW X5, Apartamento Centro...">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.type')"></label>
-                            <select class="form-select neon-input" x-model="editItem.tipo_activo">
+                            <select class="form-select neon-input" x-model="editItem.type">
                                 <option value="Property" x-text="$store.lang.t('assets.property')"></option>
                                 <option value="Automobile" x-text="$store.lang.t('assets.vehicle')"></option>
                                 <option value="Household" x-text="$store.lang.t('assets.household')"></option>
@@ -140,22 +140,22 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.initial_value')"></label>
-                            <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.valor_inicial">
+                            <input type="number" step="0.01" class="form-control neon-input" x-model.number="editItem.initial_value">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small text-warning" x-text="$store.lang.t('assets.current_value')"></label>
-                            <input type="number" step="0.01" class="form-control neon-input border-warning border-opacity-50" x-model.number="editItem.valor_actual">
+                            <input type="number" step="0.01" class="form-control neon-input border-warning border-opacity-50" x-model.number="editItem.current_value">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.purchase_date')"></label>
-                            <input type="date" class="form-control neon-input" x-model="editItem.fecha_compra">
+                            <input type="date" class="form-control neon-input" x-model="editItem.purchase_date">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.method')"></label>
-                            <select class="form-select neon-input" x-model="editItem.metodo_variacion">
+                            <select class="form-select neon-input" x-model="editItem.variation_method">
                                 <option value="None">None</option>
                                 <option value="Linear">Linear</option>
                                 <option value="Percentage">Percentage</option>
@@ -163,11 +163,11 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.variation') + ' (%)'"></label>
-                            <input type="number" step="0.0001" class="form-control neon-input" x-model.number="editItem.tasa_variacion">
+                            <input type="number" step="0.0001" class="form-control neon-input" x-model.number="editItem.variation_rate">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="text-dim small" x-text="$store.lang.t('assets.frequency')"></label>
-                            <select class="form-select neon-input" x-model="editItem.frecuencia_variacion">
+                            <select class="form-select neon-input" x-model="editItem.variation_frequency">
                                 <option value="Monthly" x-text="$store.lang.t('recurring.monthly')"></option>
                                 <option value="Yearly" x-text="$store.lang.t('recurring.yearly')"></option>
                             </select>
@@ -176,17 +176,17 @@
 
                     <div class="mb-3">
                         <label class="text-dim extra-small fw-bold text-uppercase" x-text="$store.lang.t('recurring.notes')">NOTAS/DETALLES</label>
-                        <textarea class="form-control neon-input" rows="2" x-model="editItem.notas"></textarea>
+                        <textarea class="form-control neon-input" rows="2" x-model="editItem.notes"></textarea>
                     </div>
 
                     <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" x-model="editItem.activo" :true-value="1" :false-value="0" id="checkActivo">
-                        <label class="form-check-label text-dim extra-small fw-bold text-uppercase" for="checkActivo" x-text="$store.lang.t('assets.status_active')">ESTADO_ACTIVO</label>
+                        <input class="form-check-input" type="checkbox" x-model="editItem.is_active" :true-value="1" :false-value="0" id="checkIsActive">
+                        <label class="form-check-label text-dim extra-small fw-bold text-uppercase" for="checkIsActive" x-text="$store.lang.t('assets.status_active')">ESTADO_ACTIVO</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" x-text="$store.lang.t('common.cancel')"></button>
-                    <button type="button" class="btn neon-btn" @click="guardar()" :disabled="saving">
+                    <button type="button" class="btn neon-btn" @click="saveAsset()" :disabled="saving">
                         <span x-show="!saving" x-text="$store.lang.t('common.save')"></span>
                         <span x-show="saving" class="spinner-border spinner-border-sm"></span>
                     </button>
@@ -215,10 +215,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="h in history" :key="h.id_historial">
+                                <template x-for="h in history" :key="h.id">
                                     <tr>
-                                        <td x-text="formatDate(h.fecha)"></td>
-                                        <td class="text-end fw-bold" x-text="formatCurrency(h.valor)"></td>
+                                        <td x-text="formatDate(h.date)"></td>
+                                        <td class="text-end fw-bold" x-text="formatCurrency(h.value)"></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -236,32 +236,45 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('assetsPage', () => ({
-        // ... (data properties)
         assets: [],
         history: [],
         loading: false,
         saving: false,
         bsModal: null,
         bsHistoryModal: null,
-        editItem: { activo: 1, tipo_activo: 'Other', metodo_variacion: 'None', frecuencia_variacion: 'Yearly' },
+        editItem: { is_active: 1, type: 'Other', variation_method: 'None', variation_frequency: 'Yearly' },
         grid: null,
         layoutManager: null,
 
         async init() {
             this.bsModal = new bootstrap.Modal(document.getElementById('modalAsset'));
             this.bsHistoryModal = new bootstrap.Modal(document.getElementById('modalHistory'));
-            await this.listar();
+            await this.listAssets();
         },
 
-        async listar() {
+        async listAssets() {
             this.loading = true;
             try {
                 const response = await api.get('/assets/');
-                this.assets = response.data;
+                const rawAssets = response.data;
+                this.assets = rawAssets.map(a => ({
+                    ...a,
+                    id: a.id ?? a.id_activo,
+                    name: a.name ?? a.nombre_activo,
+                    type: a.type ?? a.tipo_activo,
+                    initial_value: a.initial_value ?? a.valor_inicial,
+                    current_value: a.current_value ?? a.valor_actual,
+                    purchase_date: a.purchase_date ?? a.fecha_compra,
+                    variation_method: a.variation_method ?? a.metodo_variacion,
+                    variation_rate: a.variation_rate ?? a.tasa_variacion,
+                    variation_frequency: a.variation_frequency ?? a.frecuencia_variacion,
+                    is_active: a.is_active ?? a.activo,
+                    notes: a.notes ?? a.notas
+                }));
                 // Wait for Alpine to render DOM then init GridStack
                 this.$nextTick(() => {
                     if (this.grid) {
-                        this.grid.destroy(false); // don't remove DOM elements
+                        this.grid.destroy(false);
                     }
                     this.grid = GridStack.init({
                         cellHeight: 70,
@@ -288,69 +301,76 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // ... (rest of methods: nuevoActivo, editar, guardar, eliminar, verHistorial, helpers)
-        nuevoActivo() {
+        newAsset() {
             this.editItem = {
-                id_activo: 'NEW',
-                nombre_activo: '',
-                tipo_activo: 'Other',
-                valor_inicial: 0,
-                valor_actual: 0,
-                fecha_compra: new Date().toISOString().split('T')[0],
-                metodo_variacion: 'None',
-                tasa_variacion: 0,
-                frecuencia_variacion: 'Yearly',
-                activo: 1,
-                notas: ''
+                id: 'NEW',
+                name: '',
+                type: 'Other',
+                initial_value: 0,
+                current_value: 0,
+                purchase_date: new Date().toISOString().split('T')[0],
+                variation_method: 'None',
+                variation_rate: 0,
+                variation_frequency: 'Yearly',
+                is_active: 1,
+                notes: ''
             };
             this.bsModal.show();
         },
 
-        editar(item) {
+        editAsset(item) {
             this.editItem = JSON.parse(JSON.stringify(item));
             this.bsModal.show();
         },
 
-        async guardar() {
+        async saveAsset() {
             this.saving = true;
             try {
-                if (this.editItem.id_activo === 'NEW') {
-                    await api.post('/assets/', this.editItem);
+                const payload = { ...this.editItem };
+                if (payload.id === 'NEW') {
+                    await api.post('/assets/', payload);
                 } else {
-                    await api.put(`/assets/${this.editItem.id_activo}`, this.editItem);
+                    await api.put(`/assets/${payload.id}`, payload);
                 }
-                await this.listar();
+                await this.listAssets();
                 this.bsModal.hide();
+                NotificationManager.success('Activo guardado');
             } catch (error) {
-                alert('Error al guardar: ' + (error.response?.data?.detail || error.message));
+                NotificationManager.error((error.response?.data?.detail || error.message), this.$store.lang.t('common.error_save'));
             } finally {
                 this.saving = false;
             }
         },
 
-        async eliminar(id) {
-            if (!confirm('¿Deseas eliminar este activo y todo su historial?')) return;
+        async deleteAsset(id) {
+            if (!await NotificationManager.confirm(this.$store.lang.t('assets.confirm_delete'))) return;
             try {
                 await api.delete(`/assets/${id}`);
-                this.assets = this.assets.filter(a => a.id_activo !== id);
-                // Re-init grid or remove widget logic could go here, but full reload is safer for sync
-                await this.listar(); 
+                this.assets = this.assets.filter(a => a.id !== id);
+                await this.listAssets(); 
+                NotificationManager.success('Activo eliminado');
             } catch (error) {
-                alert('Error al eliminar');
+                NotificationManager.error(this.$store.lang.t('common.error_delete'));
             }
         },
 
-        async verHistorial(item) {
+        async viewHistory(item) {
             try {
-                const response = await api.get(`/assets/${item.id_activo}/history`);
-                this.history = response.data;
+                const response = await api.get(`/assets/${item.id}/history`);
+                const rawHistory = response.data;
+                this.history = rawHistory.map(h => ({
+                    ...h,
+                    id: h.id ?? h.id_historial,
+                    date: h.date ?? h.fecha,
+                    value: h.value ?? h.valor
+                }));
                 this.bsHistoryModal.show();
             } catch (error) {
-                alert('Error al cargar historial');
+                NotificationManager.error(this.$store.lang.t('assets.error_load_history'));
             }
         },
 
-        getIcon(tipo) {
+        getIcon(type) {
             const icons = {
                 'Property': 'fa-house-chimney',
                 'Automobile': 'fa-car',
@@ -359,11 +379,11 @@ document.addEventListener('alpine:init', () => {
                 'Jewelry': 'fa-gem',
                 'Other': 'fa-box'
             };
-            return icons[tipo] || 'fa-box';
+            return icons[type] || 'fa-box';
         },
 
-        getTypeLabel(tipo) {
-            return this.$store.lang.t('assets.' + tipo.toLowerCase()) || tipo;
+        getTypeLabel(type) {
+            return this.$store.lang.t('assets.' + type.toLowerCase()) || type;
         },
 
         formatDate(d) { return d ? new Date(d).toLocaleDateString('es-AR') : '-'; },

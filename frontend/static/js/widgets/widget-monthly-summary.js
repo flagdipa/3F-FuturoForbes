@@ -19,7 +19,7 @@
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-                const res = await api.get(`/transactions/?limit=500&fecha_inicio=${startOfMonth}&fecha_fin=${endOfMonth}`);
+                const res = await api.get(`/transactions/?limit=500&start_date=${startOfMonth}&end_date=${endOfMonth}&fecha_inicio=${startOfMonth}&fecha_fin=${endOfMonth}`);
                 const txList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
                 let income = 0;

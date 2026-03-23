@@ -24,7 +24,7 @@ def create_indexes():
         ("idx_tx_dividida_tx", "transacciones_divididas", "id_transaccion"),
         ("idx_tx_dividida_cat", "transacciones_divididas", "id_categoria"),
         
-        ("idx_recurrente_fecha", "transacciones_programadas", "proxima_fecha, activo"),
+        ("idx_recurrente_fecha", "transacciones_programadas", "proxima_fecha, is_active"),
         ("idx_recurrente_cuenta", "transacciones_programadas", "id_cuenta"),
         
         ("idx_audit_usuario", "audit_logs", "id_usuario"),
