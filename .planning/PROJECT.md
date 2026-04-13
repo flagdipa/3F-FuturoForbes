@@ -22,3 +22,15 @@ To empower personal financial freedom through comprehensive control, automated t
 - **Name**: Fer Futuro Forbes (3F)
 - **Vibe**: Professional yet cutting-edge (High-tech finance).
 - **Palette**: Dark backgrounds with vibrant neon highlights (Indigo, Primary Blue, Warning Yellow).
+
+## Current State
+- **Shipped Version**: v1.0 (Production Ready).
+- **Accomplishments**: 
+  - Ledger doble-partida verificado y auto-curable (Integrity Service).
+  - Interfaz de reportes reactiva (Sankey, Proyecciones Cashflow).
+  - Exportación contable CSV.
+  - Automatización atómica CRON para recurrentes.
+  - Onboarding fluido para cuentas nuevas.
+
+## Next Milestone Goals
+- Planificación y priorización del Roadmap de la v2.0 (por definir junto al usuario).

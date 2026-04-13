@@ -1,40 +1,9 @@
 # Roadmap - 3F
 
-## Milestone 1: Stabilization & Core Engine (v0.8)
-*Goal: Ensure the database and engine are bulletproof.*
+## Historico
+- **[v1.0 (Completado)](milestones/v1.0-ROADMAP.md)**: Estabilización del código base, migración a sistema determinista sin IA, Exportación CSV, Onboarding y Automatización CRON.
 
-- **Phase 1**: **Engine Audit & Cleanup** 
-  - Fix any Pydantic/SQLAlchemy 2.0 compatibility issues.
-  - Standardize `LedgerEngine` logic for double-entry validation.
-- **Phase 2**: **UX Polish & Sidebar Sync**
-  - Implement real-time balance updates in the sidebar using Alpine.js stores.
-  - Fix sidebar sorting and filtering.
-- **Phase 3**: **Transaction Split UX**
-  - Finalize the transaction multi-split UI component.
-  - Ensure backend validation handles fractional cents/rounding.
+## Próximo Ciclo (v2.0)
+*Pendiente de definición estratégica.*
 
-## Milestone 2: Intelligent Automation (v0.9)
-*Goal: Reduce manual data entry.*
-
-- **Phase 4**: **PaddleOCR Plugin Deployment**
-  - Implement a dedicated OCR plugin module.
-  - Create a "Drafts" interface for scanned receipts before final ledger entry.
-- **Phase 5**: **Recurring Transactions v2**
-  - Enable robust scheduling for fixed expenses.
-  - Implementation of "Next occurrence" notification/auto-execution.
-
-## Milestone 3: Deep Insights (v1.0-rc)
-*Goal: Provide actionable financial analysis.*
-
-- **Phase 6**: **Advanced Reporting Suite**
-  - Build the Cashflow Sankey diagram or multi-month comparison.
-  - Implement "Heatmap" for spending patterns.
-- **Phase 7**: **Budgeting & Goals**
-  - Finalize the Budgeting module.
-  - Add visual progress tracking for Saving Goals.
-
-## Milestone 4: Polishing & v1.0 Release
-- **Phase 8**: **E2E Verification Suite**
-  - Complete Playwright coverage for all critical paths.
-- **Phase 9**: **Onboarding & Setup Wizard**
-  - Create a first-run wizard for account creation and base currency configuration.
+- **Phase 10**: ...
