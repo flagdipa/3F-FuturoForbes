@@ -1,0 +1,13 @@
+{
+  "project_name": "3F",
+  "workflow": "gsd",
+  "preferred_model": "gemini-3-flash",
+  "conventions": {
+    "backend": "fastapi-sqlmodel",
+    "frontend": "alpine-jinja2"
+  },
+  "automation": {
+    "auto_commit": true,
+    "parallel_execution": true
+  }
+}
